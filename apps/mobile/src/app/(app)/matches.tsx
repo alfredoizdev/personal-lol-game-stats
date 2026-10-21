@@ -1,15 +1,77 @@
-import { StyleSheet, Text } from 'react-native'
-import { Screen } from '@/components/Screen'
-import { colors, font } from '@/theme/tokens'
+import { useMemo } from 'react'
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { router } from 'expo-router'
+import { Disclaimer } from '@/components/Disclaimer'
+import { MatchRow } from '@/components/MatchRow'
+import { PerformanceHeader } from '@/components/PerformanceHeader'
+import { RiotErrorView } from '@/components/RiotErrorView'
+import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useRecentMatches, type MatchRowState } from '@/hooks/useRecentMatches'
+import { aggregateMatches } from '@/lib/match-aggregates'
+import { riotErrorCode } from '@/lib/riot-api'
+import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function MatchesScreen() {
+  const { data: account } = useLinkedAccount()
+  const { ids, matches, refresh, isRefreshing } = useRecentMatches(account ?? null)
+  const now = Date.now()
+
+  const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready'), [matches])
+  const visible = useMemo(() => matches.filter((m) => !(m.status === 'error' && m.error === 'NOT_FOUND')), [matches])
+  const agg = useMemo(() => aggregateMatches(ready.map((m) => m.summary)), [ready])
+
+  const header = (
+    <View style={styles.headerBlock}>
+      <Text style={styles.title}>My Matches</Text>
+      <Text style={styles.subtitle}>Recent performance</Text>
+      {ready.length > 0 ? <PerformanceHeader agg={agg} /> : null}
+      {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
+      {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
+      <Text style={styles.section}>Recent Games{ids.data ? ` (${visible.length})` : ''}</Text>
+    </View>
+  )
+
   return (
-    <Screen title="My Matches" subtitle="Recent performance">
-      <Text style={styles.muted}>Your recent matches will appear here.</Text>
-    </Screen>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <FlatList
+        data={ids.isPending && account ? SKELETON : visible}
+        keyExtractor={(m) => m.matchId}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={header}
+        ListFooterComponent={<View style={styles.footer}><Disclaimer /></View>}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void refresh()} tintColor={colors.muted} />}
+        renderItem={({ item }) => <Row item={item} now={now} />}
+      />
+    </SafeAreaView>
   )
 }
 
+const SKELETON: MatchRowState[] = Array.from({ length: 5 }, (_, i) => ({ matchId: `skeleton-${i}`, status: 'loading' as const }))
+
+function Row({ item, now }: { item: MatchRowState; now: number }) {
+  if (item.status === 'ready') {
+    return <MatchRow summary={item.summary} now={now} onPress={() => router.push(`/(app)/match/${item.matchId}`)} />
+  }
+  if (item.status === 'error') {
+    return (
+      <View style={styles.placeholder}>
+        <Text style={styles.muted}>Couldn't load this game.</Text>
+      </View>
+    )
+  }
+  return <View style={[styles.placeholder, styles.skeleton]} />
+}
+
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  list: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.sm + 4, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  headerBlock: { gap: space.md, marginBottom: 4 },
+  title: { color: colors.text, fontSize: font.title, fontWeight: '800', letterSpacing: -0.5 },
+  subtitle: { color: colors.muted, fontSize: font.body, marginTop: -space.sm },
+  section: { color: colors.text, fontSize: font.body, fontWeight: '700', marginTop: space.xs },
   muted: { color: colors.muted, fontSize: font.body },
+  placeholder: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, minHeight: 92, justifyContent: 'center' },
+  skeleton: { opacity: 0.5 },
+  footer: { paddingVertical: space.lg },
 })
