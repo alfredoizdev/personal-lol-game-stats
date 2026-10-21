@@ -1,0 +1,201 @@
+# LoL Personal Performance v2 — Diseño
+
+**Fecha:** 2026-10-21
+**Estado:** aprobado por el product owner el 2026-10-21
+**Documento padre:** `LOL_PERSONAL_PERFORMANCE_ROADMAP.md` (v1.0). Este diseño lo concreta y lo corrige donde choca con lo que ya existe en RiftLens. Donde los dos difieran, manda este documento.
+
+## 1. Intención y por qué
+
+RiftLens (repo `alfredoizdev/riftlens`, worktree `~/Desktop/lol-app-ui`) funciona, pero se complicó: coaching con coaches humanos, clips, quests, scouting de los 9 rivales, overlay, meta tiers, notificaciones. El usuario ya no sabe qué mirar.
+
+v2 es **el mismo producto recortado a lo personal**: qué hiciste tú en cada partida, cómo lo hiciste contra tu oponente de línea, y qué una sola cosa mejorar. Dos pestañas en el móvil. El desktop es solo un recolector de datos sin interfaz de estadísticas.
+
+No es un producto nuevo ni un rewrite del backend. Reutiliza el proyecto de Supabase, las Edge Functions de Riot, el detector y lector del cliente de League, y el canal en tiempo real que ya conecta desktop y móvil.
+
+## 2. Objetivos, no-objetivos, anti-objetivos
+
+**Objetivos**
+- Abrir la app y en una pantalla ver las últimas partidas con campeón, resultado, rol, KDA y CS/min.
+- Abrir una partida y leer en menos de 10 segundos: un score, tres números grandes, qué hiciste bien, qué trabajar, una mejora concreta.
+- Durante una partida real, ver en el móvil o tablet tus stats y las de tu oponente de línea, actualizadas cada pocos segundos, más el objetivo que fijaste antes de jugar.
+- Antes de jugar, elegir campeón y rol y ver tu historial personal contra ese matchup y una sugerencia de ban basada solo en tus partidas.
+
+**No-objetivos (fuera de v2)**
+- Coach conversacional, LLM, narrativas de partida.
+- Scouting de los otros 9 jugadores, tags de comportamiento, recomendaciones de champ select.
+- Overlay sobre el juego, grabación de clips, quests, logros, notificaciones push.
+- Coaching con coaches humanos, reservas, pagos, suscripciones.
+- Benchmarks contra otros jugadores o contra el rango. Solo baseline propio.
+- Soporte a ARAM, Arena y modos rotativos en análisis y pre-partida. Se listan pero sin análisis.
+
+**Anti-objetivos (fallo aunque funcione)**
+- Que la pantalla de partida parezca OP.GG o Mobalytics: tabla de 10 jugadores, 40 métricas, badges.
+- Consejos tácticos en vivo ("ve a farmear", "haz back"). Solo datos y el objetivo pre-fijado.
+- Afirmar cosas que los datos no prueban ("te posicionaste mal") o equiparar perder con jugar mal.
+- Cifras inventadas: si un dato no está, se muestra "—", nunca cero.
+
+## 3. Restricciones
+
+- **Riot.** Key de API solo en Supabase Edge Functions. Dev key: 20 req/s, 100 req/2 min, caduca cada 24 h. Production key antes de cualquier beta pública. Disclaimer obligatorio visible en móvil y desktop (texto exacto en memoria de ContextForge, "Riot Developer Portal — Registration path"). Sin RSO hasta aprobación.
+- **Política de Riot en vivo.** Mostrar nivel, KDA, CS y visión del oponente de línea es información que el jugador ya ve en el marcador con Tab, por tanto no es "información desconocida para el jugador". Se mantiene detrás de un flag `LIVE_OPPONENT_COMPARE` para poder apagarlo si Riot lo pide. Nunca cooldowns, predicciones ni posiciones.
+- **Plataforma.** La detección de League en RiftLens es solo macOS: `process.ts` usa `pgrep` y `lockfile.ts` solo conoce rutas de macOS. Windows no está sin validar, está sin implementar. Ver pregunta abierta en 11.
+- **Móvil en segundo plano.** iOS corta el WebSocket al bloquear. La experiencia base es con la pantalla encendida. Al volver al frente, el móvil pide el último snapshot.
+- **Supabase compartido.** Mismo proyecto que RiftLens. El historial canónico de migraciones sigue en `lol-app-ui/desktop-app/supabase/migrations`. Cada migración o Edge Function nueva de v2 se escribe en `supabase/` de este repo y se copia al repo de RiftLens en el mismo ciclo, para que `schema_migrations` no se desincronice. Se despliega desde RiftLens.
+
+## 4. Decisiones del product owner
+
+1. Dos pestañas en móvil: `Matches` y `Live`. Pre-partida vive dentro de `Live` cuando no hay partida.
+2. Desktop (macOS/Windows) es un recolector: login, estado de conexión, "esperando partida", desconectar. Sin estadísticas ni partidas.
+3. Reutilizar Supabase (proyecto, Edge Functions, tablas, Realtime) y el código Electron de detección y lectura del cliente.
+4. Pantallas según los mockups entregados el 2026-10-21: lista de partidas, review de partida con score y tres secciones, pre-match con matchups difíciles y ban, live con tú contra oponente y objetivo pre-partida.
+5. Estilo: fondo negro, tipografía grande, tarjetas con aire, sin badges ni insignias. Mobalytics es el ejemplo de lo que no se quiere.
+6. Referencia en vivo: oponente de línea más objetivo personal. No metas fijas universales.
+
+## 5. Decisiones mías (revisables)
+
+- **Login:** se mantiene el login con email de Supabase de RiftLens. Motivo: partidas, snapshots y el canal Realtime van ligados al `user.id`, y cambiarlo obliga a rehacer RLS y las funciones. Es una pantalla al arrancar y luego no se vuelve a ver.
+- **Repo nuevo** en `~/Desktop/lol-app-v-2`, monorepo pnpm con `apps/mobile` (Expo) y `apps/desktop` (Electron), más `packages/shared`. El Electron se copia de RiftLens y se recorta; el móvil se escribe de cero copiando solo módulos puntuales.
+- **Desktop sin Next.js.** RiftLens renderiza el desktop con Next 14. En v2 el renderer es una ventana mínima con Vite + React. El publicador de snapshots, que hoy vive en el hook `useLivePublisher` del renderer, se mueve al proceso main.
+- **Sesión en desktop:** token de Supabase guardado con `safeStorage` de Electron. No keytar (archivado).
+- **Certificado del Live Client:** RiftLens usa `rejectUnauthorized: false` en loopback. Se mantiene para arrancar y queda como pendiente obligatorio antes de distribuir instaladores.
+- **Objetivo pre-partida:** por defecto, tu CS/min medio con ese campeón y rol en las últimas 20 partidas si hay al menos 3; si no, tu media del rol; si no, sin objetivo. Editable a mano. Se guarda por usuario y se consume en Live.
+- **Cache de partidas obligatoria desde el día uno.** Un detalle de partida se pide a Riot una sola vez y queda en `match_details_cache`. El timeline se pide solo al abrir el detalle.
+- **Análisis sin LLM, basado en reglas,** con confianza explícita y tamaño de muestra. Ver 7.
+- **Fuente de verdad del historial propio: la Riot API cacheada, no la tabla `matches`.** En RiftLens `matches` la llena el renderer del desktop desde el historial del LCU, y ese código no existe en v2. Todo (lista, baseline del análisis, pre-match, objetivo por defecto) sale de `match-list-ids` + `match-detail` con `riot_match_list_cache` y `match_details_cache`. Para pre-match y baseline se piden hasta 100 ids y los detalles se rellenan en segundo plano con indicador de progreso; cada detalle se pide una sola vez en la vida.
+- **Timeline: sí.** Nueva Edge Function `match-timeline` con cache en tabla `match_timeline_cache`, mismo patrón que `match-detail`. Se pide solo al abrir el detalle. Coste: una llamada extra por partida abierta, una vez.
+- **Sin interoperabilidad con clientes RiftLens.** El desktop v2 solo habla con el móvil v2. Se conserva el nombre del canal `user:${user.id}` y nada más; el payload es el de 6.3. No se escribe `last_game_snapshots`.
+- **LCU mínimo y de solo lectura.** Se mantiene `lockfile.ts` + `lcu-client.ts` recortado para tres lecturas: fase de gameflow (detectar esperando / en partida / terminada), `queueId` de la partida actual (el Live Client solo da `gameMode`) y summoner actual (confirmar que la cuenta del juego coincide con el Riot ID vinculado). Sin champ select, sin lobby, sin LP.
+- **Región:** selector al vincular el Riot ID, por defecto NA. `link-riot-account` ya guarda la plataforma (`na1`, `euw1`...) en `linked_riot_accounts.platform`, con política de lectura propia; v2 deriva la región de ahí en cada llamada. Sin columna nueva.
+- **Registro:** el móvil v2 tiene inicio de sesión y registro (RiftLens mobile solo tenía inicio de sesión). El desktop solo inicio de sesión.
+- **Flag `LIVE_OPPONENT_COMPARE`:** flag de build. Si Riot lo pide, se publica una versión. No flag remoto en v2.
+- **Tests de módulos copiados:** `kda-quality`, `death-context`, `kill-context` no tienen tests en RiftLens. Se escriben en v2 al copiarlos.
+
+## 6. Arquitectura
+
+### 6.1 Piezas y de dónde vienen
+
+| Pieza | Origen | Cambio en v2 |
+|---|---|---|
+| Edge Functions `riot-lookup`, `match-list-ids`, `match-detail`, `link-riot-account`, `delete-account` | RiftLens `desktop-app/supabase/functions` | Se usan tal cual. |
+| Edge Function `match-timeline` | Nueva | Copia el patrón de `match-detail` contra `/lol/match/v5/matches/{id}/timeline`. |
+| Tablas `profiles`, `match_details_cache`, `riot_account_cache`, `riot_match_list_cache` | Supabase compartido | Se usan tal cual. `matches`, `match_events`, `last_game_snapshots` no se usan. |
+| `electron/league/{process,lockfile,lcu-client,detector,live-client,live-poller}.ts` | RiftLens | Se copian y se recortan: `detector` y `live-poller` pierden sus imports de champ select, lobby y LP; `lcu-client` queda con gameflow, queueId y summoner actual. Se eliminan `champ-select-poller`, `blob-capture`, `recorder`, `rofl-parser`, `replay-list`, `lp-tracker`. |
+| Publicador Realtime (`useLivePublisher`) | RiftLens renderer | Se reescribe en main process, misma forma de mensajes. |
+| Contexto de partida en vivo (`live-game-context.tsx`) | RiftLens mobile | Se copia y se recorta a `live-snapshot`, `live-ended`, `last-game`. |
+| Cálculos `kda-quality`, `death-context`, `kill-context`, `assign-lanes` | RiftLens mobile `src/lib` | Se copian a `packages/shared` los que el análisis necesite, con sus tests. |
+
+`match-detail` no devuelve el timeline (verificado), por eso `match-timeline` es nueva.
+
+### 6.2 Flujo de datos
+
+```
+Matches:  móvil → Edge Function match-list-ids / match-detail / match-timeline
+          → riot_match_list_cache / match_details_cache / match_timeline_cache → móvil
+          (el desktop no ingesta nada; al terminar la partida el móvil sondea
+          match-list-ids con backoff hasta que aparece el matchId nuevo)
+
+Live:     League (127.0.0.1:2999) → Electron main (poll 2–5 s)
+          → supabase.channel(`user:${userId}`).send('live-snapshot')
+          → móvil live-game-context → pantalla Live
+
+Pre-match: móvil → hasta 100 detalles propios cacheados → agrupación local por campeón/rol/oponente
+```
+
+### 6.3 Canal Realtime
+
+Se conserva el nombre `user:${user.id}`. Un solo evento, `live-snapshot`, con `isFinal: true` en el último. El móvil v2 ignora cualquier otro evento que un cliente RiftLens pudiera emitir en la misma cuenta.
+
+Payload de `live-snapshot` (campos nullable, nunca cero inventado):
+
+```ts
+type LiveSnapshotV2 = {
+  v: 2
+  ts: number                 // epoch ms
+  isFinal: boolean
+  queueId: number | null     // del LCU; null si no disponible
+  gameTimeSeconds: number | null
+  gameMode: string | null
+  me: LivePlayer
+  opponent: LivePlayer | null   // enemigo con misma `position`; null si ambiguo
+  focus: { metric: 'csPerMin'; target: number } | null
+}
+type LivePlayer = {
+  championName: string
+  position: 'TOP'|'JUNGLE'|'MIDDLE'|'BOTTOM'|'UTILITY'|null
+  level: number | null
+  kills: number | null; deaths: number | null; assists: number | null
+  cs: number | null; csPerMin: number | null
+  wardScore: number | null
+}
+```
+
+Oponente de línea en vivo: jugador del equipo contrario con la misma `position` del `playerlist`. Si no hay `position` (ARAM, modos) o hay más de un candidato, `opponent = null` y la pantalla muestra solo tus stats. No se intenta adivinar.
+
+### 6.4 Datos nuevos
+
+Dos tablas:
+- `pre_match_focus (user_id, champion_id, role, metric, target, updated_at)`, RLS por usuario.
+- `match_timeline_cache (match_id, data jsonb, fetched_at)`, service_role only, sin TTL, igual que `match_details_cache`.
+
+## 7. Análisis de partida (reglas)
+
+Entradas: detalle Match-v5 del jugador, su `teamPosition`, timeline si está (frames por minuto de CS, oro, XP), y baseline propio: últimas N partidas con mismo campeón, rol y cola (N ≤ 20, se muestra el N real).
+
+Métricas: KDA, CS/min (minions + monstruos), KP% con `null` si el equipo tiene 0 kills, muertes, CS a 10 y 15 min si hay timeline, diferencia de CS contra el oponente de línea a 10/15 min cuando `teamPosition` coincide, visión.
+
+Salida: `MatchReview` del roadmap (strengths, improvements, trainingFocus) con `confidence` y `sampleSize`. Reglas de ejemplo, el builder las completa:
+- Fortaleza: KP ≥ baseline + 10 puntos, o CS/min ≥ baseline + 0.8.
+- A trabajar: CS/min cae más de 25% entre el tramo 0–15 y 15–fin (requiere timeline; sin timeline no se afirma).
+- Mejora: la única deficiencia con mayor confianza. Formulada como práctica para la próxima partida, nunca como orden táctica.
+
+Score 0–100: compuesto explicable de CS/min, KP, muertes y visión contra el baseline propio, con pesos fijos y documentados. Si el baseline tiene menos de 3 partidas, el score se marca "provisional". El builder define la fórmula y la documenta en `docs/ANALYSIS.md`.
+
+Casos de test obligatorios: sin historial, 1 partida, 0 kills del equipo, remake (< 5 min o rendición temprana), ARAM, timeline ausente, `teamPosition` vacío.
+
+## 8. Pantallas
+
+**Móvil (Expo, phone y tablet)**
+1. Inicio de sesión y registro con Supabase. Luego Riot ID y región vinculados vía `link-riot-account` si el perfil no lo tiene.
+2. `Matches`: últimas 20, pull to refresh. Estados: cargando, vacío, sin Riot ID, rate limited, offline.
+3. Detalle: score, KDA / CS/min / KP, tres secciones, y si hay timeline una curva de CS por minuto tuya y del oponente.
+4. `Live` sin desktop emparejado: instrucciones (iniciar sesión en el desktop con la misma cuenta).
+5. `Live` esperando: pre-match. Selector de campeón y rol, win rate propio, matchups difíciles (mín. 3 partidas; menos se etiqueta "pocas partidas"), sugerencia de ban en texto, objetivo editable.
+6. `Live` en partida: tú y oponente, timer, tabla de 5 filas, diferencia de CS, objetivo. Indicador de dato viejo si pasan más de 15 s sin snapshot. Tablet: dos columnas.
+7. `Live` terminada: "Partida terminada, analizando" y enlace al detalle cuando `match-list-ids` devuelva el matchId nuevo (sondeo con backoff, hasta 5 minutos).
+
+**Desktop (Electron)**
+1. Login con la misma cuenta.
+2. Estado: League detectado / esperando partida / en partida / desconectado.
+3. Botón desconectar y cerrar sesión. Tray con el mismo estado. Disclaimer de Riot.
+
+## 9. Fases
+
+| Fase | Entrega | Criterio de aceptación |
+|---|---|---|
+| 1 | Monorepo, Expo con login y tabs, Electron recolector copiado y arrancando, `packages/shared` con tipos | Login funciona en ambos; desktop detecta League en Mac; sin keys en bundles |
+| 2 | `Matches` lista y detalle con datos reales vía funciones existentes | Abrir una partida real muestra stats correctas; cache evita segunda llamada |
+| 3 | Análisis de partida (sección 7) | Review con evidencia sobre fixtures y sobre partidas reales; tests de casos límite |
+| 4 | Live: publicador en main, canal, pantalla Live | En partida real el móvil se actualiza sin refrescar; estados correctos |
+| 5 | Pre-match y objetivo, consumido en Live | Elegir campeón muestra historial honesto; objetivo aparece en vivo |
+| 6 | Fin de partida → detalle, QA Mac/iOS/Android, disclaimer, borrado de datos, instalador macOS | Flujo completo de abrir League a leer el análisis de esa partida |
+
+Windows queda fuera de las seis fases (ver 11).
+
+No se pasa de fase sin instrucción del product owner.
+
+## 10. Mockups
+
+En `docs/mockups/`: `01-pre-match-preparation.png`, `04-matches-and-review.png` y `05-live-matchup.png` son las pantallas a construir. `02-phone-style-reference.png` es referencia de tono visual. `03-mobalytics-what-not-to-do.png` es el contraejemplo.
+
+## 11. Decisiones cerradas con el product owner (2026-10-21)
+
+1. **Windows.** v2 se construye primero para macOS. Windows entra después de la fase 6 como trabajo aparte: implementación de `process.ts` y `lockfile.ts` para Windows y validación en una máquina real. Hasta entonces el desktop solo se distribuye para macOS.
+2. El product owner aprobó el documento y las decisiones de la sección 5 el 2026-10-21.
+
+## 12. Lo que queda al builder
+
+- Estructura interna de componentes, navegación con Expo Router, estado con TanStack Query.
+- Fórmula del score y pesos (documentados).
+- Forma exacta del selector de campeón y de la curva de CS.
+- Tooling: ESLint, Vitest, CI.
+- Cómo empaquetar el Electron (electron-builder) y EAS para el móvil.

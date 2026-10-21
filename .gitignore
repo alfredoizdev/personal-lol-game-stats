@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-*
+.env
+.env.*
+!.env.example
+.expo
+ios
+android
+*.log
+.DS_Store
+.superpowers
+cache
+jobs
+monitors
+snapshots
+webhooks
