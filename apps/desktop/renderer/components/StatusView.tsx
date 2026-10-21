@@ -10,7 +10,7 @@ const DOT_CLASS: Record<LeagueStatus['state'], string> = {
   ERROR: 'dot dot-red',
 }
 
-export function StatusView() {
+export function StatusView({ email }: { email: string }) {
   const [status, setStatus] = useState<LeagueStatus>({ state: 'CLOSED' })
 
   useEffect(() => {
@@ -36,6 +36,12 @@ export function StatusView() {
         Refresh
       </button>
       <p className="hint">Keep this app running while you play. Your stats show up on your phone.</p>
+      <div className="account-row">
+        <span className="hint">{email}</span>
+        <button className="button" onClick={() => void window.lpp.auth.signOut()}>
+          Sign out
+        </button>
+      </div>
       <p className="disclaimer">{RIOT_DISCLAIMER}</p>
     </main>
   )

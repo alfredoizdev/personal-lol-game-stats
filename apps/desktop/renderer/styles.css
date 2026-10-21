@@ -84,3 +84,40 @@ body {
   font-size: 11px;
   line-height: 1.4;
 }
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input {
+  appearance: none;
+  border: 1px solid #2c2c2e;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+}
+.input:focus { outline: 2px solid #3a3a3c; }
+
+.button-primary {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+}
+.button-primary:hover { background: #e5e5ea; }
+.button-primary:disabled { opacity: 0.6; cursor: default; }
+
+.error {
+  color: var(--red);
+  margin: 0;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
