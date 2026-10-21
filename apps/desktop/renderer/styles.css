@@ -1,0 +1,86 @@
+:root {
+  --bg: #000000;
+  --surface: #111214;
+  --text: #f5f5f7;
+  --muted: #8e8e93;
+  --green: #4cd964;
+  --amber: #ffcc00;
+  --red: #ff6b6b;
+  --grey: #48484a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.screen {
+  min-height: 100vh;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.status-text {
+  font-size: 17px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.dot-grey { background: var(--grey); }
+.dot-amber { background: var(--amber); }
+.dot-green { background: var(--green); }
+.dot-red { background: var(--red); }
+
+.button {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+.button:hover { background: #1c1c1e; }
+
+.hint {
+  color: var(--muted);
+  margin: 0;
+}
+
+.disclaimer {
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
