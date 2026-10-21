@@ -18,6 +18,7 @@ export function LoginView() {
 
   return (
     <main className="screen">
+      <img className="logo" src="./logo.png" alt="LanePulse" />
       <h1 className="title">Sign in</h1>
       <p className="hint">Use the same account as on your phone.</p>
       <form className="form" onSubmit={onSubmit}>

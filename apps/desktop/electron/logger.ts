@@ -2,7 +2,7 @@ import { promises as fs, existsSync, mkdirSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-const LOG_DIR = path.join(os.homedir(), 'Library/Logs/LoLPersonalPerformance')
+const LOG_DIR = path.join(os.homedir(), 'Library/Logs/LanePulse')
 const LOG_FILE = path.join(LOG_DIR, 'app.log')
 const MAX_BYTES = 1_000_000
 

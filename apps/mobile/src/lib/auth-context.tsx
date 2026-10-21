@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session, User } from '@supabase/supabase-js'
 import { isRefreshTokenError } from '@lpp/shared'
 import { supabase } from './supabase'
+import { getRememberMe } from './remember-me'
 
 type AuthState = {
   user: User | null
@@ -28,8 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!cancelled) setSession(null)
     }
 
-    supabase.auth
-      .getSession()
+    // "Remember me" unticked at the last sign-in: drop the stored session on
+    // this cold start before restoring anything.
+    getRememberMe()
+      .then(async (remember) => {
+        if (!remember) await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+        return supabase.auth.getSession()
+      })
       .then(async ({ data, error }) => {
         if (cancelled) return
         if (error) {

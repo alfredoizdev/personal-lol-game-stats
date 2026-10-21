@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "LoL Personal Performance",
-    "slug": "lol-personal-performance",
+    "name": "LanePulse",
+    "slug": "lanepulse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#000000",
+        "backgroundColor": "#0B0A1F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,9 +29,10 @@
       "expo-status-bar"
     ],
     "scheme": "lpp",
-    "backgroundColor": "#000000",
+    "backgroundColor": "#0B0A1F",
     "splash": {
-      "backgroundColor": "#000000",
+      "image": "./assets/splash-icon.png",
+      "backgroundColor": "#0B0A1F",
       "resizeMode": "contain"
     }
   }

@@ -1,12 +1,13 @@
 :root {
-  --bg: #000000;
-  --surface: #111214;
+  --bg: #0b0a1f;
+  --surface: #1b1742;
   --text: #f5f5f7;
   --muted: #8e8e93;
-  --green: #4cd964;
-  --amber: #ffcc00;
-  --red: #ff6b6b;
+  --green: #2dd4a6;
+  --amber: #f59e0b;
+  --red: #fb5c7a;
   --grey: #48484a;
+  --accent: #8b5cf6;
 }
 
 * {
@@ -103,11 +104,11 @@ body {
 .input:focus { outline: 2px solid #3a3a3c; }
 
 .button-primary {
-  background: var(--text);
-  color: var(--bg);
-  font-weight: 600;
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 700;
 }
-.button-primary:hover { background: #e5e5ea; }
+.button-primary:hover { background: #7c4fe0; }
 .button-primary:disabled { opacity: 0.6; cursor: default; }
 
 .error {
@@ -120,4 +121,10 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.logo {
+  width: 56px;
+  height: 56px;
+  align-self: flex-start;
 }

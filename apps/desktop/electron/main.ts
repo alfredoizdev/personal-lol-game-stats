@@ -23,7 +23,7 @@ function createWindow(): BrowserWindow {
     width: 420,
     height: 520,
     resizable: false,
-    title: 'LoL Personal Performance',
+    title: 'LanePulse',
     backgroundColor: '#000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

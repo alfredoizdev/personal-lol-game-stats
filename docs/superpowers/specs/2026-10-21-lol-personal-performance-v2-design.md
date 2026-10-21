@@ -1,4 +1,6 @@
-# LoL Personal Performance v2 — Diseño
+# LanePulse (LoL Personal Performance v2) — Diseño
+
+**Nombre del producto:** LanePulse, "Personal performance coach" (decidido 2026-10-21, tarde, mockups 09–10).
 
 **Fecha:** 2026-10-21
 **Estado:** aprobado por el product owner el 2026-10-21
@@ -156,7 +158,7 @@ Casos de test obligatorios: sin historial, 1 partida, 0 kills del equipo, remake
 
 **Móvil (Expo, phone y tablet)**
 0. `Profile`: icono de invocador (Data Dragon `profileicon/{id}.png`, `linked_riot_accounts.profile_icon_id`), Riot ID, región, cerrar sesión, borrar cuenta (confirmación en dos pasos).
-1. Inicio de sesión y registro con Supabase. Luego Riot ID y región vinculados vía `link-riot-account` si el perfil no lo tiene.
+1. Inicio de sesión (email, contraseña con mostrar/ocultar, "Remember me", "Forgot password?" que envía el correo de restablecimiento de Supabase) y registro (username, Riot ID opcional, email, contraseña ≥ 8 y confirmación, región, aceptación de términos). Username y Riot ID se guardan como metadatos del usuario al registrarse y se aplican en el primer arranque con sesión (`profiles.display_name`, `link-riot-account`), porque con confirmación por email no hay sesión al registrarse. Luego Riot ID y región vinculados vía `link-riot-account` si el perfil no lo tiene.
 2. `Matches`: últimas 20, pull to refresh. Estados: cargando, vacío, sin Riot ID, rate limited, offline.
 3. Detalle: score, KDA / CS/min / KP, tres secciones, y si hay timeline una curva de CS por minuto tuya y del oponente.
 4. `Live` sin desktop emparejado: instrucciones (iniciar sesión en el desktop con la misma cuenta).
@@ -189,7 +191,15 @@ No se pasa de fase sin instrucción del product owner.
 En `docs/mockups/`:
 - `06-look-matches.png`, `07-look-match-review.png`, `08-look-live.png` (2026-10-21, tarde): **la dirección visual vigente** y la estructura de las tres pantallas principales.
 - `01-pre-match-preparation.png`, `04-matches-and-review.png`, `05-live-matchup.png`: estructura de información original; siguen valiendo para el contenido de pre-match.
+- `09-look-sign-in.png`, `10-look-register.png` (2026-10-21, tarde): login y registro, nombre LanePulse.
 - `02-phone-style-reference.png`: referencia anterior, superada por 06–08. `03-mobalytics-what-not-to-do.png`: contraejemplo.
+
+Elementos de 09–10 que **no** se construyen todavía, y por qué:
+- "Continue with Apple / Google": requiere configurar los proveedores OAuth en Supabase, una cuenta de Apple Developer y un development build de Expo (Expo Go no soporta Sign in with Apple nativo). Se decide en Fase 6.
+- "Email or Riot ID" para iniciar sesión: Supabase autentica por email; un Riot ID no identifica una cuenta de LanePulse de forma segura. El campo es solo email.
+- Enlaces a Términos de servicio y Política de privacidad: no existen las páginas aún; el checkbox es obligatorio y el texto no enlaza. Páginas en Fase 6.
+- El logotipo: `docs/mockups/logo.png` (entregado 2026-10-21); iconos de iOS/Android/splash generados desde él con fondo `#0B0A1F`.
+- Fondo con splash art de Riot: no se usa arte de Riot como fondo (IP). Se usa degradado propio; si se quiere arte de fondo, debe ser propio o con licencia.
 
 Elementos de 06–08 que **no** se construyen tal cual, y por qué:
 - Live "Focus right now" con consejo táctico generado del estado de la partida ("play safer after pushing side waves"): es consejo táctico en vivo, prohibido por la sección 3 y por la política de Riot. En su lugar: el objetivo fijado antes de jugar y, como mucho, un estado neutro ("CS/min por encima de tu objetivo").

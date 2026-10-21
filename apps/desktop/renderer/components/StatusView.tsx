@@ -27,7 +27,8 @@ export function StatusView({ email }: { email: string }) {
 
   return (
     <main className="screen">
-      <h1 className="title">Collector</h1>
+      <img className="logo" src="./logo.png" alt="LanePulse" />
+      <h1 className="title">LanePulse collector</h1>
       <div className="status-row">
         <span className={DOT_CLASS[status.state]} aria-hidden="true" />
         <span className="status-text">{statusLabel(status)}</span>

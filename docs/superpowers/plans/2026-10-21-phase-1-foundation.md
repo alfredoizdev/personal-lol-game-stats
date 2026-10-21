@@ -17,7 +17,7 @@
 - Desktop renderer never holds the Supabase session; the main process does.
 - macOS only in this phase. No Windows code paths.
 - LCU usage is read-only GET: `/lol-summoner/v1/current-summoner`, `/lol-gameflow/v1/gameflow-phase`, `/lol-lobby/v2/lobby`. Nothing else is copied from `lcu-client.ts`.
-- Riot disclaimer text (verbatim, visible in both apps): "LoL Personal Performance isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc."
+- Riot disclaimer text (verbatim, visible in both apps): "LanePulse isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc."
 - No `matches`, `match_events`, `last_game_snapshots` tables are read or written.
 - TypeScript `strict: true` everywhere. `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test` must pass at the end of every task.
 - Commit after every task. Commit messages end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.

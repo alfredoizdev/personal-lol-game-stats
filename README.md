@@ -1,4 +1,4 @@
-# LoL Personal Performance
+# LanePulse
 
 A simple, personal League of Legends performance companion. Two tabs on your phone or tablet: **Matches** (how *you* did in each game, against your lane opponent) and **Live** (your own stats during a match, on a second screen). A small macOS desktop app collects data from the League client and sends it to your phone. No stats are shown on the desktop.
 
@@ -41,4 +41,4 @@ Desktop and mobile both sign in with the same Supabase account. The desktop only
 
 ## Legal
 
-LoL Personal Performance isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
+LanePulse isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.

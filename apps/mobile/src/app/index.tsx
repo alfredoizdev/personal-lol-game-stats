@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
 import { Redirect, router } from 'expo-router'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
-import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useLinkedAccount, useInvalidateLinkedAccounts } from '@/hooks/useLinkedAccount'
+import { runPostSignupSetup } from '@/lib/post-signup-runner'
 import { resolveEntryRoute } from '@/lib/route-guard'
 import { supabase } from '@/lib/supabase'
 import { colors, font, space } from '@/theme/tokens'
@@ -9,8 +11,27 @@ import { colors, font, space } from '@/theme/tokens'
 export default function Index() {
   const { user, loading } = useAuth()
   const { data, isError, refetch } = useLinkedAccount()
+  const invalidate = useInvalidateLinkedAccounts()
+  const [settingUp, setSettingUp] = useState(false)
+  const ranFor = useRef<string | null>(null)
+
+  // First signed-in launch after sign-up: apply display name + pending Riot ID.
+  useEffect(() => {
+    if (!user || data === undefined || ranFor.current === user.id) return
+    const meta = user.user_metadata ?? {}
+    if (!meta.pending_riot_game_name && !meta.display_name) return
+    ranFor.current = user.id
+    setSettingUp(true)
+    void runPostSignupSetup(supabase, user, { hasLinkedAccount: data !== null })
+      .then(async ({ linked }) => {
+        if (linked) await invalidate()
+      })
+      .catch(() => {})
+      .finally(() => setSettingUp(false))
+  }, [user, data, invalidate])
+
   const route = resolveEntryRoute({
-    loading,
+    loading: loading || settingUp,
     signedIn: !!user,
     linked: data === undefined ? null : data !== null,
     linkError: isError,
