@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    "types": ["vite/client"],
+    "paths": {
+      "@electron/*": ["./electron/*"],
+      "@shared/*": ["./shared/*"]
+    }
+  },
+  "include": ["electron/**/*.ts", "renderer/**/*.ts", "renderer/**/*.tsx", "shared/**/*.ts", "tests/**/*.ts", "vite.config.ts", "vitest.config.ts"]
+}
