@@ -48,7 +48,7 @@ No es un producto nuevo ni un rewrite del backend. Reutiliza el proyecto de Supa
 2. Desktop (macOS/Windows) es un recolector: login, estado de conexión, "esperando partida", desconectar. Sin estadísticas ni partidas.
 3. Reutilizar Supabase (proyecto, Edge Functions, tablas, Realtime) y el código Electron de detección y lectura del cliente.
 4. Pantallas según los mockups entregados el 2026-10-21: lista de partidas, review de partida con score y tres secciones, pre-match con matchups difíciles y ban, live con tú contra oponente y objetivo pre-partida.
-5. Estilo: fondo negro, tipografía grande, tarjetas con aire, sin badges ni insignias. Mobalytics es el ejemplo de lo que no se quiere.
+5. Estilo (actualizado 2026-10-21, tarde): dirección visual según `docs/mockups/06-look-matches.png`, `07-look-match-review.png` y `08-look-live.png`. Fondo azul marino muy oscuro con degradado, acento violeta (botones, pestaña activa, gráficas), cian para "tú", rojo/rosa para "enemigo" y derrota, verde para victoria y mejoras; tarjetas translúcidas con borde sutil y splash art del campeón como fondo; retratos circulares con anillo de color; chips de una frase por partida ("Strong early game", "Too many deaths"); iconos de objetos; pestañas tipo píldora arriba y barra inferior. Sigue sin ser Mobalytics: pocas métricas grandes, no tablas de 10 jugadores.
 6. Referencia en vivo: oponente de línea más objetivo personal. No metas fijas universales.
 
 ## 5. Decisiones mías (revisables)
@@ -185,12 +185,24 @@ No se pasa de fase sin instrucción del product owner.
 
 ## 10. Mockups
 
-En `docs/mockups/`: `01-pre-match-preparation.png`, `04-matches-and-review.png` y `05-live-matchup.png` son las pantallas a construir. `02-phone-style-reference.png` es referencia de tono visual. `03-mobalytics-what-not-to-do.png` es el contraejemplo.
+En `docs/mockups/`:
+- `06-look-matches.png`, `07-look-match-review.png`, `08-look-live.png` (2026-10-21, tarde): **la dirección visual vigente** y la estructura de las tres pantallas principales.
+- `01-pre-match-preparation.png`, `04-matches-and-review.png`, `05-live-matchup.png`: estructura de información original; siguen valiendo para el contenido de pre-match.
+- `02-phone-style-reference.png`: referencia anterior, superada por 06–08. `03-mobalytics-what-not-to-do.png`: contraejemplo.
+
+Elementos de 06–08 que **no** se construyen tal cual, y por qué:
+- Live "Focus right now" con consejo táctico generado del estado de la partida ("play safer after pushing side waves"): es consejo táctico en vivo, prohibido por la sección 3 y por la política de Riot. En su lugar: el objetivo fijado antes de jugar y, como mucho, un estado neutro ("CS/min por encima de tu objetivo").
+- Live: oro, daño y rango del enemigo. El Live Client no expone oro ni daño de otros jugadores; el rango requiere una llamada a Riot por rival en vivo. Se muestran nivel, KDA, CS, CS/min y visión, que el marcador del juego ya enseña.
+- Live "Objective Presence" (dragones, heraldo, torres): fuera de v2 (no es rendimiento personal).
+- Match Review: "won 4 of your first 5 trades", "lost ~420 gold from 6 uncollected side waves", "damage to champs at 10" no se pueden derivar con fiabilidad del timeline de Match-v5. Se sustituyen por métricas demostrables (sección 7): CS a 10/15, diferencia de CS vs oponente, KP, muertes, visión, caída de CS/min por tramo.
+- Pestaña "Profile": no decidida. Ver 11.
+- Rango del oponente en Match Review: solo si sale de datos propios del partido o de una llamada cacheada; nunca se infiere.
 
 ## 11. Decisiones cerradas con el product owner (2026-10-21)
 
 1. **Windows.** v2 se construye primero para macOS. Windows entra después de la fase 6 como trabajo aparte: implementación de `process.ts` y `lockfile.ts` para Windows y validación en una máquina real. Hasta entonces el desktop solo se distribuye para macOS.
 2. El product owner aprobó el documento y las decisiones de la sección 5 el 2026-10-21.
+3. **Pendiente:** ¿tercera pestaña "Profile" (avatar, Riot ID, región, cerrar sesión, borrar datos) como en los mockups 06–08, o esos controles viven en un menú dentro de Matches? Hasta decidirlo, las pantallas se construyen con dos pestañas y los controles de cuenta en Matches.
 
 ## 12. Lo que queda al builder
 
