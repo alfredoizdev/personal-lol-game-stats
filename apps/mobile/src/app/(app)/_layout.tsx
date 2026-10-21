@@ -41,6 +41,7 @@ export default function AppLayout() {
       <Tabs.Screen name="live" options={tab('Live')} />
       <Tabs.Screen name="profile" options={tab('Profile')} />
       <Tabs.Screen name="link" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="match/[matchId]" options={{ href: null }} />
     </Tabs>
   )
 }
