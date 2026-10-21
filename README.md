@@ -31,7 +31,13 @@ cp apps/mobile/.env.example apps/mobile/.env
 pnpm test        # all workspaces
 pnpm typecheck
 pnpm lint
+
+pnpm --filter @lpp/desktop dev    # Electron collector (Vite renderer on :5174)
+pnpm --filter @lpp/mobile ios     # Expo on the iOS simulator
+pnpm --filter @lpp/mobile start   # Expo dev server (scan with Expo Go)
 ```
+
+Desktop and mobile both sign in with the same Supabase account. The desktop only starts watching League after sign-in.
 
 ## Legal
 
