@@ -59,7 +59,16 @@ export function startDetector(opts: DetectorOptions): DetectorHandle {
 
   const runTick = async (): Promise<LeagueStatus> => {
     if (cancelled) return lastStatus ?? { state: 'CLOSED' }
-    let status = await computeStatus()
+    let status: LeagueStatus
+    try {
+      status = await computeStatus()
+    } catch (err) {
+      // Anything unexpected (EACCES on the lockfile, pgrep spawn failure…)
+      // becomes ERROR and goes through the same grace/backoff path, so one
+      // bad tick can never kill the loop.
+      const reason = err instanceof Error ? err.message : String(err)
+      status = { state: 'ERROR', reason }
+    }
 
     if (status.state === 'ERROR') {
       errorStreak++
@@ -96,8 +105,11 @@ export function startDetector(opts: DetectorOptions): DetectorHandle {
   const schedule = () => {
     if (cancelled) return
     timer = setTimeout(async () => {
-      await tick()
-      schedule()
+      try {
+        await tick()
+      } finally {
+        schedule()
+      }
     }, currentInterval)
   }
 
@@ -111,8 +123,11 @@ export function startDetector(opts: DetectorOptions): DetectorHandle {
 
   // First tick on next macrotask (setTimeout 0 works with fake timers).
   timer = setTimeout(async () => {
-    await tick()
-    schedule()
+    try {
+      await tick()
+    } finally {
+      schedule()
+    }
   }, 0)
 
   const handle = stop as DetectorHandle

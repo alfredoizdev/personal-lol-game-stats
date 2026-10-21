@@ -217,4 +217,32 @@ describe('LeagueDetector', () => {
     expect(handle.currentIntervalMs()).toBe(3000)
     handle.stop()
   })
+
+  it('an unexpected throw in a tick becomes ERROR (after the grace window) and polling continues', async () => {
+    isLeagueRunning.mockResolvedValue(true)
+    const eacces = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' })
+    readLockfile.mockRejectedValue(eacces)
+
+    const emissions: LeagueStatus[] = []
+    const handle = startDetector({ intervalMs: 1000, onChange: (s) => emissions.push(s) })
+
+    // 4 ticks: 3 grace ticks surface STARTING, the 4th escalates to ERROR
+    for (let i = 0; i < 4; i++) {
+      await vi.advanceTimersByTimeAsync(i === 0 ? 0 : handle.currentIntervalMs())
+      await flushTicks()
+    }
+    expect(emissions.map((e) => e.state)).toEqual(['STARTING', 'ERROR'])
+    expect(emissions[1]).toEqual({ state: 'ERROR', reason: 'EACCES: permission denied' })
+
+    // polling is still alive: a recovery flips back to STARTING (lockfile null)
+    readLockfile.mockResolvedValue(null)
+    await vi.advanceTimersByTimeAsync(handle.currentIntervalMs())
+    await flushTicks()
+    expect(emissions.at(-1)).toEqual({ state: 'STARTING' })
+
+    // forceTick resolves instead of rejecting
+    readLockfile.mockRejectedValue(eacces)
+    await expect(handle.forceTick()).resolves.toBeDefined()
+    handle.stop()
+  })
 })
