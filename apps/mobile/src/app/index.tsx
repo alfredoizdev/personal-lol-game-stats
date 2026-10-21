@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.md },
   title: { color: colors.text, fontSize: font.body + 3, fontWeight: '700' },
   muted: { color: colors.muted, fontSize: font.body, textAlign: 'center' },
-  button: { backgroundColor: colors.text, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
-  buttonText: { color: colors.bg, fontSize: font.body, fontWeight: '600' },
+  button: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
+  buttonText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   link: { color: colors.muted, fontSize: font.caption + 2, fontWeight: '600' },
 })

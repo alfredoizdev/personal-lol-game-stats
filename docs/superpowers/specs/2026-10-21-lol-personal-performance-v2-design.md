@@ -44,7 +44,7 @@ No es un producto nuevo ni un rewrite del backend. Reutiliza el proyecto de Supa
 
 ## 4. Decisiones del product owner
 
-1. Dos pestañas en móvil: `Matches` y `Live`. Pre-partida vive dentro de `Live` cuando no hay partida.
+1. Tres pestañas en móvil: `Matches`, `Live` y `Profile` (decidido 2026-10-21, tarde; antes eran dos). Pre-partida vive dentro de `Live` cuando no hay partida. `Profile`: lista de cuentas Riot vinculadas (varios invocadores por usuario, decidido 2026-10-21), añadir otra, elegir la activa, cerrar sesión y borrar cuenta con todos los datos (Edge Function `delete-account` existente, con doble confirmación). La cuenta activa es `profiles.current_puuid` (mismo puntero que lee el desktop de RiftLens); al cambiarla se actualiza también `linked_riot_accounts.last_seen_at`. Todo lo que muestran Matches y Live se refiere a la cuenta activa.
 2. Desktop (macOS/Windows) es un recolector: login, estado de conexión, "esperando partida", desconectar. Sin estadísticas ni partidas.
 3. Reutilizar Supabase (proyecto, Edge Functions, tablas, Realtime) y el código Electron de detección y lectura del cliente.
 4. Pantallas según los mockups entregados el 2026-10-21: lista de partidas, review de partida con score y tres secciones, pre-match con matchups difíciles y ban, live con tú contra oponente y objetivo pre-partida.
@@ -76,7 +76,7 @@ No es un producto nuevo ni un rewrite del backend. Reutiliza el proyecto de Supa
 
 | Pieza | Origen | Cambio en v2 |
 |---|---|---|
-| Edge Functions `riot-lookup`, `match-list-ids`, `match-detail`, `link-riot-account`, `delete-account` | RiftLens `desktop-app/supabase/functions` | Se usan tal cual. |
+| Edge Functions `riot-lookup`, `match-list-ids`, `match-detail`, `link-riot-account`, `delete-account` | RiftLens `desktop-app/supabase/functions` | Se usan tal cual. `delete-account` borra el usuario y todo lo asociado por cascade (Phase 1 lo expone en Profile). |
 | Edge Function `match-timeline` | Nueva | Copia el patrón de `match-detail` contra `/lol/match/v5/matches/{id}/timeline`. |
 | Tablas `profiles`, `match_details_cache`, `riot_account_cache`, `riot_match_list_cache` | Supabase compartido | Se usan tal cual. `matches`, `match_events`, `last_game_snapshots` no se usan. |
 | `electron/league/{process,lockfile,lcu-client,detector,live-client,live-poller}.ts` | RiftLens | Se copian y se recortan: `detector` y `live-poller` pierden sus imports de champ select, lobby y LP; `lcu-client` queda con gameflow, queueId y summoner actual. Se eliminan `champ-select-poller`, `blob-capture`, `recorder`, `rofl-parser`, `replay-list`, `lp-tracker`. |
@@ -155,6 +155,7 @@ Casos de test obligatorios: sin historial, 1 partida, 0 kills del equipo, remake
 ## 8. Pantallas
 
 **Móvil (Expo, phone y tablet)**
+0. `Profile`: icono de invocador (Data Dragon `profileicon/{id}.png`, `linked_riot_accounts.profile_icon_id`), Riot ID, región, cerrar sesión, borrar cuenta (confirmación en dos pasos).
 1. Inicio de sesión y registro con Supabase. Luego Riot ID y región vinculados vía `link-riot-account` si el perfil no lo tiene.
 2. `Matches`: últimas 20, pull to refresh. Estados: cargando, vacío, sin Riot ID, rate limited, offline.
 3. Detalle: score, KDA / CS/min / KP, tres secciones, y si hay timeline una curva de CS por minuto tuya y del oponente.
@@ -195,14 +196,14 @@ Elementos de 06–08 que **no** se construyen tal cual, y por qué:
 - Live: oro, daño y rango del enemigo. El Live Client no expone oro ni daño de otros jugadores; el rango requiere una llamada a Riot por rival en vivo. Se muestran nivel, KDA, CS, CS/min y visión, que el marcador del juego ya enseña.
 - Live "Objective Presence" (dragones, heraldo, torres): fuera de v2 (no es rendimiento personal).
 - Match Review: "won 4 of your first 5 trades", "lost ~420 gold from 6 uncollected side waves", "damage to champs at 10" no se pueden derivar con fiabilidad del timeline de Match-v5. Se sustituyen por métricas demostrables (sección 7): CS a 10/15, diferencia de CS vs oponente, KP, muertes, visión, caída de CS/min por tramo.
-- Pestaña "Profile": no decidida. Ver 11.
 - Rango del oponente en Match Review: solo si sale de datos propios del partido o de una llamada cacheada; nunca se infiere.
 
 ## 11. Decisiones cerradas con el product owner (2026-10-21)
 
 1. **Windows.** v2 se construye primero para macOS. Windows entra después de la fase 6 como trabajo aparte: implementación de `process.ts` y `lockfile.ts` para Windows y validación en una máquina real. Hasta entonces el desktop solo se distribuye para macOS.
 2. El product owner aprobó el documento y las decisiones de la sección 5 el 2026-10-21.
-3. **Pendiente:** ¿tercera pestaña "Profile" (avatar, Riot ID, región, cerrar sesión, borrar datos) como en los mockups 06–08, o esos controles viven en un menú dentro de Matches? Hasta decidirlo, las pantallas se construyen con dos pestañas y los controles de cuenta en Matches.
+3. **Profile:** sí, tercera pestaña como en los mockups 06–08, con varias cuentas Riot por usuario (decidido 2026-10-21, tarde).
+4. **Pendiente (técnico):** quitar una cuenta vinculada necesita una política `delete` propia en `linked_riot_accounts` (hoy solo hay select/insert/update). Es una migración nueva que se copia al repo de RiftLens según la sección 3. Hasta entonces Profile no ofrece "quitar cuenta".
 
 ## 12. Lo que queda al builder
 

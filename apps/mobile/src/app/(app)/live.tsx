@@ -4,7 +4,7 @@ import { colors, font } from '@/theme/tokens'
 
 export default function LiveScreen() {
   return (
-    <Screen title="Live">
+    <Screen title="Live Match" subtitle="In-game performance">
       <Text style={styles.muted}>Sign in on the desktop app to see live stats.</Text>
     </Screen>
   )

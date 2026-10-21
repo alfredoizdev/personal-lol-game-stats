@@ -70,7 +70,7 @@ export function AuthForm({ title, submitLabel, onSubmit, footerText, footerLinkL
             disabled={busy}
             accessibilityRole="button"
           >
-            {busy ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.buttonText}>{submitLabel}</Text>}
+            {busy ? <ActivityIndicator color={colors.text} /> : <Text style={styles.buttonText}>{submitLabel}</Text>}
           </Pressable>
           <View style={styles.footer}>
             <Text style={styles.muted}>{footerText} </Text>
@@ -101,9 +101,9 @@ const styles = StyleSheet.create({
     fontSize: font.body,
   },
   message: { color: colors.loss, fontSize: font.caption + 2 },
-  button: { backgroundColor: colors.text, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  button: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   buttonPressed: { opacity: 0.8 },
-  buttonText: { color: colors.bg, fontSize: font.body, fontWeight: '600' },
+  buttonText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   footer: { flexDirection: 'row', alignItems: 'center' },
   muted: { color: colors.muted, fontSize: font.caption + 2 },
   link: { color: colors.text, fontSize: font.caption + 2, fontWeight: '600' },

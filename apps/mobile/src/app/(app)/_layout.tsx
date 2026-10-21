@@ -6,8 +6,13 @@ import { resolveAppGroupRedirect } from '@/lib/route-guard'
 import { colors } from '@/theme/tokens'
 
 function TabLabel({ title, focused }: { title: string; focused: boolean }) {
-  return <Text style={{ color: focused ? colors.text : colors.muted, fontSize: 13, fontWeight: '600' }}>{title}</Text>
+  return <Text style={{ color: focused ? colors.accent : colors.muted, fontSize: 13, fontWeight: '600' }}>{title}</Text>
 }
+
+const tab = (title: string) => ({
+  title,
+  tabBarLabel: ({ focused }: { focused: boolean }) => <TabLabel title={title} focused={focused} />,
+})
 
 export default function AppLayout() {
   const { user, loading } = useAuth()
@@ -32,14 +37,9 @@ export default function AppLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen
-        name="matches"
-        options={{ title: 'Matches', tabBarLabel: ({ focused }) => <TabLabel title="Matches" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="live"
-        options={{ title: 'Live', tabBarLabel: ({ focused }) => <TabLabel title="Live" focused={focused} /> }}
-      />
+      <Tabs.Screen name="matches" options={tab('Matches')} />
+      <Tabs.Screen name="live" options={tab('Live')} />
+      <Tabs.Screen name="profile" options={tab('Profile')} />
       <Tabs.Screen name="link" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   )

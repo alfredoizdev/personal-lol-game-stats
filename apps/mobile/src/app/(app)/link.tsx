@@ -4,7 +4,9 @@ import { router } from 'expo-router'
 import { parseRiotId, type Region } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { RegionPicker } from '@/components/RegionPicker'
-import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useLinkedAccount, useInvalidateLinkedAccounts } from '@/hooks/useLinkedAccount'
+import { useAuth } from '@/lib/auth-context'
+import { setActiveAccount } from '@/lib/account'
 import { linkRiotAccount, type LinkErrorCode } from '@/lib/linked-account'
 import { supabase } from '@/lib/supabase'
 import { colors, font, space } from '@/theme/tokens'
@@ -23,7 +25,9 @@ function errorMessage(code: LinkErrorCode, region: Region): string {
 }
 
 export default function LinkScreen() {
-  const { refetch } = useLinkedAccount()
+  const { user } = useAuth()
+  const { data: existing } = useLinkedAccount()
+  const invalidate = useInvalidateLinkedAccounts()
   const [riotId, setRiotId] = useState('')
   const [region, setRegion] = useState<Region>('NA')
   const [message, setMessage] = useState<string | null>(null)
@@ -44,12 +48,22 @@ export default function LinkScreen() {
       setMessage(errorMessage(result.code, region))
       return
     }
-    await refetch()
-    router.replace('/(app)/matches')
+    if (user) await setActiveAccount(supabase, user.id, result.puuid).catch(() => {})
+    await invalidate()
+    router.replace(existing ? '/(app)/profile' : '/(app)/matches')
   }
 
   return (
-    <Screen title="Your Riot ID">
+    <Screen
+      title={existing ? 'Add Riot account' : 'Your Riot ID'}
+      right={
+        existing ? (
+          <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={8}>
+            <Text style={styles.muted}>Cancel</Text>
+          </Pressable>
+        ) : undefined
+      }
+    >
       <Text style={styles.muted}>We use it to read your own match history. Nothing else.</Text>
       <TextInput
         style={styles.input}
@@ -71,7 +85,7 @@ export default function LinkScreen() {
         disabled={busy}
         accessibilityRole="button"
       >
-        {busy ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.buttonText}>Link account</Text>}
+        {busy ? <ActivityIndicator color={colors.text} /> : <Text style={styles.buttonText}>Link account</Text>}
       </Pressable>
     </Screen>
   )
@@ -92,7 +106,7 @@ const styles = StyleSheet.create({
   regionBlock: { gap: space.sm },
   label: { color: colors.muted, fontSize: font.caption, textTransform: 'uppercase', letterSpacing: 0.5 },
   error: { color: colors.loss, fontSize: font.caption + 2 },
-  button: { backgroundColor: colors.text, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  button: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   buttonPressed: { opacity: 0.8 },
-  buttonText: { color: colors.bg, fontSize: font.body, fontWeight: '600' },
+  buttonText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
 })

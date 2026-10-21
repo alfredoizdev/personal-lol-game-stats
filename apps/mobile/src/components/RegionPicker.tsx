@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  chipSelected: { backgroundColor: colors.text, borderColor: colors.text },
+  chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
   label: { color: colors.text, fontSize: font.caption + 2, fontWeight: '600' },
-  labelSelected: { color: colors.bg },
+  labelSelected: { color: colors.text },
 })
