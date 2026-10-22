@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { colors, font } from '@/theme/tokens'
+import { activeTabFor, tabBarHiddenFor } from '@/lib/tab-bar'
 
 const TABS: Record<string, { label: string; icon: (color: string) => React.ReactNode }> = {
   matches: { label: 'Matches', icon: (c) => <MaterialCommunityIcons name="sword-cross" size={24} color={c} /> },
@@ -17,12 +18,15 @@ type TabBarProps = {
 }
 
 export function TabBar({ state, navigateToTab, insets }: TabBarProps) {
+  const focusedName = state.routes[state.index]?.name ?? 'matches'
+  if (tabBarHiddenFor(focusedName)) return null
+  const active = activeTabFor(focusedName)
   const visible = state.routes.filter((r) => TABS[r.name])
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       {visible.map((route) => {
         const tab = TABS[route.name]!
-        const focused = state.routes[state.index]?.key === route.key
+        const focused = route.name === active
         const color = focused ? colors.accent : colors.muted
         return (
           <Pressable

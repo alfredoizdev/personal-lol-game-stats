@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
-import { summarizeMatch, type MatchSummary } from '@lpp/shared'
 import type { LinkedAccount } from '@/lib/linked-account'
-import { fetchMatchDetail, fetchMatchIds, isRetryableRiotError, riotErrorCode, type RiotErrorCode } from '@/lib/riot-api'
+import { fetchMatchDetail, fetchMatchIds, isRetryableRiotError } from '@/lib/riot-api'
+import { toRowStates, type DetailResult, type MatchRowState } from '@/lib/match-rows'
 import { supabase } from '@/lib/supabase'
 import { INITIAL_PAGE, nextPage } from '@/lib/paging'
 
@@ -11,11 +11,7 @@ export const matchKeys = {
   detail: (matchId: string) => ['match-detail', matchId] as const,
 }
 
-export type MatchRowState =
-  | { matchId: string; status: 'loading' }
-  | { matchId: string; status: 'error'; error: RiotErrorCode }
-  | { matchId: string; status: 'not-participant' }
-  | { matchId: string; status: 'ready'; summary: MatchSummary }
+export type { MatchRowState }
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -59,15 +55,11 @@ export function useRecentMatches(account: LinkedAccount | null, count = 20) {
   })
 
   const matches: MatchRowState[] = useMemo(() => {
-    const list = (ids.data ?? []).slice(0, shown)
-    return list.map((matchId, i) => {
-      const q = details[i]
-      if (!q || q.isPending) return { matchId, status: 'loading' as const }
-      if (q.isError) return { matchId, status: 'error' as const, error: riotErrorCode(q.error) }
-      const summary = account ? summarizeMatch(q.data, identityOf(account)) : null
-      if (!summary) return { matchId, status: 'not-participant' as const }
-      return { matchId, status: 'ready' as const, summary }
-    })
+    if (!account) return []
+    const results: DetailResult[] = details.map((q) =>
+      q.isPending ? { status: 'pending' } : q.isError ? { status: 'error', error: q.error } : { status: 'success', data: q.data },
+    )
+    return toRowStates(ids.data ?? [], results, identityOf(account), shown)
   }, [ids.data, details, account, shown])
 
   const hasMore = shown < total
@@ -79,11 +71,18 @@ export function useRecentMatches(account: LinkedAccount | null, count = 20) {
     if (!account) return
     setRefreshing(true)
     try {
-      await qc.invalidateQueries({ queryKey: matchKeys.ids(account.puuid, count) })
+      const window = new Set((ids.data ?? []).slice(0, shown))
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: matchKeys.ids(account.puuid, count) }),
+        // Failed detail rows (429s, transient errors) get another chance on pull-to-refresh.
+        qc.refetchQueries({
+          predicate: (q) => q.queryKey[0] === 'match-detail' && window.has(String(q.queryKey[1])) && q.state.status === 'error',
+        }),
+      ])
     } finally {
       setRefreshing(false)
     }
-  }, [qc, account, count])
+  }, [qc, account, count, ids.data, shown])
 
   return { ids, matches, refresh, isRefreshing, hasMore, loadMore, total }
 }
