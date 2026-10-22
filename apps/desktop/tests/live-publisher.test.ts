@@ -11,10 +11,10 @@ function snapshot(ts: number, cs = 100): LiveSnapshotV2 {
 }
 
 function fakeClient(sendResult: string = 'ok') {
-  const channels: Array<{ name: string; sent: unknown[]; subscribed: boolean; unsubscribed: boolean }> = []
+  const channels: Array<{ name: string; opts: unknown; sent: unknown[]; subscribed: boolean; unsubscribed: boolean }> = []
   const client = {
-    channel: vi.fn((name: string) => {
-      const rec = { name, sent: [] as unknown[], subscribed: false, unsubscribed: false }
+    channel: vi.fn((name: string, opts?: unknown) => {
+      const rec = { name, opts, sent: [] as unknown[], subscribed: false, unsubscribed: false }
       channels.push(rec)
       const ch = {
         subscribe: (cb?: (status: string) => void) => {
@@ -38,12 +38,13 @@ function fakeClient(sendResult: string = 'ok') {
 }
 
 describe('createLivePublisher', () => {
-  it('subscribes lazily to user:<id> and sends the first snapshot as a broadcast', async () => {
+  it('subscribes lazily to the private lanepulse:<id> channel and sends the first snapshot as a broadcast', async () => {
     const { client, channels } = fakeClient()
     const pub = createLivePublisher(client as never, 'u1')
     expect(channels.length).toBe(0)
     await pub.publish(snapshot(1000))
-    expect(channels[0]?.name).toBe('user:u1')
+    expect(channels[0]?.name).toBe('lanepulse:u1')
+    expect(channels[0]?.opts).toEqual({ config: { private: true } })
     expect(channels[0]?.subscribed).toBe(true)
     expect(channels[0]?.sent[0]).toMatchObject({ type: 'broadcast', event: 'live-snapshot', payload: { v: 2, ts: 1000 } })
   })

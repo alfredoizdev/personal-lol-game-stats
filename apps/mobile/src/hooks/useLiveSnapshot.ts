@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { AppState } from 'react-native'
-import { liveViewState, parseLiveSnapshot, type LiveSnapshotV2, type LiveViewState } from '@lpp/shared'
+import { liveTopic, liveViewState, parseLiveSnapshot, type LiveSnapshotV2, type LiveViewState } from '@lpp/shared'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 
 const TICK_MS = 1000
 
 /**
- * Subscribes to the user's Realtime channel and keeps the newest valid
+ * Subscribes to the user's private Realtime channel (`lanepulse:<id>`) and keeps the newest valid
  * `live-snapshot`. View state is re-evaluated every second so staleness
  * shows up without new messages.
  */
@@ -41,7 +41,7 @@ export function useLiveSnapshot(): { snapshot: LiveSnapshotV2 | null; state: Liv
       return
     }
     const channel = supabase
-      .channel(`user:${user.id}`)
+      .channel(liveTopic(user.id), { config: { private: true } })
       .on('broadcast', { event: 'live-snapshot' }, (msg: { payload?: unknown }) => {
         const parsed = parseLiveSnapshot(msg.payload)
         if (!parsed || parsed.ts < latestTs.current) return
