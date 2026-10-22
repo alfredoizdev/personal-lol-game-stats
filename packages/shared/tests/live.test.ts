@@ -131,6 +131,13 @@ describe('liveViewState', () => {
     expect(liveViewState(base, base.ts + 16_000)).toBe('stale')
     expect(liveViewState({ ...base, isFinal: true }, base.ts + 60_000)).toBe('ended')
   })
+  it('an ended snapshot expires back to waiting after 10 minutes', () => {
+    expect(liveViewState({ ...base, isFinal: true }, base.ts + 9 * 60_000)).toBe('ended')
+    expect(liveViewState({ ...base, isFinal: true }, base.ts + 11 * 60_000)).toBe('waiting')
+  })
+  it('a stale non-final snapshot expires back to waiting after 10 minutes too', () => {
+    expect(liveViewState(base, base.ts + 11 * 60_000)).toBe('waiting')
+  })
 })
 
 describe('shouldPublish', () => {

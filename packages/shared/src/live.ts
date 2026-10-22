@@ -199,10 +199,15 @@ export function parseLiveSnapshot(payload: unknown): LiveSnapshotV2 | null {
 // ---------------------------------------------------------------------------
 export type LiveViewState = 'waiting' | 'live' | 'stale' | 'ended'
 
+const EXPIRE_AFTER_MS = 10 * 60_000
+
+/** waiting | live | stale | ended. Anything older than 10 minutes is forgotten (back to waiting). */
 export function liveViewState(snapshot: LiveSnapshotV2 | null, nowMs: number, staleAfterMs = 15_000): LiveViewState {
   if (!snapshot) return 'waiting'
+  const age = nowMs - snapshot.ts
+  if (age > EXPIRE_AFTER_MS) return 'waiting'
   if (snapshot.isFinal) return 'ended'
-  return nowMs - snapshot.ts > staleAfterMs ? 'stale' : 'live'
+  return age > staleAfterMs ? 'stale' : 'live'
 }
 
 /** Publish when something other than `ts` changed, when final, or when the heartbeat interval elapsed. */
