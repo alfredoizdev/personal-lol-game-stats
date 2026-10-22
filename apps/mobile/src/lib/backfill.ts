@@ -15,6 +15,13 @@ export function nextChunk(ids: string[], cached: ReadonlySet<string>, size = CHU
   return out
 }
 
+/** How many of the first `n` ids are cached (the Performance tab needs its 20-game window complete). */
+export function cachedWithin(ids: string[], isCached: (id: string) => boolean, n: number): number {
+  let count = 0
+  for (const id of ids.slice(0, n)) if (isCached(id)) count += 1
+  return count
+}
+
 export type BackfillResult = { fetched: number; failed: number; stoppedBy: unknown | null }
 
 /**

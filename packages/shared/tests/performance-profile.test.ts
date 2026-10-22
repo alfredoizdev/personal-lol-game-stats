@@ -177,7 +177,7 @@ describe('performanceProfile — champions and matchups', () => {
     ])
     expect(p.best.map((m) => [m.championName, m.role, m.winRate])).toEqual([['Caitlyn', 'BOTTOM', 100]])
   })
-  it('matchups use every loaded game, not just the period, and say how many', () => {
+  it('matchups use twice the period (the window plus the one before it), and say how many', () => {
     const draven = { championId: 119, championName: 'Draven' }
     const old = [loss(WEAK, {}, draven), loss(WEAK, {}, draven)]
     const recent = Array.from({ length: 20 }, () => win())
@@ -185,6 +185,9 @@ describe('performanceProfile — champions and matchups', () => {
     expect(p.games).toBe(20)
     expect(p.matchupGames).toBe(22)
     expect(p.toughest.map((m) => [m.championName, m.games])).toEqual([['Draven', 2]])
+    const many = performanceProfile([...old, ...recent, ...Array.from({ length: 30 }, () => win())], 20)
+    expect(many.matchupGames).toBe(40)
+    expect(many.toughest).toEqual([]) // Draven games are older than the 40
   })
   it('an even matchup (50 %) is in neither list', () => {
     const mf = { championId: 21, championName: 'MissFortune' }

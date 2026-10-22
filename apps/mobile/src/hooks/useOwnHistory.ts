@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { summarizeMatch, type MatchSummary, type MatchV5 } from '@lpp/shared'
-import { BACKFILL_COUNT, runBackfill } from '@/lib/backfill'
+import { BACKFILL_COUNT, cachedWithin, runBackfill } from '@/lib/backfill'
 import { claimRun, getRun, isRunOwned, releaseRun, setRun, subscribeRuns } from '@/lib/backfill-run'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { matchKeys } from '@/lib/match-keys'
@@ -16,7 +16,10 @@ export type OwnHistory = {
   loaded: number
   total: number
   running: boolean
-  start: () => void
+  /** Fetch the missing details; `limit` restricts the run to the first n ids (Performance's window). */
+  start: (limit?: number) => void
+  /** How many of the first n ids are cached. */
+  loadedWithin: (n: number) => number
   /** The last run's problem (rate limit, failed ids) or the ids query's error. */
   error: unknown | null
   idsPending: boolean
@@ -86,7 +89,7 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
     if (!claimRun(puuid)) return // another instance drives this run
     let cancelled = false
     void runBackfill({
-      ids,
+      ids: run.limit === null ? ids : ids.slice(0, run.limit),
       isCached,
       fetchOne: (id) => qc.fetchQuery(matchDetailQuery(id, region)),
       isPaused: () => pausedRef.current || isReviewOpen(),
@@ -105,11 +108,14 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
         if (!isRunOwned(puuid)) setRun(puuid, { running: false })
       })
     }
-  }, [run.running, ids, puuid, region, qc, isCached, idsQuery.isPending])
+  }, [run.running, run.limit, ids, puuid, region, qc, isCached, idsQuery.isPending])
 
-  const start = useCallback(() => {
-    if (puuid) setRun(puuid, { running: true, error: null })
-  }, [puuid])
+  const start = useCallback(
+    (limit?: number) => {
+      if (puuid) setRun(puuid, { running: true, error: null, limit: limit ?? null })
+    },
+    [puuid],
+  )
 
   const summaries = useMemo(() => {
     void tick
@@ -127,6 +133,13 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
     void tick
     return ids.filter(isCached).length
   }, [ids, tick, isCached])
+  const loadedWithin = useCallback(
+    (n: number) => {
+      void tick
+      return cachedWithin(ids, isCached, n)
+    },
+    [ids, tick, isCached],
+  )
 
   return {
     summaries,
@@ -135,6 +148,7 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
     total: ids.length,
     running: run.running,
     start,
+    loadedWithin,
     error: run.error ?? idsQuery.error ?? null,
     idsPending: !!account && idsQuery.isPending,
   }

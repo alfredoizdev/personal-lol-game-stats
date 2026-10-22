@@ -63,3 +63,21 @@ export function previousDelta(p: PerformanceProfile): string | null {
 export function onTargetLabel(p: PerformanceProfile): string {
   return p.games === 0 ? '—' : `${p.onTargetGames} / ${p.games}`
 }
+
+/** The window the tab is built on (owner: the last 20 games). The auto-load fetches twice that for "vs previous". */
+export const WINDOW = 20
+
+export type LoadState = 'loading' | 'empty' | 'ready' | 'short'
+
+/**
+ * What the screen shows: nothing but a loading line until the window is
+ * cached (or the auto-load gave up), the cards when it is, and the cards
+ * with a warning when a run ended before completing the window.
+ */
+export function loadState(s: { idsPending: boolean; total: number; loadedInWindow: number; running: boolean; attempted: boolean }): LoadState {
+  if (s.idsPending) return 'loading'
+  if (s.total === 0) return 'empty'
+  if (s.loadedInWindow >= Math.min(WINDOW, s.total)) return 'ready'
+  if (s.running || !s.attempted) return 'loading'
+  return 'short'
+}
