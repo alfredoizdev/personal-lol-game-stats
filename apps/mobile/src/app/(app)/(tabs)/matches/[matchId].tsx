@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query'
 import { analyzeMatch, csCurve, goldDiffCurve, summarizeMatch, type AreaKey, type PhaseKey } from '@lpp/shared'
 import { AreaCard } from '@/components/AreaCard'
 import { AreaPills } from '@/components/AreaPills'
-import { Collapsible } from '@/components/Collapsible'
 import { CsCurveChart } from '@/components/CsCurveChart'
 import { Disclaimer } from '@/components/Disclaimer'
 import { GoldDiffChart } from '@/components/GoldDiffChart'
@@ -109,9 +108,7 @@ export default function MatchReviewScreen() {
               </View>
             ) : null}
 
-            <Collapsible title="Full lane comparison">
-              <LaneMatchupCard me={summary.me} opponent={summary.opponent} />
-            </Collapsible>
+            <LaneMatchupCard me={summary.me} opponent={summary.opponent} />
 
             {analysis?.analyzable && summary.me.role ? (
               <Pressable
