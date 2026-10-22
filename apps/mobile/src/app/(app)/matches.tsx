@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
+import { formatRiotId } from '@lpp/shared'
 import { Disclaimer } from '@/components/Disclaimer'
+import { SummonerAvatar } from '@/components/SummonerAvatar'
 import { MatchRow } from '@/components/MatchRow'
 import { PerformanceHeader } from '@/components/PerformanceHeader'
 import { RiotErrorView } from '@/components/RiotErrorView'
@@ -23,8 +25,18 @@ export default function MatchesScreen() {
 
   const header = (
     <View style={styles.headerBlock}>
-      <Text style={styles.title}>My Matches</Text>
-      <Text style={styles.subtitle}>Recent performance</Text>
+      <View style={styles.titleRow}>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>My Matches</Text>
+          {account ? <Text style={styles.summoner}>{formatRiotId(account.gameName, account.tagLine)}</Text> : null}
+          <Text style={styles.subtitle}>Recent performance</Text>
+        </View>
+        {account ? (
+          <Pressable onPress={() => router.push('/(app)/profile')} accessibilityRole="button" accessibilityLabel="Profile" hitSlop={8}>
+            <SummonerAvatar account={account} size={52} />
+          </Pressable>
+        ) : null}
+      </View>
       {ready.length > 0 ? <PerformanceHeader agg={agg} /> : null}
       {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
       {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
@@ -83,8 +95,11 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   list: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.sm + 4, maxWidth: 720, width: '100%', alignSelf: 'center' },
   headerBlock: { gap: space.md, marginBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.md },
+  titleBlock: { flex: 1 },
   title: { color: colors.text, fontSize: font.title, fontWeight: '800', letterSpacing: -0.5 },
-  subtitle: { color: colors.muted, fontSize: font.body, marginTop: -space.sm },
+  summoner: { color: colors.you, fontSize: font.body, fontWeight: '700', marginTop: 2 },
+  subtitle: { color: colors.muted, fontSize: font.caption + 2, marginTop: 2 },
   section: { color: colors.text, fontSize: font.body, fontWeight: '700', marginTop: space.xs },
   muted: { color: colors.muted, fontSize: font.body },
   placeholder: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, minHeight: 92, justifyContent: 'center' },
