@@ -47,23 +47,12 @@ export function fewGamesNote(p: PerformanceProfile): string | null {
   return p.games > 0 && p.games < FEW_GAMES ? p.headline : null
 }
 
-/** "−4 vs your previous 20 games": the only comparable that is truly the player's own. */
-export function previousLabel(p: PerformanceProfile): string | null {
+/** "−4": the average against the previous window of the same size (the player's own comparable). */
+export function previousDelta(p: PerformanceProfile): string | null {
   if (p.avgScore === null || p.previousAvgScore === null) return null
   const d = p.avgScore - p.previousAvgScore
-  const sign = d > 0 ? '+' : d < 0 ? '−' : '±'
-  return `${sign}${Math.abs(d)} vs your previous ${p.previousN} game${p.previousN === 1 ? '' : 's'}`
+  return `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d)}`
 }
 
+/** Score at which every role target is met. */
 export const ON_TARGET_SCORE = 70
-
-export function rangeLabel(p: PerformanceProfile): string | null {
-  if (p.bestScore === null || p.worstScore === null) return null
-  return `best ${p.bestScore} · worst ${p.worstScore} · ${ON_TARGET_SCORE} = on target`
-}
-
-/** "Farming 36 · Combat 58 · Vision 44": the averages the overall score is built from. */
-export function areaLine(p: PerformanceProfile): string | null {
-  const parts = p.areas.filter((a) => a.avgScore !== null).map((a) => `${a.label} ${a.avgScore}`)
-  return parts.length ? parts.join(' · ') : null
-}

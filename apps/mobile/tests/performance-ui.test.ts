@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { performanceProfile, type AreaStat } from '@lpp/shared'
-import { areaLine, barHeight, fewGamesNote, gamesNote, previousLabel, rangeLabel, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
+import { performanceProfile } from '@lpp/shared'
+import { barHeight, fewGamesNote, gamesNote, previousDelta, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -58,23 +58,10 @@ describe('performance-ui — few games', () => {
 })
 
 describe('performance-ui — score context', () => {
-  it('compares the average with the previous window', () => {
-    expect(previousLabel({ ...EMPTY, avgScore: 46, previousAvgScore: 50, previousN: 20 })).toBe('−4 vs your previous 20 games')
-    expect(previousLabel({ ...EMPTY, avgScore: 46, previousAvgScore: 40, previousN: 7 })).toBe('+6 vs your previous 7 games')
-    expect(previousLabel({ ...EMPTY, avgScore: 46, previousAvgScore: 46, previousN: 20 })).toBe('±0 vs your previous 20 games')
-    expect(previousLabel({ ...EMPTY, avgScore: 46, previousAvgScore: null, previousN: 0 })).toBeNull()
-  })
-  it('states the range and the on-target mark', () => {
-    expect(rangeLabel({ ...EMPTY, bestScore: 72, worstScore: 12 })).toBe('best 72 · worst 12 · 70 = on target')
-    expect(rangeLabel(EMPTY)).toBeNull()
-  })
-  it('lists the area averages that make up the score', () => {
-    const areas: AreaStat[] = [
-      { key: 'farming', label: 'Farming', avgScore: 36, rating: 'Poor', n: 20, subrows: [] },
-      { key: 'combat', label: 'Combat', avgScore: 58, rating: 'Fair', n: 20, subrows: [] },
-      { key: 'vision', label: 'Vision', avgScore: null, rating: null, n: 0, subrows: [] },
-    ]
-    expect(areaLine({ ...EMPTY, areas })).toBe('Farming 36 · Combat 58')
-    expect(areaLine(EMPTY)).toBeNull()
+  it('compares the average with the previous window as a signed number', () => {
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 50, previousN: 20 })).toBe('−4')
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 40, previousN: 7 })).toBe('+6')
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 46, previousN: 20 })).toBe('±0')
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: null, previousN: 0 })).toBeNull()
   })
 })

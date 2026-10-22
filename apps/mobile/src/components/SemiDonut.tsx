@@ -28,7 +28,7 @@ export function SemiDonut({ score, size, color, label, text, tick }: { score: nu
       </Svg>
       <View style={[styles.center, { top: size * 0.24 }]}>
         <Text style={[styles.score, { fontSize: size * 0.26 }]} maxFontSizeMultiplier={1.15}>{text ?? (score === null ? '—' : String(score))}</Text>
-        {label ? <Text style={styles.label} maxFontSizeMultiplier={1.15}>{label}</Text> : null}
+        {label ? <Text style={styles.label} numberOfLines={1} maxFontSizeMultiplier={1.15}>{label}</Text> : null}
       </View>
     </View>
   )
