@@ -25,12 +25,13 @@ function player(p: Omit<Partial<RawLivePlayer>, 'team'> & { team: 'ORDER' | 'CHA
   }
 }
 
-function raw(opts: { me?: Partial<RawLivePlayer>; enemies?: RawLivePlayer[]; allies?: RawLivePlayer[]; gameTime?: number }): RawAllGameData {
+function raw(opts: { me?: Omit<Partial<RawLivePlayer>, 'team'>; enemies?: RawLivePlayer[]; allies?: RawLivePlayer[]; gameTime?: number }): RawAllGameData {
   const me = player({
-    team: 'ORDER', riotIdGameName: 'Hexed', riotIdTagLine: '7551', championName: 'Yasuo', position: 'MIDDLE', level: 11,
+    riotIdGameName: 'Hexed', riotIdTagLine: '7551', championName: 'Yasuo', position: 'MIDDLE', level: 11,
     scores: { kills: 4, deaths: 1, assists: 3, creepScore: 112, wardScore: 9 },
     items: [{ itemID: 3031 }, { itemID: 0 }, { itemID: 3006 }],
     ...opts.me,
+    team: 'ORDER',
   })
   const allies = opts.allies ?? [
     player({ team: 'ORDER', position: 'TOP', scores: { kills: 2, deaths: 0, assists: 1, creepScore: 90, wardScore: 5 } }),
