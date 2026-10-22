@@ -18,6 +18,7 @@ export function AreaCard({
   chart,
   timelineError,
   onRetryTimeline,
+  goalLine,
 }: {
   area: AreaResult
   baselineN: number
@@ -25,6 +26,8 @@ export function AreaCard({
   chart?: ReactNode
   timelineError?: unknown
   onRetryTimeline?: () => void
+  /** The personal goal that was in force for this game, if any (never changes a score). */
+  goalLine?: { text: string; met: boolean | null } | null
 }) {
   const needsTimeline = area.key === 'farming' || area.key === 'lane'
   return (
@@ -37,6 +40,11 @@ export function AreaCard({
 
       {area.hiddenReason ? <Text style={styles.reason}>{area.hiddenReason}</Text> : null}
       {area.sentence ? <Text style={styles.sentence} maxFontSizeMultiplier={1.15}>{area.sentence}</Text> : null}
+      {goalLine ? (
+        <Text style={[styles.goal, { color: goalLine.met === null ? colors.muted : goalLine.met ? colors.win : colors.warn }]} maxFontSizeMultiplier={1.15}>
+          {goalLine.text}
+        </Text>
+      ) : null}
 
       {needsTimeline && timelineError ? (
         <View style={styles.retryRow}>
@@ -69,6 +77,7 @@ const styles = StyleSheet.create({
   rating: { fontSize: font.body - 2, fontWeight: '700' },
   sentence: { color: colors.text, fontSize: font.body - 2, lineHeight: 21, textAlign: 'center', paddingHorizontal: space.xs },
   reason: { color: colors.muted, fontSize: font.caption + 1, textAlign: 'center' },
+  goal: { fontSize: font.caption + 1, fontWeight: '700', textAlign: 'center' },
   retryRow: { alignItems: 'center', gap: 6 },
   retry: { borderWidth: 1, borderColor: colors.accent, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 6 },
   retryText: { color: colors.text, fontWeight: '700', fontSize: font.caption + 1 },

@@ -76,6 +76,18 @@ games, excluding remakes and the game being reviewed (so `n` is usually well
 under 20). With fewer than 3 games the average is
 labelled "few games" and the "vs you" deltas are hidden.
 
+## 5b. Goal references (pre-match)
+
+Under the goal stepper the app draws a ruler with: your average (champion ≥ 3
+games, else role), the average of the lane opponents you actually faced in that
+role, your best game, the role target, and an **approximate** ladder of typical
+values per rank (Iron → Master+). The ladder is a community estimate for
+Summoner's Rift, not Riot data; it is labelled as such and never moves a score.
+Laner CS/min ladder: 4.0 · 4.6 · 5.2 · 5.8 · 6.3 · 6.8 · 7.3 · 8.0, scaled by the
+role's CS target (jungle ×5.5/7, bot ×7.5/7); vision ladder 0.4 → 1.2 (support
+1.0 → 2.6, jungle ×1.5); deaths per 10 min 2.2 → 1.3; kill participation 45 → 60
+(+8 for jungle and support).
+
 ## 6. Sentences
 
 Each area's sentence names its weakest scored sub-row with the concrete number

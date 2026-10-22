@@ -8,7 +8,7 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 - [x] Phase 2 — Recent Matches — code complete 2026-10-21, verified with real data
 - [x] Phase 3 — Match Analysis v1
 - [x] Phase 4 — Live companion
-- [ ] Phase 5 — Pre-match focus
+- [x] Phase 5 — Pre-match focus — code complete 2026-10-22; owner acceptance (saved goal → live → review) pending
 - [ ] Phase 6 — End-of-game sync, QA, beta readiness
 
 ## Phase 1 tasks
@@ -91,3 +91,15 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-3-analysis.md`. Spec: `docs/super
 - Engine cases covered by tests: ARAM / bots / remakes not analyzed with a reason; support (Farming not scored, Lane gold+XP); no timeline; no lane opponent; team with 0 kills; 9-minute game; baseline with 0/1/2 games; the worked example in `docs/ANALYSIS.md`.
 - `pnpm -r test`: shared 105, desktop 60, mobile 86. Lint and typecheck clean. No `RGAPI-` / JWT in sources.
 - Owner acceptance still pending on device: tap the pills, expand the lane comparison, and open a fresh game (timeline fetched live) and an ARAM (reason shown).
+
+## Phase 5 verification (2026-10-22)
+
+Plan: `docs/superpowers/plans/2026-10-22-phase-5-prematch.md`. Spec: `docs/superpowers/specs/2026-10-22-phase-5-pre-match-design.md`.
+
+- Live tab, no game running: "Prepare your next game" — role chips, champion picker (Data Dragon list with search, your champions in that role first with game counts), your record with that champion (games, win rate, KDA, CS/min; honest about few games), a personal goal editor (CS/min · vision score/min · deaths per 10 min · kill participation, stepper, default = your average with that champion ≥ 3 games → your role average → the role target, source stated) saved per Riot account, and "Toughest matchups" by role with a ban sentence only when you lost ≥ 3 games against one champion under 40 %.
+- Own history: up to 100 games, loaded only when the player presses "Load your last 100 games", in chunks of 20 through the 4-wide limiter with progress; cached games are used immediately.
+- Live hero shows "Personal goal: 7.0 CS/min · On track / Below goal / —" for the champion being played (name → id via Data Dragon), falling back to the newest goal for the role.
+- Match Review shows "Your goal: … → you did … (met/missed)" in the area that owns the metric, using the goal in force when the game ended.
+- `pre_match_focus` table applied to the shared project (append-only rows, RLS own).
+- Verified in the simulator with temporary launch hacks (no synthetic taps: other windows covered the simulator): role chips, picker (fixed to a page sheet after the owner found its header under the status bar), summary, goal editor, matchups, backfill bar. Owner acceptance pending: save a goal, play a game with the collector open, see it live, then in the review.
+- `pnpm -r test`: shared 130, desktop 60, mobile 109. Lint and typecheck clean. No secrets in sources.

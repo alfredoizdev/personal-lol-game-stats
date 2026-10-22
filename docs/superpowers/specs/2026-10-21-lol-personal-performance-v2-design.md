@@ -218,6 +218,11 @@ Elementos de 06–08 que **no** se construyen tal cual, y por qué:
 3. **Profile:** sí, tercera pestaña como en los mockups 06–08, con varias cuentas Riot por usuario (decidido 2026-10-21, tarde).
 4. **Pendiente (técnico):** quitar una cuenta vinculada necesita una política `delete` propia en `linked_riot_accounts` (hoy solo hay select/insert/update). Es una migración nueva que se copia al repo de RiftLens según la sección 3. Hasta entonces Profile no ofrece "quitar cuenta".
 
+## 11b. Decisiones añadidas el 2026-10-22
+
+5. **Objetivo: aprobación de Riot.** El owner va a someter LanePulse al portal de desarrolladores de Riot para producción. Toda función se diseña para pasar esa revisión: nada de consejo táctico en vivo, ni en pantalla ni en notificaciones; solo datos propios y estado neutro.
+6. **Notificaciones de objetivo en partida (petición del owner):** se harán en la Fase 6, enviadas por el desktop a través del servicio push de Expo (el móvil registra su token en Supabase), cada 5 minutos o solo al cambiar de estado (opción), con texto de estado ("15:00 · Goal 7.0 CS/min · Below goal, now 5.2"), nunca una instrucción. Requieren build de desarrollo con EAS.
+
 ## 12. Lo que queda al builder
 
 - Estructura interna de componentes, navegación con Expo Router, estado con TanStack Query.
