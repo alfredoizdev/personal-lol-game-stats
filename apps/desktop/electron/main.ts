@@ -12,6 +12,8 @@ import type { LockfileData } from './league/lockfile'
 import { startLivePoller, type LivePollerHandle, type LiveState } from './league/live-poller'
 import { createLivePublisher, type LivePublisher } from './live/live-publisher'
 import { createDemoDeps } from './live/demo-feed'
+import { createGoalPush, type GoalPush } from './notify/goal-push'
+import { createChampionLookup } from './notify/champions'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveLabel, statusLabel } from '../shared/status-label'
 import { logger } from './logger'
@@ -27,6 +29,8 @@ let supabaseClient: SupabaseClient | null = null
 let userId: string | null = null
 let livePoller: LivePollerHandle | null = null
 let publisher: LivePublisher | null = null
+let goalPush: GoalPush | null = null
+const champions = createChampionLookup(globalThis.fetch)
 let lastLive: LiveState = { kind: 'idle' }
 let lockfileCache: LockfileData | null = null
 let quitting = false
@@ -118,12 +122,19 @@ function onLiveState(state: LiveState): void {
   if ((state.kind === 'live' || state.kind === 'ended') && publisher) {
     publisher.publish(state.snapshot).catch((err) => logger.warn(`publish failed: ${String(err)}`))
   }
+  void goalPush?.onLiveState(state) // never throws; the poller does not wait for the network
+}
+
+/** The Riot ID League is signed in with; the demo feed plays as the first linked account's owner. */
+function lcuIdentity(): { gameName: string; tagLine: string } | null {
+  return lastStatus.state === 'CONNECTED' ? { gameName: lastStatus.summoner.gameName, tagLine: lastStatus.summoner.tagLine } : null
 }
 
 /** Live poller + publisher run only while signed in AND League is connected. */
 function startLive(): void {
   if (livePoller || !supabaseClient || !userId) return
   publisher = publisher ?? createLivePublisher(supabaseClient, userId)
+  goalPush = goalPush ?? createGoalPush(supabaseClient, userId, { log: logger, champions, identity: lcuIdentity })
   const demo = isDemo()
   const identity = () =>
     lastStatus.state === 'CONNECTED'
@@ -144,6 +155,7 @@ function startLive(): void {
 function stopLive(): void {
   livePoller?.stop()
   livePoller = null
+  goalPush?.reset()
   if (lastLive.kind !== 'idle') onLiveState({ kind: 'idle' })
 }
 
@@ -192,6 +204,7 @@ function onAuthState(state: AuthState): void {
     stopLive()
     void publisher?.stop()
     publisher = null
+    goalPush = null
     if (detector) stopCollector()
   }
 }
