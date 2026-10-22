@@ -155,6 +155,8 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@24.19.2)(lightningcss@1.33.0)(terser@5.51.2)
 
+  apps/site: {}
+
   packages/shared:
     devDependencies:
       '@eslint/js':

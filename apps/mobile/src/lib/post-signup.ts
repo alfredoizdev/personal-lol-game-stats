@@ -6,6 +6,8 @@ export type PendingSignupMetadata = {
   pending_riot_game_name?: string | null
   pending_riot_tag_line?: string | null
   pending_region?: string | null
+  /** LEGAL_VERSION the user accepted at sign-up; shown in Profile → Legal. */
+  accepted_legal_version?: string | null
 }
 
 export type PostSignupAction =

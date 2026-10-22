@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveEntryRoute, resolveAppGroupRedirect } from '../src/lib/route-guard'
+import { resolveEntryRoute, resolveAppGroupRedirect, isPublicSegment } from '../src/lib/route-guard'
 
 describe('resolveEntryRoute', () => {
   it('returns null while auth is loading', () => {
@@ -41,5 +41,17 @@ describe('resolveAppGroupRedirect', () => {
   })
   it('does not redirect while the link status is unknown', () => {
     expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: null, segment: '(tabs)' })).toBeNull()
+  })
+})
+
+describe('isPublicSegment', () => {
+  it('treats the legal screens and the auth group as public', () => {
+    expect(isPublicSegment('legal')).toBe(true)
+    expect(isPublicSegment('(auth)')).toBe(true)
+  })
+  it('keeps the app group and unknown segments guarded', () => {
+    expect(isPublicSegment('(app)')).toBe(false)
+    expect(isPublicSegment(undefined)).toBe(false)
+    expect(isPublicSegment('')).toBe(false)
   })
 })

@@ -7,6 +7,7 @@ import { useLinkedAccount, useLinkedAccounts, useInvalidateLinkedAccounts } from
 import { useAuth } from '@/lib/auth-context'
 import { deleteAccount, setActiveAccount } from '@/lib/account'
 import { supabase } from '@/lib/supabase'
+import { acceptedVersionLabel } from '@/lib/legal-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function ProfileScreen() {
@@ -15,6 +16,7 @@ export default function ProfileScreen() {
   const { data: accounts = [], isLoading } = useLinkedAccounts()
   const invalidate = useInvalidateLinkedAccounts()
   const [busy, setBusy] = useState<string | null>(null)
+  const acceptedLegalVersion = acceptedVersionLabel(user?.user_metadata?.accepted_legal_version)
 
   async function switchTo(puuid: string) {
     if (!user || busy) return
@@ -78,6 +80,17 @@ export default function ProfileScreen() {
       <Pressable style={styles.secondaryButton} onPress={() => router.push('/(app)/link')} accessibilityRole="button">
         <Text style={styles.secondaryText}>Add another Riot account</Text>
       </Pressable>
+
+      <View style={styles.divider} />
+
+      <Text style={styles.sectionTitle}>Legal</Text>
+      <Pressable style={styles.secondaryButton} onPress={() => router.push('/legal/terms')} accessibilityRole="link">
+        <Text style={styles.secondaryText}>Terms of Service</Text>
+      </Pressable>
+      <Pressable style={styles.secondaryButton} onPress={() => router.push('/legal/privacy')} accessibilityRole="link">
+        <Text style={styles.secondaryText}>Privacy Policy</Text>
+      </Pressable>
+      <Text style={styles.muted}>Accepted version {acceptedLegalVersion}</Text>
 
       <View style={styles.divider} />
 
