@@ -1,5 +1,5 @@
 import { colors } from '@/theme/tokens'
-import { FEW_GAMES, ROLE_LABEL, type AreaSubrowStat, type PerformanceProfile, type Streak } from '@lpp/shared'
+import { FEW_GAMES, ROLE_LABEL, scoreOn10, type AreaSubrowStat, type PerformanceProfile, type Streak } from '@lpp/shared'
 
 /** Copy and geometry for the Performance tab; pure so it is testable. */
 
@@ -47,12 +47,19 @@ export function fewGamesNote(p: PerformanceProfile): string | null {
   return p.games > 0 && p.games < FEW_GAMES ? p.headline : null
 }
 
-/** "−4": the average against the previous window of the same size (the player's own comparable). */
-export function previousDelta(p: PerformanceProfile): string | null {
-  if (p.avgScore === null || p.previousAvgScore === null) return null
-  const d = p.avgScore - p.previousAvgScore
-  return `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d)}`
+/** A 0–100 score on the 10 ladder ("4.7"); "—" when missing. */
+export function on10(score: number | null): string {
+  return score === null ? '—' : scoreOn10(score).toFixed(1)
 }
 
-/** Score at which every role target is met. */
-export const ON_TARGET_SCORE = 70
+/** "−0.4": the average against the previous window of the same size, on the 10 ladder. */
+export function previousDelta(p: PerformanceProfile): string | null {
+  if (p.avgScore === null || p.previousAvgScore === null) return null
+  const d = Math.round(p.avgScore - p.previousAvgScore) / 10
+  return `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(1)}`
+}
+
+/** "3 / 20": games in the window that reached the on-target score. */
+export function onTargetLabel(p: PerformanceProfile): string {
+  return p.games === 0 ? '—' : `${p.onTargetGames} / ${p.games}`
+}

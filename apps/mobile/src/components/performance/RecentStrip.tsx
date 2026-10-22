@@ -17,7 +17,7 @@ export function RecentStrip({ recent }: { recent: RecentGame[] }) {
           </View>
         ))}
       </View>
-      <Text style={styles.caption} maxFontSizeMultiplier={1.15}>Last {recent.length} games, oldest → newest · bar height = match score</Text>
+      <Text style={styles.caption} maxFontSizeMultiplier={1.15}>Last {recent.length} games, oldest → newest · bar height = score</Text>
     </View>
   )
 }

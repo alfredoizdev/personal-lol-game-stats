@@ -20,6 +20,13 @@ export const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JUNGLE: 'Jungle', 
 const ROLE_ORDER: Role[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']
 
 export const RECENT_N = 10
+/** Score at which every role target is met (ratio curve: 1.0 → 70); 7.0 on the 10 ladder. */
+export const ON_TARGET_SCORE = 70
+
+/** The 0–100 score on the owner's 1–10 ladder, one decimal (47 → 4.7; the tier "5+" is round(4.7)). */
+export function scoreOn10(score: number): number {
+  return Math.round(score) / 10
+}
 /** Lane needs the timeline of every game; the page never downloads it. */
 const AGGREGATED_AREAS: AreaKey[] = ['farming', 'combat', 'vision']
 const MATCHUP_MIN_GAMES = 2
@@ -47,6 +54,8 @@ export type PerformanceProfile = {
   previousN: number
   bestScore: number | null
   worstScore: number | null
+  /** Games in the window whose score reached ON_TARGET_SCORE. */
+  onTargetGames: number
   /** Oldest → newest, at most RECENT_N. */
   recent: RecentGame[]
   /** Current run of the same result from the newest game; n ≥ 2 only. */
@@ -102,6 +111,7 @@ export function performanceProfile(all: MatchSummary[], period: Period): Perform
     previousN: previous.length,
     bestScore: scores.length ? Math.max(...scores) : null,
     worstScore: scores.length ? Math.min(...scores) : null,
+    onTargetGames: scores.filter((v) => v >= ON_TARGET_SCORE).length,
     recent: games
       .slice(0, RECENT_N)
       .reverse()

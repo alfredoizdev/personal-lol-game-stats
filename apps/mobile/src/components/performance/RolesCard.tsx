@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { rating, ROLE_LABEL, type PerformanceProfile } from '@lpp/shared'
 import { RoleIcon } from '@/components/RoleIcon'
 import { ratingColor } from '@/lib/area-ui'
-import { roleRankNote } from '@/lib/performance-ui'
+import { on10, roleRankNote } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 /** One row per role played: games, win rate and the mean match score as a bar (spec 2.4). */
@@ -10,7 +10,7 @@ export function RolesCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Where you are strongest</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Bar = average match score · win rate beside it</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Bar = average match score on 10 · win rate beside it</Text>
       {profile.roles.map((r) => {
         const color = r.avgScore === null ? colors.muted : ratingColor(rating(r.avgScore))
         return (
@@ -30,7 +30,7 @@ export function RolesCard({ profile }: { profile: PerformanceProfile }) {
                 <View style={styles.track}>
                   <View style={[styles.fill, { width: `${r.avgScore ?? 0}%`, backgroundColor: color }]} />
                 </View>
-                <Text style={[styles.score, { color }]} maxFontSizeMultiplier={1.15}>{r.avgScore ?? '—'}</Text>
+                <Text style={[styles.score, { color }]} maxFontSizeMultiplier={1.15}>{on10(r.avgScore)}</Text>
               </View>
             </View>
           </View>
@@ -54,6 +54,6 @@ const styles = StyleSheet.create({
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   track: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },
-  score: { width: 28, textAlign: 'right', fontSize: font.caption + 1, fontWeight: '800' },
+  score: { width: 34, textAlign: 'right', fontSize: font.caption + 1, fontWeight: '800' },
   note: { color: colors.text, fontSize: font.caption + 1, paddingTop: space.sm },
 })

@@ -1,17 +1,18 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
-import { TIER_LABELS, tierBucket, type PerformanceProfile } from '@lpp/shared'
+import { ON_TARGET_SCORE, scoreOn10, TIER_LABELS, tierBucket, type PerformanceProfile } from '@lpp/shared'
 import { SemiDonut } from '@/components/SemiDonut'
-import { fewGamesNote, ON_TARGET_SCORE, previousDelta, recordLabel, streakLabel } from '@/lib/performance-ui'
+import { fewGamesNote, on10, onTargetLabel, previousDelta, recordLabel, streakLabel } from '@/lib/performance-ui'
 import { tierColor } from '@/lib/row-rating'
 import { colors, font, radius, space } from '@/theme/tokens'
 import { RecentStrip } from './RecentStrip'
 
+const TARGET_ON_10 = scoreOn10(ON_TARGET_SCORE).toFixed(1)
+
 /**
- * Average match score with three own comparables in one row (previous window,
- * best/worst, the 70 "on target" mark that also opens How it's scored), the
- * record, the streak and the last-10 strip. Kept to one visual + one line per
- * fact at the owner's request (2026-10-22).
+ * Average match score on the owner's 1–10 ladder, with three own comparables
+ * (previous window, best/worst, games on target), the record, the streak and
+ * the last-10 strip. One visual + one line per fact (owner, 2026-10-22).
  */
 export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
   const color = profile.tier ? tierColor(tierBucket(profile.tier)) : colors.muted
@@ -22,7 +23,7 @@ export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <View style={styles.top}>
-        <SemiDonut score={profile.avgScore} size={84} color={color} label="avg score" tick={ON_TARGET_SCORE} />
+        <SemiDonut score={profile.avgScore} text={on10(profile.avgScore)} size={84} color={color} label="avg score" tick={ON_TARGET_SCORE} />
         <View style={styles.text}>
           <Text style={styles.kicker} maxFontSizeMultiplier={1.15}>{profile.tier ? `${profile.tier} · ${TIER_LABELS[profile.tier]}` : 'Overall · —'}</Text>
           <Text style={styles.record} maxFontSizeMultiplier={1.15}>{recordLabel(profile)}</Text>
@@ -32,13 +33,13 @@ export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
       <View style={styles.facts}>
         <Fact value={delta ?? '—'} label={profile.previousN ? `vs previous ${profile.previousN}` : 'vs previous'} color={delta?.startsWith('+') ? colors.win : delta?.startsWith('−') ? colors.loss : colors.text} />
         <View style={styles.divider} />
-        <Fact value={profile.bestScore === null ? '—' : `${profile.bestScore} / ${profile.worstScore}`} label="best / worst" />
+        <Fact value={profile.bestScore === null ? '—' : `${on10(profile.bestScore)} / ${on10(profile.worstScore)}`} label="best / worst" />
         <View style={styles.divider} />
-        <Pressable style={styles.fact} onPress={() => router.push(`/(app)/(tabs)/matches/how-scored?role=${role}`)} accessibilityRole="link" accessibilityLabel="How it's scored">
-          <Text style={[styles.value, { color: colors.accent }]} maxFontSizeMultiplier={1.15}>{ON_TARGET_SCORE} ›</Text>
-          <Text style={styles.label} maxFontSizeMultiplier={1.15}>on target · how?</Text>
-        </Pressable>
+        <Fact value={onTargetLabel(profile)} label={`games at ${TARGET_ON_10}+`} />
       </View>
+      <Pressable onPress={() => router.push(`/(app)/(tabs)/matches/how-scored?role=${role}`)} accessibilityRole="link" hitSlop={6}>
+        <Text style={styles.link} maxFontSizeMultiplier={1.15}>Score on 10 · {TARGET_ON_10} = every role target met · How it's scored ›</Text>
+      </Pressable>
       {few ? <Text style={styles.few} maxFontSizeMultiplier={1.15}>{few}</Text> : null}
       <RecentStrip recent={profile.recent} />
     </View>
@@ -55,7 +56,7 @@ function Fact({ value, label, color = colors.text }: { value: string; label: str
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
+  card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.sm },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   text: { flex: 1, gap: 4 },
   kicker: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
@@ -66,5 +67,6 @@ const styles = StyleSheet.create({
   value: { fontSize: font.body + 1, fontWeight: '800' },
   label: { color: colors.muted, fontSize: font.caption - 2 },
   divider: { width: 1, height: 28, backgroundColor: colors.border },
+  link: { color: colors.muted, fontSize: font.caption - 2 },
   few: { color: colors.warn, fontSize: font.caption + 1 },
 })

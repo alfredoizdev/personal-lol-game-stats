@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine, Role } from '../src/match-v5'
 import { analyzeMatch } from '../src/analysis/areas'
 import { performanceTier } from '../src/analysis/performance-tier'
-import { performanceProfile, PERIODS, RECENT_N, ROLE_LABEL } from '../src/performance/profile'
+import { ON_TARGET_SCORE, performanceProfile, PERIODS, RECENT_N, ROLE_LABEL, scoreOn10 } from '../src/performance/profile'
 import { game, line } from './analysis-fixtures'
 
 /** The worked ADC example (score 82) and a weak game (single digits). */
@@ -29,7 +29,7 @@ const loss = (me: Partial<PlayerLine> = WEAK, extra: Partial<MatchSummary> = {},
 describe('performanceProfile — overview', () => {
   it('is empty and honest with no games', () => {
     const p = performanceProfile([], 20)
-    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], matchupGames: 0, previousAvgScore: null, previousN: 0, bestScore: null, worstScore: null })
+    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], matchupGames: 0, previousAvgScore: null, previousN: 0, bestScore: null, worstScore: null, onTargetGames: 0 })
     expect(p.headline).toBe("No Summoner's Rift games loaded yet.")
     expect(PERIODS).toEqual([20, 50, 100])
   })
@@ -66,6 +66,17 @@ describe('performanceProfile — overview', () => {
     const only = performanceProfile(recent, 20)
     expect(only.previousAvgScore).toBeNull()
     expect(only.previousN).toBe(0)
+  })
+  it('counts the games that reached the on-target score (70 = every role target met)', () => {
+    expect(ON_TARGET_SCORE).toBe(70)
+    const p = performanceProfile([win(), win(), loss()], 20)
+    expect(p.onTargetGames).toBe(2)
+  })
+  it('scoreOn10 is the 0–100 score on the 1–10 ladder with one decimal', () => {
+    expect(scoreOn10(47)).toBe(4.7)
+    expect(scoreOn10(100)).toBe(10)
+    expect(scoreOn10(0)).toBe(0)
+    expect(scoreOn10(64.6)).toBe(6.5)
   })
   it('recent is oldest → newest, capped at RECENT_N', () => {
     const all = Array.from({ length: 12 }, () => win())
