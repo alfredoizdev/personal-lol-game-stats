@@ -9,9 +9,10 @@ signed-in player's own data, linked by Riot ID).
 ## Product
 
 - **Name:** LanePulse
-- **Website:** **[owner]** the Vercel URL of `apps/site` (for example
-  `https://lanepulse.vercel.app`); Terms at `/terms.html`, Privacy at
-  `/privacy.html`.
+- **Website:** https://lanepulse.vercel.app (deployed 2026-10-22; a custom
+  domain can be added later without changing the site). Terms:
+  https://lanepulse.vercel.app/terms.html · Privacy:
+  https://lanepulse.vercel.app/privacy.html
 - **Contact:** alfredodevelop@gmail.com
 - **Platforms:** iOS and Android app (Expo / React Native); macOS desktop
   companion (Electron) that only runs while League is open.
@@ -104,7 +105,7 @@ Existing captures: `docs/screenshots/phase2-matches.png`,
 
 ## Submission checklist
 
-- [ ] Site deployed and URL pasted above.
+- [x] Site deployed and URL pasted above (Vercel project `lanepulse`).
 - [ ] Legal entity reviewed (`packages/shared/src/legal.ts`, `LEGAL_ENTITY`).
 - [ ] Regions trimmed or confirmed.
 - [ ] Screenshots 1–9 taken with the owner's account.

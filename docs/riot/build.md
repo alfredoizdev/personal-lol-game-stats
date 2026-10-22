@@ -53,16 +53,18 @@ the link EAS prints (device must be registered: `npx eas device:create`).
 
 ## Public site (Vercel)
 
+Live at https://lanepulse.vercel.app (Vercel project `lanepulse`, first
+deployed 2026-10-22). The site is deployed **prebuilt**: `build.mjs` runs
+locally (it imports `packages/shared/src/legal.ts`, outside the site folder,
+which a Vercel-side build would not see) and the static `dist/` is uploaded.
+
 ```bash
 cd ~/Desktop/lol-app-v-2/apps/site
-pnpm build          # writes dist/
-npx vercel deploy --prod
+pnpm build                      # writes dist/ (git-ignored, holds the Vercel link)
+cd dist && npx vercel deploy --prod --yes
 ```
 
-On the first deploy Vercel asks to create a project: Root Directory
-`apps/site`, Build Command `node build.mjs`, Output Directory `dist`
-(already in `vercel.json`). Because the build imports
-`packages/shared/src/legal.ts`, keep "Include source files outside of the
-Root Directory" enabled (default for monorepos) and Node 22.18 or newer
-(Project Settings → Node.js Version). Note the resulting URL for the Riot
-application (`docs/riot/application.md`).
+If `dist/.vercel` is missing (fresh clone), link first:
+`cd dist && npx vercel link --yes --project lanepulse`. The hashed deployment
+URL is protected by Vercel SSO; share the alias `https://lanepulse.vercel.app`.
+A custom domain goes in the Vercel dashboard → Project → Domains.
