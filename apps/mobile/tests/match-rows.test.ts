@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { toRowStates, type DetailResult } from '../src/lib/match-rows'
-import { matchKeys } from '../src/hooks/useRecentMatches'
+import { matchKeys } from '../src/lib/match-keys'
 import { RiotApiError } from '../src/lib/riot-api'
 import type { MatchV5 } from '@lpp/shared'
 

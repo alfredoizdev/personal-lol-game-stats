@@ -6,10 +6,8 @@ import { toRowStates, type DetailResult, type MatchRowState } from '@/lib/match-
 import { supabase } from '@/lib/supabase'
 import { INITIAL_PAGE, nextPage } from '@/lib/paging'
 
-export const matchKeys = {
-  ids: (puuid: string | undefined, count: number) => ['match-ids', puuid, count] as const,
-  detail: (matchId: string) => ['match-detail', matchId] as const,
-}
+import { matchKeys } from '@/lib/match-keys'
+export { matchKeys }
 
 export type { MatchRowState }
 
