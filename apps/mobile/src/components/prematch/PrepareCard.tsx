@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { banSuggestion, championSummary, lastRole, playedChampions, toughestMatchups, type Role } from '@lpp/shared'
 import { useChampionList } from '@/hooks/useChampionList'
@@ -36,9 +36,12 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   useEffect(() => {
     if (restored && role === null && history.summaries.length) setRole(lastRole(history.summaries))
   }, [restored, role, history.summaries])
-  // No champion picked yet: start from the one you play most in this role (you can change it).
+  // Role change (or nothing picked yet): jump to the champion you play most in that role; the picker still overrides.
+  const lastAutoRole = useRef<Role | null>(null)
   useEffect(() => {
-    if (!restored || championId !== null || role === null) return
+    if (!restored || role === null) return
+    if (lastAutoRole.current === role && championId !== null) return
+    lastAutoRole.current = role
     const top = playedChampions(history.summaries, role)[0]
     if (top) setChampionId(top.championId)
   }, [restored, championId, role, history.summaries])
