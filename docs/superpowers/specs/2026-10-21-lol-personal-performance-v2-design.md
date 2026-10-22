@@ -131,6 +131,9 @@ type LivePlayer = {
 }
 ```
 
+Campos añadidos en la Fase 4 (visibles en el marcador del juego, sin datos de otros jugadores): `teamKills: number` (kills del equipo propio, para KP) y `items: number[]` en cada `LivePlayer` (siete huecos fijos, 0 = vacío, el séptimo es el trinket).
+
+
 Oponente de línea en vivo: jugador del equipo contrario con la misma `position` del `playerlist`. Si no hay `position` (ARAM, modos) o hay más de un candidato, `opponent = null` y la pantalla muestra solo tus stats. No se intenta adivinar.
 
 ### 6.4 Datos nuevos

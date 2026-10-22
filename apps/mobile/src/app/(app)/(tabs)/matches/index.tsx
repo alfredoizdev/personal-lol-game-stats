@@ -32,7 +32,7 @@ export default function MatchesScreen() {
           <Text style={styles.subtitle}>Recent performance</Text>
         </View>
         {account ? (
-          <Pressable onPress={() => router.push('/(app)/profile')} accessibilityRole="button" accessibilityLabel="Profile" hitSlop={8}>
+          <Pressable onPress={() => router.push('/(app)/(tabs)/profile')} accessibilityRole="button" accessibilityLabel="Profile" hitSlop={8}>
             <SummonerAvatar account={account} size={52} />
           </Pressable>
         ) : null}
@@ -70,7 +70,7 @@ const SKELETON: MatchRowState[] = Array.from({ length: 5 }, (_, i) => ({ matchId
 
 function Row({ item, now }: { item: MatchRowState; now: number }) {
   if (item.status === 'ready') {
-    return <MatchRow summary={item.summary} now={now} onPress={() => router.push(`/(app)/match/${item.matchId}`)} />
+    return <MatchRow summary={item.summary} now={now} onPress={() => router.push(`/(app)/(tabs)/matches/${item.matchId}`)} />
   }
   if (item.status === 'error') {
     return (

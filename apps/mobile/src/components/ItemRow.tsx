@@ -3,11 +3,11 @@ import { itemIconUrl } from '@lpp/shared'
 import { useDdragonVersion } from '@/hooks/useDdragonVersion'
 import { colors } from '@/theme/tokens'
 
-export function ItemRow({ items, trinket, size = 26 }: { items: number[]; trinket: number; size?: number }) {
+export function ItemRow({ items, trinket, size = 26, wrap = false }: { items: number[]; trinket: number; size?: number; wrap?: boolean }) {
   const version = useDdragonVersion()
   const slots = [...items.slice(0, 6), trinket]
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, wrap && { flexWrap: 'wrap', justifyContent: 'center', width: size * 4 + 3 * 4 }]}>
       {slots.map((id, i) => (
         <View
           key={i}

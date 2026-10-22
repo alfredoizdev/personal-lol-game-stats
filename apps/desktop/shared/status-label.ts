@@ -1,4 +1,6 @@
 import type { LeagueStatus } from '@lpp/shared'
+import { formatDuration } from '@lpp/shared'
+import type { LiveState } from '../electron/league/live-poller'
 
 /** Human label for the collector's League status. Used by the tray tooltip and the renderer. */
 export function statusLabel(status: LeagueStatus): string {
@@ -11,5 +13,26 @@ export function statusLabel(status: LeagueStatus): string {
       return `Connected as ${status.summoner.gameName}#${status.summoner.tagLine}`
     case 'ERROR':
       return `Error: ${status.reason}`
+  }
+}
+
+const WAITING_LABEL: Partial<Record<string, string>> = {
+  Matchmaking: 'Searching for a match…',
+  ReadyCheck: 'Match found — accept it!',
+  ChampSelect: 'Champion select',
+  GameStart: 'Loading into the game…',
+  Lobby: 'In lobby',
+}
+
+export function liveLabel(state: LiveState): string {
+  switch (state.kind) {
+    case 'idle':
+      return 'Not in a game'
+    case 'waiting':
+      return WAITING_LABEL[state.phase] ?? 'Waiting for a match'
+    case 'live':
+      return `In game as ${state.snapshot.me.championName} · ${state.snapshot.gameTimeSeconds === null ? '--:--' : formatDuration(state.snapshot.gameTimeSeconds)}`
+    case 'ended':
+      return 'Match ended'
   }
 }

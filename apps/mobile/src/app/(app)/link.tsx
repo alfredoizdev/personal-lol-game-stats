@@ -50,7 +50,7 @@ export default function LinkScreen() {
     }
     if (user) await setActiveAccount(supabase, user.id, result.puuid).catch(() => {})
     await invalidate()
-    router.replace(existing ? '/(app)/profile' : '/(app)/matches')
+    router.replace(existing ? '/(app)/(tabs)/profile' : '/(app)/(tabs)/matches')
   }
 
   return (

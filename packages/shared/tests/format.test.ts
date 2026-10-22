@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDuration, formatKda, relativeTime } from '../src/format'
+import { formatDuration, formatKda, relativeTime, relativeTimeShort } from '../src/format'
 import { queueLabel } from '../src/queue-label'
 
 describe('formatDuration', () => {
@@ -39,5 +39,16 @@ describe('queueLabel', () => {
     expect(queueLabel(420)).toBe('Ranked Solo')
     expect(queueLabel(450)).toBe('ARAM')
     expect(queueLabel(9999)).toBe('Other')
+  })
+})
+
+describe('relativeTimeShort', () => {
+  const now = Date.parse('2026-10-22T12:00:00Z')
+  it('stays on one short token', () => {
+    expect(relativeTimeShort('2026-10-22T11:59:40Z', now)).toBe('now')
+    expect(relativeTimeShort('2026-10-22T11:48:00Z', now)).toBe('12m ago')
+    expect(relativeTimeShort('2026-10-22T02:00:00Z', now)).toBe('10h ago')
+    expect(relativeTimeShort('2026-10-19T12:00:00Z', now)).toBe('3d ago')
+    expect(relativeTimeShort('2026-10-01T12:00:00Z', now)).toBe('Oct 1')
   })
 })

@@ -37,3 +37,9 @@ export function profileIconUrl(version: string, profileIconId: number): string {
 }
 
 export const DDRAGON_VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json'
+
+/** Tall loading-screen art (308×560), versionless on the CDN. */
+export function championLoadingArtUrl(championName: string): string {
+  return `${CDN}/img/champion/loading/${championImageKey(championName)}_0.jpg`
+}
+

@@ -123,3 +123,15 @@ export async function lcuGetLobbyQueueId(lockfile: LockfileData): Promise<number
   const id = pickNumber((gameConfig as Record<string, unknown>).queueId)
   return Number.isFinite(id) && id > 0 ? id : null
 }
+
+/** queueId of the game in progress (`/lol-gameflow/v1/session` → gameData.queue.id), or null. */
+export async function lcuGetCurrentQueueId(lockfile: LockfileData): Promise<number | null> {
+  const raw = await lcuGet<unknown>(lockfile, '/lol-gameflow/v1/session').catch(() => null)
+  if (!raw || typeof raw !== 'object') return null
+  const gameData = (raw as Record<string, unknown>).gameData
+  if (!gameData || typeof gameData !== 'object') return null
+  const queue = (gameData as Record<string, unknown>).queue
+  if (!queue || typeof queue !== 'object') return null
+  const id = pickNumber((queue as Record<string, unknown>).id)
+  return Number.isFinite(id) && id > 0 ? id : null
+}
