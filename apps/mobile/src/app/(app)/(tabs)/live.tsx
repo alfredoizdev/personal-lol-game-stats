@@ -6,12 +6,15 @@ import { LiveHero } from '@/components/LiveHero'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
 import { LiveStatTiles } from '@/components/LiveStatTiles'
 import { LiveTrendChart } from '@/components/LiveTrendChart'
+import { PrepareCard } from '@/components/prematch/PrepareCard'
+import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useLiveSnapshot } from '@/hooks/useLiveSnapshot'
 import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function LiveScreen() {
   const { snapshot, state, connected } = useLiveSnapshot()
+  const { data: account } = useLinkedAccount()
   const [trend, setTrend] = useState<TrendPoint[]>([])
 
   useEffect(() => {
@@ -21,11 +24,14 @@ export default function LiveScreen() {
   return (
     <Screen title="Live Match" subtitle="In-game performance">
       {state === 'waiting' || !snapshot ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Waiting for a match</Text>
-          <Text style={styles.muted}>Keep the LanePulse collector open on your Mac. Your stats appear here as soon as a game starts.</Text>
-          {!connected ? <Text style={styles.warn}>Not connected to live updates yet…</Text> : null}
-        </View>
+        <>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Waiting for a match</Text>
+            <Text style={styles.muted}>Keep the LanePulse collector open on your Mac. Your stats appear here as soon as a game starts.</Text>
+            {!connected ? <Text style={styles.warn}>Not connected to live updates yet…</Text> : null}
+          </View>
+          {account ? <PrepareCard account={account} /> : null}
+        </>
       ) : (
         <>
           <LiveHero

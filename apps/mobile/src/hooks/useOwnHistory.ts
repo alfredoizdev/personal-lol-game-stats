@@ -40,6 +40,7 @@ export function useOwnHistory(
 
   useEffect(() => {
     if (!running || !account) return
+    if (ids.length === 0) return // ids still loading: stay "running", this effect re-runs when they arrive
     let cancelled = false
     const run = async () => {
       try {
@@ -63,7 +64,7 @@ export function useOwnHistory(
     return () => {
       cancelled = true
     }
-  }, [running])
+  }, [running, ids.length])
 
   const start = useCallback(() => {
     setError(null)
