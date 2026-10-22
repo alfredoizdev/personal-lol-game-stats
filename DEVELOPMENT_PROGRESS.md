@@ -5,7 +5,7 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 ## Phases
 
 - [x] Phase 1 — Foundation (monorepo, shared package, Electron collector, Expo app with login and tabs) — code complete 2026-10-21; credentialed acceptance pending (see below)
-- [ ] Phase 2 — Recent Matches
+- [x] Phase 2 — Recent Matches — code complete 2026-10-21, verified with real data
 - [ ] Phase 3 — Match Analysis v1
 - [ ] Phase 4 — Live companion
 - [ ] Phase 5 — Pre-match focus
@@ -22,6 +22,23 @@ Plan: `docs/superpowers/plans/2026-10-21-phase-1-foundation.md`
 - [x] Task 5 — Expo app with sign-in and sign-up
 - [x] Task 6 — Riot ID link screen and the two tabs
 - [x] Task 7 — Phase 1 acceptance and progress report
+
+## Phase 2 verification (2026-10-21)
+
+Plan: `docs/superpowers/plans/2026-10-21-phase-2-recent-matches.md`. Screenshot: `docs/screenshots/phase2-matches.png`.
+
+Verified with the owner's account and a renewed dev key:
+- Matches tab lists real games (champion, role, K/D/A, KDA ratio, CS/min, duration, time ago, items) with the "Last 10 Games" header (Avg KDA, CS/min, Win Rate).
+- 10 games first, +5 per scroll-to-end; only the visible window fetches `match-detail`; at most 4 detail calls in flight.
+- Match Review opens from a row: hero card, four stats, Lane Matchup (you vs lane opponent) — confirmed by the owner.
+- Expired-key state shown correctly (`KEY_INVALID` → "Riot key expired" + renewal hint) before the key was renewed.
+- Identity: the owner's linked account stores the LCU 36-char uuid; `summarizeMatch` now falls back to Riot ID (gameName#tagLine) so matches resolve.
+- Tab bar with icons (Matches / Live / Profile), centered, bottom safe-area inset for Android nav bars.
+- `pnpm -r test`: shared 42, desktop 42, mobile 56. Typecheck and lint clean. No `RGAPI-` in sources.
+
+Riot budget: list = 1 `match-list-ids` (90 s server cache) + ≤10 `match-detail` on first paint (+5 per page); every detail is cached forever in `match_details_cache`, so reopening a match costs 0 Riot calls.
+
+Limitations: no timeline, no analysis chips or "Needs work" (Phase 3); no champion filter; Android layout not yet run on a device/emulator (insets handled, visual check pending).
 
 ## Phase 1 verification (2026-10-21)
 
