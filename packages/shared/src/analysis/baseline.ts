@@ -3,7 +3,7 @@
  * the same role (spec 2.7, 6.2). Context only — never moves a score.
  */
 import type { MatchSummary, Role } from '../match-v5'
-import { metricsOf } from './areas'
+import { metricsOf } from './metrics'
 import { ANALYZABLE_QUEUES } from './targets'
 
 export type Baseline = {

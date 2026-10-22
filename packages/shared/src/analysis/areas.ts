@@ -3,13 +3,16 @@
  * Scores come only from ROLE_TARGETS; deltas vs the opponent and vs your own
  * baseline are context. Pure: no I/O, no React.
  */
-import type { MatchSummary, PlayerLine, Role } from '../match-v5'
+import type { MatchSummary, Role } from '../match-v5'
 import type { Baseline } from './baseline'
 import { BASELINE_MIN_GAMES } from './baseline'
 import { rating, scoreDiff, scoreRatio, weightedMean, type Rating } from './score'
 import { areaSentence, headline, type SentenceSubrow } from './sentences'
 import { ANALYZABLE_QUEUES, AREA_WEIGHTS, DIFF_CURVES, PHASES, ROLE_TARGETS, SUBROW_WEIGHTS, type AreaKey } from './targets'
 import { laneDiffAt, phaseCs, type TimelineSeries } from './timeline-series'
+import { metricsOf, type Metrics } from './metrics'
+
+export { metricsOf, type Metrics }
 
 export type Delta = { vsOpponent: number | null; vsYou: number | null }
 
@@ -52,35 +55,12 @@ export type MatchAnalysis =
 
 export type AnalysisInput = { summary: MatchSummary; series: TimelineSeries | null; baseline: Baseline | null }
 
-export type Metrics = {
-  csPerMin: number | null
-  kpPct: number | null
-  deathsPer10: number | null
-  visionPerMin: number | null
-  wardsPerMin: number | null
-  damagePerMin: number | null
-}
-
 const AREA_LABEL: Record<AreaKey, string> = { farming: 'Farming', combat: 'Combat', vision: 'Vision', lane: 'Lane' }
-const MIN_SEC_FOR_RATE = 60
 
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
 const fmt = (n: number | null, d: number) => (n === null ? '—' : n.toFixed(d))
 const signed = (n: number) => (n < 0 ? `−${Math.abs(Math.round(n))}` : `+${Math.round(n)}`)
 const diff = (a: number | null, b: number | null, d = 2) => (a === null || b === null ? null : round(a - b, d))
-
-export function metricsOf(line: PlayerLine, durationSec: number, teamKills: number): Metrics {
-  const minutes = durationSec / 60
-  const ok = durationSec >= MIN_SEC_FOR_RATE
-  return {
-    csPerMin: line.csPerMin,
-    kpPct: teamKills > 0 ? Math.round(((line.kills + line.assists) / teamKills) * 100) : null,
-    deathsPer10: ok ? round(line.deaths / (durationSec / 600), 2) : null,
-    visionPerMin: ok ? round(line.visionScore / minutes, 2) : null,
-    wardsPerMin: ok ? round(line.wardsPlaced / minutes, 2) : null,
-    damagePerMin: ok ? Math.round(line.damageToChampions / minutes) : null,
-  }
-}
 
 export function analyzeMatch(input: AnalysisInput): MatchAnalysis {
   const { summary, series } = input
