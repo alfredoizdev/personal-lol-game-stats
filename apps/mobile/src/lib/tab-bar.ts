@@ -1,4 +1,4 @@
-export type TabName = 'matches' | 'live' | 'profile'
+export type TabName = 'matches' | 'live' | 'performance' | 'profile'
 
 /** Tab routes that must not show the tab bar (none today: `link` lives outside the tabs). */
 const HIDDEN: readonly string[] = []
@@ -9,6 +9,6 @@ export function tabBarHiddenFor(routeName: string): boolean {
 
 /** Which tab to highlight for a focused tab route; anything unknown maps to Matches. */
 export function activeTabFor(routeName: string): TabName {
-  if (routeName === 'live' || routeName === 'profile') return routeName
+  if (routeName === 'live' || routeName === 'performance' || routeName === 'profile') return routeName
   return 'matches'
 }

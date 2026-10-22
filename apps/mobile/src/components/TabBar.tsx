@@ -6,6 +6,7 @@ import { activeTabFor, tabBarHiddenFor } from '@/lib/tab-bar'
 const TABS: Record<string, { label: string; icon: (color: string) => React.ReactNode }> = {
   matches: { label: 'Matches', icon: (c) => <MaterialCommunityIcons name="sword-cross" size={24} color={c} /> },
   live: { label: 'Live', icon: (c) => <Ionicons name="radio-outline" size={24} color={c} /> },
+  performance: { label: 'Performance', icon: (c) => <Ionicons name="stats-chart-outline" size={24} color={c} /> },
   profile: { label: 'Profile', icon: (c) => <Ionicons name="person-outline" size={24} color={c} /> },
 }
 

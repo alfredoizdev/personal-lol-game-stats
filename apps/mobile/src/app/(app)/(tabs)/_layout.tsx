@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router'
 import { TabBar } from '@/components/TabBar'
 import { colors } from '@/theme/tokens'
 
-/** The three main tabs. Match Review lives inside the Matches tab's own stack. */
+/** The four main tabs. Match Review lives inside the Matches tab's own stack. */
 export default function TabsLayout() {
   return (
     <Tabs
@@ -11,6 +11,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="matches" options={{ title: 'Matches' }} />
       <Tabs.Screen name="live" options={{ title: 'Live' }} />
+      <Tabs.Screen name="performance" options={{ title: 'Performance' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   )
