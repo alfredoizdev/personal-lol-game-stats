@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { formatDuration, formatKda, relativeTimeShort, type MatchSummary } from '@lpp/shared'
-import { ChampionPortrait } from './ChampionPortrait'
+import { PortraitWithBadges } from './PortraitWithBadges'
 import { ItemRow } from './ItemRow'
 import { resultWord } from './MatchRow'
+import { resultOf } from '@/lib/result-badge'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 const ROLE_LABEL: Record<string, string> = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' }
@@ -23,9 +24,8 @@ export function MatchHero({ summary, now }: { summary: MatchSummary; now: number
   return (
     <View style={styles.card}>
       <View style={styles.top}>
-        <ChampionPortrait championName={me.championName} size={84} ring={r.ring} />
+        <PortraitWithBadges championName={me.championName} size={84} ring={r.ring} result={resultOf(summary)} role={me.role} />
         <View style={styles.titleBlock}>
-          <Text style={[styles.result, { color: r.color }]}>{r.text}</Text>
           <Text style={styles.champ}>{me.championName}</Text>
           <Text style={styles.meta}>{me.role ? ROLE_LABEL[me.role] : summary.gameMode}</Text>
           <View style={styles.items}>
@@ -50,8 +50,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
   top: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
   titleBlock: { flex: 1, gap: 2 },
-  result: { fontSize: font.title - 8, fontWeight: '800' },
-  champ: { color: colors.text, fontSize: font.body, fontWeight: '600' },
+  champ: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
   meta: { color: colors.muted, fontSize: font.caption + 1 },
   items: { marginTop: space.sm },
   statsRow: { flexDirection: 'row', alignItems: 'flex-start', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space.md },

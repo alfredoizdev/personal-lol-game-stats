@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { formatDuration, formatKda, relativeTime, type MatchSummary } from '@lpp/shared'
-import { ChampionPortrait } from './ChampionPortrait'
+import { PortraitWithBadges } from './PortraitWithBadges'
 import { ItemRow } from './ItemRow'
+import { resultOf } from '@/lib/result-badge'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 const ROLE_LABEL: Record<string, string> = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' }
@@ -16,11 +17,10 @@ export function MatchRow({ summary, now, onPress }: { summary: MatchSummary; now
   const me = summary.me
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <ChampionPortrait championName={me.championName} size={60} ring={r.ring} />
+      <PortraitWithBadges championName={me.championName} size={60} ring={r.ring} result={resultOf(summary)} role={me.role} />
       <View style={styles.main}>
         <View style={styles.topRow}>
           <View style={styles.left}>
-            <Text style={[styles.result, { color: r.color }]}>{r.text}</Text>
             <Text style={styles.champ} numberOfLines={1}>{me.championName}</Text>
             <Text style={styles.meta} numberOfLines={1}>{me.role ? ROLE_LABEL[me.role] : summary.queueLabel}</Text>
           </View>
@@ -63,8 +63,7 @@ const styles = StyleSheet.create({
   colKda: { width: 62, alignItems: 'center' },
   colCs: { width: 46, alignItems: 'center' },
   colTime: { width: 66, alignItems: 'center' },
-  result: { fontSize: font.body, fontWeight: '800' },
-  champ: { color: colors.text, fontSize: font.caption + 1 },
+  champ: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
   meta: { color: colors.muted, fontSize: font.caption - 1 },
   big: { color: colors.text, fontSize: font.caption + 2, fontWeight: '700', letterSpacing: -0.3 },
 })
