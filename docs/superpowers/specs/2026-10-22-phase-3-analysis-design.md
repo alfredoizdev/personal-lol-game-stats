@@ -89,6 +89,12 @@ negativo rojo). Si no hay timeline, el gráfico no se muestra y la tarjeta lo di
    la tarjeta del área elegida (semi-donut grande, subfilas, frase, gráfico).
    Se abre en el área con peor nota.
 4. "Lane Matchup" (la tabla actual) plegada por defecto bajo "Ver comparación completa".
+   **Cada fila lleva una barra de dos lados** (petición del owner, 2026-10-22):
+   cian a la izquierda para ti, rojo a la derecha para el enemigo, y el lado
+   del que lo hizo mejor ocupa más espacio en proporción (8 kills contra 14 →
+   el rojo ocupa 14/22). Es la misma `CompareBar` de la pestaña Live, con el
+   delta al lado de la etiqueta. En métricas "menos es mejor" (muertes) la
+   proporción se invierte para que el lado más grande siga siendo el mejor.
 5. Enlace "¿Cómo se calcula?" que abre una hoja con los objetivos de tu rol, los
    pesos y la N de tu media. Es la misma información de `docs/ANALYSIS.md`.
 6. Disclaimer de Riot.
@@ -180,9 +186,10 @@ cierro yo (son mis decisiones, el owner puede cambiarlas); la quinta es del owne
    (`supabase/functions/match-timeline/index.ts`,
    `supabase/migrations/<fecha>_match_timeline_cache.sql`) y se copian al repo
    de RiftLens en el mismo ciclo, como dice la sección 3 del diseño general.
-   **Pendiente del owner:** quién despliega al proyecto compartido de Supabase
-   (función + migración). Propuesta: lo hago yo desde el repo de RiftLens con
-   la sesión del CLI ya existente, avisando antes del comando exacto.
+   **Decidido por el owner (2026-10-22, "si hazlo"):** el builder despliega al
+   proyecto compartido de Supabase desde el repo de RiftLens con la sesión del
+   CLI ya existente, mostrando el comando exacto antes de ejecutarlo. El
+   documento completo quedó aprobado en esa misma respuesta.
 4. **Lane por rol.** `UTILITY`: solo oro y XP a 10/15 (nada de CS). `JUNGLE`:
    CS (incluye monstruos), oro y XP contra el jungla enemigo. Resto: CS, oro y XP.
    Las plantillas de frase son por rol.
