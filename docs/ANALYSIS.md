@@ -44,6 +44,13 @@ them when the other is missing).
 
 **Rating words:** Poor < 40, Fair 40–59, Good 60–79, Great ≥ 80.
 
+**Match rating ladder** (shown as "9+" on list rows and "9+ · Dominant" on the
+overall card; same ladder RiftLens used): 10+ Legendary Carry ≥ 95 · 9+ Dominant
+≥ 85 · 8+ Strong Game ≥ 75 · 7+ Reliable ≥ 65 · 6+ Average ≥ 55 · 5+ Needs Work
+≥ 45 · 4+ Weak ≥ 35 · 3+ Struggling ≥ 25 · 2+ Critical ≥ 15 · 1+ Disaster below.
+List rows rate from the match data alone (no timeline, no baseline), so the
+review's score, which adds Lane and the phases, can differ by a few points.
+
 ## 4. Sub-rows and weights
 
 | Area | Scored sub-rows (weight) | Context rows (never scored) |

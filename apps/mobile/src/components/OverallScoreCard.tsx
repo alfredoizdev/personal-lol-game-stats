@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
-import type { MatchAnalysis } from '@lpp/shared'
+import { performanceTier, TIER_LABELS, type MatchAnalysis } from '@lpp/shared'
 import { ratingColor } from '@/lib/area-ui'
 import { SemiDonut } from './SemiDonut'
 import { colors, font, radius, space } from '@/theme/tokens'
@@ -14,7 +14,9 @@ export function OverallScoreCard({ analysis, baselineLoading }: { analysis: Extr
     <View style={styles.card}>
       <SemiDonut score={analysis.overall} size={84} color={ratingColor(analysis.overallRating)} />
       <View style={styles.text}>
-        <Text style={styles.kicker} maxFontSizeMultiplier={1.15}>Overall · {analysis.overallRating ?? '—'}</Text>
+        <Text style={styles.kicker} maxFontSizeMultiplier={1.15}>
+          {analysis.overall === null ? 'Overall · —' : `${performanceTier(analysis.overall)} · ${TIER_LABELS[performanceTier(analysis.overall)]}`}
+        </Text>
         <Text style={styles.headline} maxFontSizeMultiplier={1.15}>{analysis.headline}</Text>
         <Text style={styles.note} maxFontSizeMultiplier={1.15}>{note}</Text>
       </View>
