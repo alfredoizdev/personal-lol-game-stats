@@ -123,3 +123,14 @@ Timeline CS: 105 at 14 min, 170 at 25 min, 210 at 30 min. Lane diffs: CS +5 @10,
 - A timeline frame that lacks a participant is `null` in the reduced series and
   simply drops out (no lead or deficit is invented); phase CS/min divides by the
   minutes the two frames really cover.
+
+## 8. Matches header donuts
+
+The "Last 10 Games" card on the Matches tab draws its three stats as semi-donuts
+(`apps/mobile/src/lib/header-donuts.ts`), over the same window as `aggregateMatches`.
+**Avg KDA:** the 10-game mean KDA against a fixed target of 3.0 through the ratio
+curve of section 3 (3.0 → 70, Good), rated with the usual Poor/Fair/Good/Great bands.
+**CS/min:** mean of the per-game `scoreRatio(csPerMin, ROLE_TARGETS[role].csPerMin)`;
+support games have no CS target and drop out (null when only supports were played).
+**Win rate:** the arc is the rate itself; the word uses its own bands: < 40 Poor,
+40–49 Fair, 50–59 Good, ≥ 60 Great. Arc colour = rating colour; muted when null.
