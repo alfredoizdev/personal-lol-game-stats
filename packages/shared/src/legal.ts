@@ -94,11 +94,11 @@ export const PRIVACY_SECTIONS: readonly LegalSection[] = [
     heading: 'Data we collect',
     paragraphs: [
       'Account: your email address, a hashed password, your display name and the date you accepted the terms. Supabase, our hosting provider, also keeps the session tokens that sign you in.',
-      'Riot account: the Riot ID (game name and tag line), the account identifier (puuid) Riot assigns to it, the region, and the summoner icon and level, for each Riot ID you link. We fetch these from the Riot Games API when you link an account.',
+      'Riot account: the Riot ID (game name and tag line), the account identifier (puuid) Riot assigns to it, the region and the profile icon, for each Riot ID you link. We fetch these from the Riot Games API when you link an account.',
       'Match data: for the games played on your linked Riot IDs, the match details and, when you open a review, the match timeline, exactly as the Riot Games API returns them. These are cached by match id, not by user, because the same game appears in the history of ten players.',
       'Live game: while the desktop companion runs during a game, it sends a snapshot of your own live stats (CS, kills, deaths, assists, gold, vision, game time) to your phone through a private channel. Snapshots are relayed, not stored; when the game ends they are gone.',
       'Goals and settings: the goal you set before a game, your active Riot ID, and your notification preferences.',
-      'Push notifications: if you turn on goal updates, the push token Expo assigns to your phone, the platform and the app version, so the desktop companion can send status messages to your phone.',
+      'Push notifications: only if you turn on goal updates in Profile, the push token Expo assigns to your phone, the platform and the app version, so the desktop companion can send status messages to your phone. Turning it off revokes the token.',
       'Technical: standard request logs kept by Supabase (IP address, timestamps, request path) for security and debugging.',
     ],
   },
@@ -112,7 +112,7 @@ export const PRIVACY_SECTIONS: readonly LegalSection[] = [
   {
     heading: 'Where it is stored',
     paragraphs: [
-      'Your data is stored in a Supabase project hosted in the United States. Match data and live snapshots are also cached on your phone and on your computer for the app to work offline and to avoid repeat requests.',
+      'Your data is stored in a Supabase project hosted in the United States. Your phone keeps a copy of the match data it has shown you in memory while the app is open, to avoid repeat requests; nothing is written to disk on your phone or computer beyond your session.',
     ],
   },
   {

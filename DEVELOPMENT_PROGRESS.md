@@ -125,5 +125,6 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-7-riot-submission.md`. Spec: `doc
 - Live channel renamed and private on both ends (`liveTopic(userId)`); verified with the demo feed (`docs/screenshots/phase7-live-private-channel.png`).
 - Goal notifier engine (pure, shared): first status after 60 s, change/interval modes, 60 s gap, one final. Desktop `createGoalPush` reads prefs/tokens/goals/linked accounts under RLS and posts to Expo; revokes dead tokens; never blocks the poller.
 - Mobile: lazy `expo-notifications` registration (skipped in Expo Go and simulators), Profile → Notifications (switch, two cadence rows, "Status only — never tips."), tap routing that ignores non-LanePulse payloads, `eas.json` profiles, delete-account dialog lists what is removed.
-- Tests: shared 180, desktop 72, mobile 152, site 1. Lint and typecheck clean. No secrets.
+- Tests: shared 181, desktop 73, mobile 156, site 1. Lint and typecheck clean. No secrets.
+- Final review fixes: token-ownership trigger (a shared phone never receives another account's pushes), push registration follows the Notifications toggle (no OS prompt unless asked), the desktop processes a state that arrives mid-send (the final at game end), call budget corrected to the code (up to 100 req in a 10 s window once per account).
 - Owner steps (not blocking merge): `eas init` + development build on a device, one real game with the toggle on, `vercel deploy` of `apps/site`, legal entity and regions review before submitting (`docs/riot/application.md` checklist).

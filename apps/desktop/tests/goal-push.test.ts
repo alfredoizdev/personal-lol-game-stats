@@ -134,6 +134,25 @@ describe('createGoalPush', () => {
     expect(fetchFn).toHaveBeenCalledTimes(3)
   })
 
+  it('processes a state that arrives while a send is in flight instead of dropping it (the final at game end)', async () => {
+    let release: (() => void) | null = null
+    const tickets = { data: [{ status: 'ok' }, { status: 'ok' }] }
+    let calls = 0
+    const f = vi.fn(async () => {
+      if (calls++ === 0) await new Promise<void>((r) => { release = r }) // only the first POST stalls
+      return { ok: true, status: 200, json: async () => tickets }
+    }) as unknown as typeof fetch
+    const { gp, fetchFn } = make(base, f)
+    const first = gp.onLiveState(live(snap(90, 7.5))) // first status: POST stalls
+    for (let i = 0; i < 50 && !release; i++) await Promise.resolve() // let the context load and the POST start
+    expect(release).not.toBeNull()
+    await gp.onLiveState(ended(snap(1500, 7.3))) // arrives while in flight
+    release!()
+    await first
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(JSON.parse(String(fetchFn.mock.calls[1]![1].body))[0].body).toBe('Game over · Goal met · 7.3 CS/min')
+  })
+
   it('reset() forgets the game in progress', async () => {
     const { gp, fetchFn } = make(base)
     await gp.onLiveState(live(snap(90, 7.5)))

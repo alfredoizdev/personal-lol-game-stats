@@ -64,8 +64,8 @@ scraping; no sale of data.
 | Client phase and signed-in Riot ID | LCU (local) | Detecting a game; matching the player to their linked account |
 
 Call volume, caching and limits: `docs/riot/call-budget.md` (≈ 145 calls on a
-user's first day, ≈ 45 a day after; one bounded burst of ≈ 20 requests per
-10 s during the one-time 100-game load).
+user's first day, ≈ 45 a day after; one bounded burst of up to 100 requests
+in a 10 s window during the one-time 100-game load, which a 429 stops).
 
 Data retention and deletion: `docs/riot/deletion.md`; Privacy Policy sections
 "Retention" and "Deleting your data".

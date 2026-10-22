@@ -37,19 +37,23 @@ Assumptions: an active player, 10 games a day, opens the app 20 times a day, ope
 
 Per 10 seconds, the only burst is the one-time backfill: 100 details in
 chunks of 20 (`CHUNK = 20`, `backfill.ts:5`), each chunk awaited before the
-next (`backfill.ts:54-65`). With an Edge Function round trip of about 300 ms
-that is at most **≈ 20 requests per 10 s per user**, and only on the first
-visit to Performance or Prepare. A `RATE_LIMITED` answer stops the run
-(`backfill.ts:66`) and the screen shows a Retry; nothing loops.
+next starts with no pause between chunks (`backfill.ts:54-65`). With an Edge
+Function round trip of about 300 ms the whole load finishes in 2–3 s, so the
+worst case is **up to 100 requests inside one 10 s window per user**, once per
+account, on the first visit to Performance or Prepare (games already cached
+for any of the ten players cost nothing). A `RATE_LIMITED` answer stops the
+run (`backfill.ts:66`) and the screen shows a Retry; nothing loops.
 
 Game details and timelines are cached by match id, so a game already fetched
 for one of its ten players costs nothing for the others.
 
 ## Against the production limits
 
-- 500 req / 10 s: 25 simultaneous first-time backfills fit; beyond that the
-  functions return 429 → the app stops the run and asks the user to retry
-  later. Everything else is single requests spread over minutes.
+- 500 req / 10 s: 5 simultaneous first-time backfills fit inside one window;
+  beyond that the functions return 429 → the app stops the run and asks the
+  user to retry later. Everything else is single requests spread over
+  minutes. If sign-ups cluster, pacing the backfill (a pause between chunks in
+  `runBackfill`) lowers the per-user burst without any other change.
 - 30,000 req / 10 min: at 45 calls per user-day the steady state supports
   tens of thousands of daily active users; the first-day cost of 145 calls
   supports ~2,000 new accounts per 10 minutes before caching kicks in.

@@ -52,6 +52,7 @@ export function createGoalPush(client: SupabaseClient, userId: string, opts: Goa
   let notifier: NotifierState = initialNotifierState
   let ctx: Context | null = null
   let inFlight = false
+  let pending: LiveState | null = null // newest state that arrived while busy; processed right after
   let warnedIdentity = false
 
   const loadContext = async (): Promise<Context> => {
@@ -130,14 +131,30 @@ export function createGoalPush(client: SupabaseClient, userId: string, opts: Goa
     }
   }
 
+  const guarded = async (state: LiveState) => {
+    try {
+      await handle(state)
+    } catch (err) {
+      opts.log.warn(`goal push: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
   return {
     async onLiveState(state) {
-      if (inFlight) return // the poller ticks every second; never queue behind a slow network
+      // The poller ticks every couple of seconds; never queue behind a slow
+      // network, but never lose the newest state either (the single `ended`).
+      if (inFlight) {
+        pending = state
+        return
+      }
       inFlight = true
       try {
-        await handle(state)
-      } catch (err) {
-        opts.log.warn(`goal push: ${err instanceof Error ? err.message : String(err)}`)
+        await guarded(state)
+        while (pending) {
+          const next = pending
+          pending = null
+          await guarded(next)
+        }
       } finally {
         inFlight = false
       }
@@ -145,6 +162,7 @@ export function createGoalPush(client: SupabaseClient, userId: string, opts: Goa
     reset() {
       notifier = initialNotifierState
       ctx = null
+      pending = null
       warnedIdentity = false
     },
   }

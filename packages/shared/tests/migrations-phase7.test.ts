@@ -45,3 +45,18 @@ describe('phase 7 migrations', () => {
     expect(sql).not.toMatch(/'user:'/)
   })
 })
+
+describe('phase 7 fix: token ownership', () => {
+  it('a device token registered by another user revokes that user\'s row (last device to register owns it)', () => {
+    const sql = read('20261023000004_lanepulse_push_tokens_ownership.sql')
+    expect(sql).toContain('create or replace function public.lanepulse_push_tokens_claim()')
+    expect(sql).toContain('security definer')
+    expect(sql).toContain('update public.lanepulse_push_tokens')
+    expect(sql).toContain('set revoked_at = now()')
+    expect(sql).toContain('where expo_token = new.expo_token')
+    expect(sql).toContain('and user_id <> new.user_id')
+    expect(sql).toContain('and revoked_at is null')
+    expect(sql).toMatch(/create trigger lanepulse_push_tokens_claim\s+before insert or update of revoked_at on public\.lanepulse_push_tokens/)
+    expect(sql).toContain('when (new.revoked_at is null)')
+  })
+})
