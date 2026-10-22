@@ -5,8 +5,9 @@ import { colors, font } from '@/theme/tokens'
 /**
  * Half ring, 0–100, with the number centred on the baseline (mockup from the
  * owner, 2026-10-22). `color` is the rating colour; the track is a faint ring.
+ * `text` replaces the centred number (the arc still fills by `score`).
  */
-export function SemiDonut({ score, size, color, label }: { score: number | null; size: number; color: string; label?: string }) {
+export function SemiDonut({ score, size, color, label, text }: { score: number | null; size: number; color: string; label?: string; text?: string }) {
   const stroke = Math.max(6, Math.round(size * 0.08))
   const r = size / 2 - stroke
   const cx = size / 2
@@ -24,7 +25,7 @@ export function SemiDonut({ score, size, color, label }: { score: number | null;
         ) : null}
       </Svg>
       <View style={[styles.center, { top: size * 0.24 }]}>
-        <Text style={[styles.score, { fontSize: size * 0.26 }]} maxFontSizeMultiplier={1.15}>{score === null ? '—' : String(score)}</Text>
+        <Text style={[styles.score, { fontSize: size * 0.26 }]} maxFontSizeMultiplier={1.15}>{text ?? (score === null ? '—' : String(score))}</Text>
         {label ? <Text style={styles.label} maxFontSizeMultiplier={1.15}>{label}</Text> : null}
       </View>
     </View>

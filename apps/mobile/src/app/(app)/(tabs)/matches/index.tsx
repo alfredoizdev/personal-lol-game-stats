@@ -10,6 +10,7 @@ import { PerformanceHeader } from '@/components/PerformanceHeader'
 import { RiotErrorView } from '@/components/RiotErrorView'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useRecentMatches, type MatchRowState } from '@/hooks/useRecentMatches'
+import { headerDonuts } from '@/lib/header-donuts'
 import { aggregateMatches } from '@/lib/match-aggregates'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
@@ -21,7 +22,9 @@ export default function MatchesScreen() {
 
   const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready'), [matches])
   const visible = useMemo(() => matches.filter((m) => !(m.status === 'error' && m.error === 'NOT_FOUND')), [matches])
-  const agg = useMemo(() => aggregateMatches(ready.map((m) => m.summary)), [ready])
+  const summaries = useMemo(() => ready.map((m) => m.summary), [ready])
+  const agg = useMemo(() => aggregateMatches(summaries), [summaries])
+  const donuts = useMemo(() => headerDonuts(summaries), [summaries])
 
   const header = (
     <View style={styles.headerBlock}>
@@ -37,7 +40,7 @@ export default function MatchesScreen() {
           </Pressable>
         ) : null}
       </View>
-      {ready.length > 0 ? <PerformanceHeader agg={agg} /> : null}
+      {ready.length > 0 ? <PerformanceHeader games={agg.games} donuts={donuts} /> : null}
       {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
       {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
       <Text style={styles.section}>Recent Games{ids.data ? ` (${total})` : ''}</Text>
