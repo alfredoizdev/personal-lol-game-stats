@@ -37,3 +37,11 @@ export function resolveAppGroupRedirect(input: AppGroupInput): '/(auth)/sign-in'
   if (input.linked === false && input.segment !== 'link') return '/(app)/link'
   return null
 }
+
+/**
+ * Root-level segments that never require a session: the auth group and the
+ * legal screens (reachable from the sign-up form before an account exists).
+ */
+export function isPublicSegment(segment: string | undefined): boolean {
+  return segment === 'legal' || segment === '(auth)'
+}

@@ -1,18 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { GOAL_METRICS, type Goal, type GoalMetric, type Role } from '@lpp/shared'
+import { rowToGoal, type Goal, type GoalRow } from '@lpp/shared'
 
-const ROLES: readonly string[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']
-const METRICS: readonly string[] = GOAL_METRICS.map((m) => m.key)
 const MAX_ROWS = 200
 
-export type GoalRow = { puuid: string; champion_id: number; role: string; metric: string; target: number | string; set_at: string }
-
-export function rowToGoal(row: GoalRow): Goal | null {
-  if (!ROLES.includes(row.role) || !METRICS.includes(row.metric)) return null
-  const target = Number(row.target)
-  if (!Number.isFinite(target)) return null
-  return { puuid: row.puuid, championId: Number(row.champion_id), role: row.role as Role, metric: row.metric as GoalMetric, target, setAt: row.set_at }
-}
+export { rowToGoal, type GoalRow }
 
 /** Newest first, for one Riot account. RLS limits rows to the signed-in user. */
 export async function fetchGoals(client: SupabaseClient, userId: string, puuid: string): Promise<Goal[]> {

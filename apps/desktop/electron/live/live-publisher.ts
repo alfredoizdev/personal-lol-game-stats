@@ -1,5 +1,5 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js'
-import { shouldPublish, type LiveSnapshotV2 } from '@lpp/shared'
+import { liveTopic, shouldPublish, type LiveSnapshotV2 } from '@lpp/shared'
 
 export type LivePublisher = {
   publish: (snapshot: LiveSnapshotV2) => Promise<void>
@@ -7,7 +7,8 @@ export type LivePublisher = {
 }
 
 /**
- * Broadcasts live snapshots on `user:<id>` as `live-snapshot`. Subscribes
+ * Broadcasts live snapshots on the private `lanepulse:<id>` topic as
+ * `live-snapshot` (Realtime Authorization, Phase 7). Subscribes
  * lazily, only sends when `shouldPublish` says so, and drops the channel
  * after a failed send so the next publish handshakes fresh.
  */
@@ -20,7 +21,7 @@ export function createLivePublisher(client: SupabaseClient, userId: string): Liv
     if (channel) return Promise.resolve(channel)
     if (pending) return pending
     pending = (async () => {
-      const ch = client.channel(`user:${userId}`)
+      const ch = client.channel(liveTopic(userId), { config: { private: true } })
       await new Promise<void>((resolve) => {
         ch.subscribe((status) => {
           if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') resolve()

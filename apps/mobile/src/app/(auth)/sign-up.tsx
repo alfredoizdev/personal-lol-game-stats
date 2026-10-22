@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Link, router } from 'expo-router'
-import type { Region } from '@lpp/shared'
+import { LEGAL_VERSION, type Region } from '@lpp/shared'
 import { AuthShell } from '@/components/AuthShell'
 import { Field } from '@/components/Field'
 import { PrimaryButton } from '@/components/PrimaryButton'
@@ -44,6 +44,7 @@ export default function SignUpScreen() {
           pending_riot_game_name: v.value.riotId?.gameName ?? null,
           pending_riot_tag_line: v.value.riotId?.tagLine ?? null,
           pending_region: v.value.region,
+          accepted_legal_version: LEGAL_VERSION,
         },
       },
     })
@@ -71,7 +72,14 @@ export default function SignUpScreen() {
         <RegionPicker value={region} onChange={setRegion} />
       </View>
       <Checkbox checked={terms} onChange={setTerms}>
-        I agree to the Terms of Service and Privacy Policy
+        I agree to the{' '}
+        <Link href="/legal/terms" push style={styles.inlineLink} accessibilityRole="link">
+          Terms of Service
+        </Link>{' '}
+        and{' '}
+        <Link href="/legal/privacy" push style={styles.inlineLink} accessibilityRole="link">
+          Privacy Policy
+        </Link>
       </Checkbox>
       {errorFor('terms') ? <Text style={styles.error}>{errorFor('terms')}</Text> : null}
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -91,6 +99,7 @@ const styles = StyleSheet.create({
   label: { color: colors.text, fontSize: font.caption + 1, fontWeight: '600' },
   footerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   link: { color: colors.accent, fontSize: font.caption + 2, fontWeight: '700', textDecorationLine: 'underline' },
+  inlineLink: { color: colors.accent, fontWeight: '700', textDecorationLine: 'underline' },
   muted: { color: colors.muted, fontSize: font.caption + 2 },
   error: { color: colors.loss, fontSize: font.caption + 1 },
   notice: { color: colors.win, fontSize: font.caption + 2 },

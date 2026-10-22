@@ -26,7 +26,15 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-dev-client",
+      [
+        "expo-notifications",
+        {
+          "color": "#8B5CF6",
+          "defaultChannel": "goals"
+        }
+      ]
     ],
     "scheme": "lpp",
     "backgroundColor": "#0B0A1F",
@@ -34,6 +42,9 @@
       "image": "./assets/splash-icon.png",
       "backgroundColor": "#0B0A1F",
       "resizeMode": "contain"
+    },
+    "extra": {
+      "eas": {}
     }
   }
 }

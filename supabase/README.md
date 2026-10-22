@@ -11,6 +11,10 @@ there (design doc, section 3).
 | `functions/match-timeline/` | Riot MATCH-V5 timeline proxy; caches the full blob, returns a reduced per-minute series (`reduce.ts`, unit-tested from `packages/shared/tests/timeline-reduce.test.ts`). |
 | `migrations/20261022000001_match_timeline_cache.sql` | `match_timeline_cache` table (service_role only). |
 | `migrations/20261022000002_pre_match_focus.sql` | `pre_match_focus` table: append-only personal goals per Riot account, RLS own (read/written by the phone). |
+| `migrations/20261023000001_lanepulse_push_tokens.sql` | `lanepulse_push_tokens`: Expo push tokens of LanePulse phones, RLS own (phone upserts, desktop reads/revokes). Separate from RiftLens `push_tokens` so pushes never cross apps. |
+| `migrations/20261023000002_notification_prefs.sql` | `notification_prefs`: goal-push opt-in (`goal_push`, default off) and cadence (`goal_push_mode` change\|interval), RLS own. |
+| `migrations/20261023000004_lanepulse_push_tokens_ownership.sql` | Trigger: the last account to register a device token owns it (other users' active rows for that token are revoked) — shared phones never receive another account's pushes. |
+| `migrations/20261023000003_realtime_lanepulse_private.sql` | Realtime Authorization policies on `realtime.messages`: broadcast on the private topic `lanepulse:<uid>` only for that user (Live channel, Phase 7). |
 
 Deploy (from the RiftLens repo, after copying):
 
