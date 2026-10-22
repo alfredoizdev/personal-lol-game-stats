@@ -1,34 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import type { LivePlayerV2 } from '@lpp/shared'
+import { cmp, signed, type Cmp } from '@/lib/compare'
 import { ChampionPortrait } from './ChampionPortrait'
+import { CompareBar } from './CompareBar'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-type Cmp = 'me' | 'enemy' | 'tie'
-function cmp(a: number | null, b: number | null): Cmp {
-  if (a === null || b === null || a === b) return 'tie'
-  return a > b ? 'me' : 'enemy'
-}
 const fmt = (n: number | null, d = 0) => (n === null ? '—' : n.toFixed(d))
 const kda = (p: LivePlayerV2) => (p.kills === null ? '—' : `${p.kills}/${p.deaths ?? '—'}/${p.assists ?? '—'}`)
-
-/** Two bars growing from the centre: your share to the left, the enemy's to the right. */
-function CompareBar({ me, enemy }: { me: number | null; enemy: number | null }) {
-  if (me === null || enemy === null) return <View style={styles.barTrack} />
-  const total = me + enemy
-  const meShare = total > 0 ? me / total : 0.5
-  return (
-    <View style={styles.barTrack}>
-      <View style={styles.barHalf}>
-        <View style={[styles.barFill, styles.barMe, { width: `${Math.round(meShare * 100)}%` }]} />
-      </View>
-      <View style={styles.barGap} />
-      <View style={[styles.barHalf, { justifyContent: 'flex-start' }]}>
-        <View style={[styles.barFill, styles.barEnemy, { width: `${Math.round((1 - meShare) * 100)}%` }]} />
-      </View>
-    </View>
-  )
-}
 
 function Row({ icon, label, me, enemy, meNum, enemyNum, better, delta, last }: {
   icon: React.ReactNode; label: string; me: string; enemy: string; meNum: number | null; enemyNum: number | null; better: Cmp; delta?: string; last?: boolean
@@ -48,8 +27,6 @@ function Row({ icon, label, me, enemy, meNum, enemyNum, better, delta, last }: {
     </View>
   )
 }
-
-const signed = (a: number | null, b: number | null, d = 0) => (a === null || b === null ? undefined : `${a - b >= 0 ? '+' : ''}${(a - b).toFixed(d)}`)
 
 const ICON = (name: React.ComponentProps<typeof MaterialCommunityIcons>['name']) => <MaterialCommunityIcons name={name} size={14} color={colors.muted} />
 const ION = (name: React.ComponentProps<typeof Ionicons>['name']) => <Ionicons name={name} size={14} color={colors.muted} />
@@ -107,12 +84,6 @@ const styles = StyleSheet.create({
   row: { paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border, gap: 6 },
   rowTop: { flexDirection: 'row', alignItems: 'center' },
   delta: { fontSize: font.caption - 1, fontWeight: '700', color: colors.muted, marginLeft: 2 },
-  barTrack: { flexDirection: 'row', height: 4, marginHorizontal: 8 },
-  barHalf: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', overflow: 'hidden' },
-  barGap: { width: 2 },
-  barFill: { height: 4, borderRadius: 2 },
-  barMe: { backgroundColor: '#0E9DB5', alignSelf: 'flex-end' },
-  barEnemy: { backgroundColor: '#E8486F', alignSelf: 'flex-start' },
   rowLast: { borderBottomWidth: 1, borderBottomColor: colors.border },
   cell: { flex: 1, color: colors.text, fontSize: font.body, fontWeight: '700', textAlign: 'center' },
   me: { color: colors.you },

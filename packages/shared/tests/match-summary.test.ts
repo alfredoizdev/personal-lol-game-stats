@@ -20,6 +20,7 @@ function participant(p: P): MatchV5Participant {
     neutralMinionsKilled: p.neutralMinionsKilled ?? 0,
     visionScore: p.visionScore ?? 0,
     wardsPlaced: p.wardsPlaced ?? 0,
+    wardsKilled: p.wardsKilled ?? 0,
     totalDamageDealtToChampions: p.totalDamageDealtToChampions ?? 0,
     goldEarned: p.goldEarned ?? 0,
     champLevel: p.champLevel ?? 1,
@@ -147,5 +148,32 @@ describe('summarizeMatch', () => {
 
   it('still returns null when neither puuid nor Riot ID match', () => {
     expect(summarizeMatch(blob({ me }), { puuid: 'nope', gameName: 'Other', tagLine: 'NA1' })).toBeNull()
+  })
+
+  it('carries participantId, wards and the team kill total for analysis', () => {
+    const b = blob({
+      me: { puuid: ME, teamId: 100, kills: 3, wardsPlaced: 9, wardsKilled: 2 },
+      allies: [{ puuid: 'A1', teamId: 100, teamPosition: 'JUNGLE', kills: 4 }],
+      enemies: [{ puuid: 'E1', teamId: 200, teamPosition: 'TOP', kills: 10 }],
+    })
+    b.info.participants.forEach((p, i) => (p.participantId = i + 1))
+    const s = summarizeMatch(b, ME)!
+    expect(s.me.participantId).toBe(b.info.participants.findIndex((p) => p.puuid === ME) + 1)
+    expect(s.me.wardsPlaced).toBe(9)
+    expect(s.me.wardsKilled).toBe(2)
+    expect(s.teamKills).toBe(7)
+  })
+
+  it('defaults wards to 0 and participantId to the 1-based index when Riot omits them', () => {
+    const b = blob({ me: { puuid: ME, teamId: 100 } })
+    for (const p of b.info.participants) {
+      delete (p as Partial<MatchV5Participant>).wardsPlaced
+      delete (p as Partial<MatchV5Participant>).wardsKilled
+      delete (p as Partial<MatchV5Participant>).participantId
+    }
+    const s = summarizeMatch(b, ME)!
+    expect(s.me.wardsPlaced).toBe(0)
+    expect(s.me.wardsKilled).toBe(0)
+    expect(s.me.participantId).toBe(b.info.participants.findIndex((p) => p.puuid === ME) + 1)
   })
 })

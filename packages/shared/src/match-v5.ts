@@ -3,6 +3,8 @@ import { queueLabel } from './queue-label'
 /** Minimal Riot MATCH-V5 shape (only the fields this app reads). */
 export type MatchV5Participant = {
   puuid: string
+  /** 1–10; the key into timeline participantFrames. Falls back to the 1-based index when absent. */
+  participantId?: number
   riotIdGameName?: string
   riotIdTagline?: string
   championId: number
@@ -16,6 +18,7 @@ export type MatchV5Participant = {
   neutralMinionsKilled: number
   visionScore: number
   wardsPlaced?: number
+  wardsKilled?: number
   totalDamageDealtToChampions: number
   goldEarned: number
   champLevel: number
@@ -46,6 +49,7 @@ const ROLES: readonly string[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'
 
 export type PlayerLine = {
   puuid: string
+  participantId: number
   championId: number
   championName: string
   role: Role | null
@@ -55,6 +59,8 @@ export type PlayerLine = {
   cs: number
   csPerMin: number | null
   visionScore: number
+  wardsPlaced: number
+  wardsKilled: number
   damageToChampions: number
   gold: number
   level: number
@@ -72,6 +78,8 @@ export type MatchSummary = {
   durationSec: number
   startedAt: string
   remake: boolean
+  /** Kills of the player's team (for kill participation). */
+  teamKills: number
   me: PlayerLine
   opponent: PlayerLine | null
 }
@@ -87,10 +95,11 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10
 }
 
-function toLine(p: MatchV5Participant, durationSec: number): PlayerLine {
+function toLine(p: MatchV5Participant, durationSec: number, index: number): PlayerLine {
   const cs = p.totalMinionsKilled + p.neutralMinionsKilled
   return {
     puuid: p.puuid,
+    participantId: p.participantId ?? index + 1,
     championId: p.championId,
     championName: p.championName,
     role: toRole(p.teamPosition),
@@ -100,6 +109,8 @@ function toLine(p: MatchV5Participant, durationSec: number): PlayerLine {
     cs,
     csPerMin: durationSec >= MIN_SEC_FOR_RATE ? round1(cs / (durationSec / 60)) : null,
     visionScore: p.visionScore,
+    wardsPlaced: p.wardsPlaced ?? 0,
+    wardsKilled: p.wardsKilled ?? 0,
     damageToChampions: p.totalDamageDealtToChampions,
     gold: p.goldEarned,
     level: p.champLevel,
@@ -143,8 +154,9 @@ export function summarizeMatch(blob: MatchV5, identity: string | PlayerIdentity)
   const id: PlayerIdentity = typeof identity === 'string' ? { puuid: identity } : identity
   const me = findMe(blob.info.participants, id)
   if (!me) return null
+  const all = blob.info.participants
   const durationSec = blob.info.gameDuration
-  const opponent = findOpponent(me, blob.info.participants)
+  const opponent = findOpponent(me, all)
   return {
     matchId: blob.metadata.matchId,
     queueId: blob.info.queueId,
@@ -153,7 +165,8 @@ export function summarizeMatch(blob: MatchV5, identity: string | PlayerIdentity)
     durationSec,
     startedAt: new Date(blob.info.gameCreation).toISOString(),
     remake: blob.info.gameEndedInEarlySurrender === true || durationSec < REMAKE_MAX_SEC,
-    me: toLine(me, durationSec),
-    opponent: opponent ? toLine(opponent, durationSec) : null,
+    teamKills: all.filter((p) => p.teamId === me.teamId).reduce((sum, p) => sum + p.kills, 0),
+    me: toLine(me, durationSec, all.indexOf(me)),
+    opponent: opponent ? toLine(opponent, durationSec, all.indexOf(opponent)) : null,
   }
 }

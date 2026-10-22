@@ -6,7 +6,7 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 
 - [x] Phase 1 — Foundation (monorepo, shared package, Electron collector, Expo app with login and tabs) — code complete 2026-10-21; credentialed acceptance pending (see below)
 - [x] Phase 2 — Recent Matches — code complete 2026-10-21, verified with real data
-- [ ] Phase 3 — Match Analysis v1
+- [x] Phase 3 — Match Analysis v1
 - [x] Phase 4 — Live companion
 - [ ] Phase 5 — Pre-match focus
 - [ ] Phase 6 — End-of-game sync, QA, beta readiness
@@ -80,3 +80,14 @@ Verified with the owner's account:
 - `pnpm -r test`: shared 62, desktop 54, mobile 71. Lint and typecheck clean. No `RGAPI-` / JWT / service_role in sources.
 
 Riot budget unchanged: live data comes from the local Live Client API (no Riot Web API calls).
+
+## Phase 3 verification (2026-10-22)
+
+Plan: `docs/superpowers/plans/2026-10-22-phase-3-analysis.md`. Spec: `docs/superpowers/specs/2026-10-22-phase-3-analysis-design.md`. Formula: `docs/ANALYSIS.md`. Screenshots: `docs/screenshots/phase3-review-{overview,farming,lane,combat}.png`, `phase3-how-scored.png`.
+
+- Match Review now shows an overall score with a headline, four area pills (Farming · Combat · Vision · Lane) and the selected area's card: semi-donut 0–100, rating word, one sentence with the concrete number and its reference, sub-rows with score bars and "vs opponent" / "vs you (n games)" deltas, plus the CS-over-the-game curve (phases marked, weakest shaded) for Farming and the gold-lead chart for Lane. "Full lane comparison" is collapsed below, every row with the two-sided share bar. "How it's scored" opens the targets, curves, weights and baseline for the match's role.
+- Verified on the owner's real game NA1_5664855818 (Syndra bot, 42 min, Normal Draft): overall 44 Fair, Farming 20 / Combat 70 / Lane 52 / Vision 39; sentence "Slow late game: 3.4 CS/min vs 5.6 for your opponent (25+ min)."; baseline n = 9.
+- `match-timeline` deployed to the shared project (migration `20261022000001_match_timeline_cache` applied). Verified with curl: first call `X-Cache: MISS` (2.2 s), second `HIT` (0.8 s), 8.8 KB / 44 frames. Riot budget per first review: 1 timeline call (+ up to 10 detail calls for the baseline, cached forever).
+- Engine cases covered by tests: ARAM / bots / remakes not analyzed with a reason; support (Farming not scored, Lane gold+XP); no timeline; no lane opponent; team with 0 kills; 9-minute game; baseline with 0/1/2 games; the worked example in `docs/ANALYSIS.md`.
+- `pnpm -r test`: shared 105, desktop 60, mobile 86. Lint and typecheck clean. No `RGAPI-` / JWT in sources.
+- Owner acceptance still pending on device: tap the pills, expand the lane comparison, and open a fresh game (timeline fetched live) and an ARAM (reason shown).

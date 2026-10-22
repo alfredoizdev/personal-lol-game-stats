@@ -1,27 +1,69 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
-import { summarizeMatch } from '@lpp/shared'
+import { analyzeMatch, csCurve, goldDiffCurve, summarizeMatch, type AreaKey, type PhaseKey } from '@lpp/shared'
+import { AreaCard } from '@/components/AreaCard'
+import { AreaPills } from '@/components/AreaPills'
+import { Collapsible } from '@/components/Collapsible'
+import { CsCurveChart } from '@/components/CsCurveChart'
 import { Disclaimer } from '@/components/Disclaimer'
+import { GoldDiffChart } from '@/components/GoldDiffChart'
 import { LaneMatchupCard } from '@/components/LaneMatchupCard'
 import { MatchHero } from '@/components/MatchHero'
+import { OverallScoreCard } from '@/components/OverallScoreCard'
 import { RiotErrorView } from '@/components/RiotErrorView'
+import { useBaseline } from '@/hooks/useBaseline'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useMatchTimeline } from '@/hooks/useMatchTimeline'
 import { identityOf, matchDetailQuery } from '@/hooks/useRecentMatches'
+import { analysisInputFromQueries, needsAnalysisData } from '@/lib/analysis-input'
+import { defaultArea } from '@/lib/area-ui'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function MatchReviewScreen() {
   const { matchId } = useLocalSearchParams<{ matchId: string }>()
+  const id = String(matchId)
   const { data: account } = useLinkedAccount()
-  const detail = useQuery({ ...matchDetailQuery(String(matchId), account?.region ?? 'NA'), enabled: !!matchId && !!account })
+  const region = account?.region ?? 'NA'
+  const detail = useQuery({ ...matchDetailQuery(id, region), enabled: !!matchId && !!account })
   const now = Date.now()
   const summary = useMemo(
     () => (detail.data && account ? summarizeMatch(detail.data, identityOf(account)) : null),
     [detail.data, account],
   )
+  const wantsAnalysis = needsAnalysisData(summary)
+  const timeline = useMatchTimeline(wantsAnalysis ? id : undefined, region)
+  const baseline = useBaseline(account ?? null, wantsAnalysis ? summary?.me.role ?? null : null, id)
+
+  const { input, timelineError, baselineLoading } = analysisInputFromQueries({
+    summary,
+    series: timeline.isSuccess ? { status: 'success', data: timeline.data } : timeline.isError ? { status: 'error', error: timeline.error } : { status: 'pending' },
+    baseline: { loading: baseline.loading, data: baseline.baseline },
+  })
+  const analysis = useMemo(() => (input ? analyzeMatch(input) : null), [input])
+
+  // The weakest area can change once the timeline lands (Lane and the phases join),
+  // so the default follows the data until the user taps a pill.
+  const [picked, setPicked] = useState<AreaKey | null>(null)
+  const active = picked ?? (analysis ? defaultArea(analysis) : null)
+  const area = analysis?.analyzable ? analysis.areas.find((a) => a.key === active) ?? null : null
+
+  const chart = useMemo(() => {
+    if (!summary || !area || !input?.series) return null
+    const me = summary.me.participantId
+    const opp = summary.opponent?.participantId ?? null
+    if (area.key === 'farming') {
+      const weakest = area.subrows.filter((r) => !r.context && r.score !== null && r.key !== 'total').sort((a, b) => a.score! - b.score!)[0]
+      return <CsCurveChart curve={csCurve(input.series, me, opp)} durationSec={summary.durationSec} weakestPhase={(weakest?.key as PhaseKey | undefined) ?? null} />
+    }
+    if (area.key === 'lane' && opp !== null) {
+      return <GoldDiffChart curve={goldDiffCurve(input.series, me, opp)} durationSec={summary.durationSec} />
+    }
+    return null
+  }, [summary, area, input?.series])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -43,11 +85,43 @@ export default function MatchReviewScreen() {
         {summary ? (
           <>
             <MatchHero summary={summary} now={now} />
-            <LaneMatchupCard me={summary.me} opponent={summary.opponent} />
-            <View style={styles.soon}>
-              <Text style={styles.soonTitle}>Analysis coming soon</Text>
-              <Text style={styles.muted}>What you did well, what needs work and your next focus arrive in the next update.</Text>
-            </View>
+
+            {analysis?.analyzable ? (
+              <>
+                <OverallScoreCard analysis={analysis} baselineLoading={baselineLoading} />
+                <AreaPills areas={analysis.areas} active={area?.key ?? analysis.areas[0]!.key} onChange={setPicked} />
+                {area ? (
+                  <AreaCard
+                    area={area}
+                    baselineN={analysis.baselineN}
+                    baselineLoading={baselineLoading}
+                    chart={chart}
+                    timelineError={timelineError}
+                    onRetryTimeline={() => void timeline.refetch()}
+                  />
+                ) : null}
+                {timeline.isPending ? <Text style={styles.hint}>Loading the timeline for phases and lane leads…</Text> : null}
+              </>
+            ) : analysis ? (
+              <View style={styles.note}>
+                <Text style={styles.noteTitle}>No analysis for this game</Text>
+                <Text style={styles.muted}>{analysis.reason}</Text>
+              </View>
+            ) : null}
+
+            <Collapsible title="Full lane comparison">
+              <LaneMatchupCard me={summary.me} opponent={summary.opponent} />
+            </Collapsible>
+
+            {analysis?.analyzable && summary.me.role ? (
+              <Pressable
+                onPress={() => router.push(`/(app)/(tabs)/matches/how-scored?role=${summary.me.role}&n=${analysis.baselineN}`)}
+                accessibilityRole="link"
+                hitSlop={6}
+              >
+                <Text style={styles.link}>How it's scored ›</Text>
+              </Pressable>
+            ) : null}
           </>
         ) : null}
 
@@ -69,7 +143,9 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontSize: font.caption + 1 },
   spinner: { marginTop: space.lg },
   muted: { color: colors.muted, fontSize: font.body },
-  soon: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: 4 },
-  soonTitle: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  hint: { color: colors.muted, fontSize: font.caption + 1, textAlign: 'center' },
+  note: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: 4 },
+  noteTitle: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  link: { color: colors.accent, fontSize: font.body, fontWeight: '700', textAlign: 'center' },
   footer: { paddingVertical: space.lg },
 })

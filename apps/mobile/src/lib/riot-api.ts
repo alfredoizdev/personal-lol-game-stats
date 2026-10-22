@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { MatchV5, Region } from '@lpp/shared'
+import type { TimelineSeries, MatchV5, Region } from '@lpp/shared'
 
 export type RiotErrorCode = 'KEY_INVALID' | 'RATE_LIMITED' | 'NOT_FOUND' | 'UNKNOWN'
 
@@ -74,6 +74,20 @@ export async function fetchMatchDetail(
     invoke<MatchV5>(client, 'match-detail', { matchId: input.matchId, region: input.region }),
   )
   if (!data || typeof data !== 'object' || !('info' in data)) throw new RiotApiError('UNKNOWN', 'match-detail: bad blob')
+  return data
+}
+
+/** Reduced per-minute timeline (see supabase/functions/match-timeline). Shares the 4-wide limiter with details. */
+export async function fetchMatchTimeline(
+  client: SupabaseClient,
+  input: { matchId: string; region: Region },
+): Promise<TimelineSeries> {
+  const data = await detailLimiter(() =>
+    invoke<TimelineSeries>(client, 'match-timeline', { matchId: input.matchId, region: input.region }),
+  )
+  if (!data || typeof data !== 'object' || (data as { v?: unknown }).v !== 1 || !Array.isArray((data as { frames?: unknown }).frames)) {
+    throw new RiotApiError('UNKNOWN', 'match-timeline: bad series')
+  }
   return data
 }
 
