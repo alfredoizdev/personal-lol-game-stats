@@ -12,9 +12,9 @@ export function streakLabel(s: Streak): string | null {
   return s ? `${s.n}-game ${s.kind} streak` : null
 }
 
-/** "Last 20 games" — or the honest count when fewer are loaded than the period asks for. */
+/** "Last 98 games": the analyzable games behind the numbers (ARAM and remakes drop out; an incomplete load is flagged by the screen, not here). */
 export function gamesNote(p: PerformanceProfile): string {
-  return p.games < p.period ? `Your ${p.games} loaded game${p.games === 1 ? '' : 's'}` : `Last ${p.games} games`
+  return p.games === 1 ? 'Last game' : `Last ${p.games} games`
 }
 
 /** Bar height for a 0–100 score: 0 when unscored, otherwise at least 2 px so a bad game is still visible. */

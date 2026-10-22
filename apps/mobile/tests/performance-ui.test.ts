@@ -18,8 +18,8 @@ describe('performance-ui helpers', () => {
   })
   it('says how many games the numbers cover', () => {
     expect(gamesNote({ ...EMPTY, period: 100, games: 100 })).toBe('Last 100 games')
-    expect(gamesNote({ ...EMPTY, period: 100, games: 7 })).toBe('Your 7 loaded games')
-    expect(gamesNote({ ...EMPTY, period: 100, games: 1 })).toBe('Your 1 loaded game')
+    expect(gamesNote({ ...EMPTY, period: 100, games: 98 })).toBe('Last 98 games') // 2 of the 100 were ARAM / remakes
+    expect(gamesNote({ ...EMPTY, period: 100, games: 1 })).toBe('Last game')
   })
   it('bar height scales with the score, 2 px floor, 0 for null', () => {
     expect(barHeight(null, 40)).toBe(0)
