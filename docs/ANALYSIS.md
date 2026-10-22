@@ -126,9 +126,10 @@ Timeline CS: 105 at 14 min, 170 at 25 min, 210 at 30 min. Lane diffs: CS +5 @10,
 
 ## 8. Performance page aggregates (`performance/profile.ts`)
 
-The Performance tab reads the player's own cached games (up to 100, the Phase 5
-backfill) and never calls Riot. Period = the newest 20 / 50 / 100 analyzable,
-non-remake games.
+The Performance tab is built on the player's last 20 analyzable, non-remake
+games. On open it fetches the details it needs (the last 40 ids: the window
+plus the one before it for "vs previous"), once per account, through the same
+cached `match-detail` function; nothing on the tab asks the player to load more.
 
 - **Game score** = the Matches-row score: `analyzeMatch` with no timeline and no
   baseline (section 1 rules, Farming "total" only). Overview = mean of those
@@ -147,8 +148,8 @@ non-remake games.
   (a "typical" target when roles are mixed). Weakest area needs ≥ 3 games.
 - **Champions:** by games (then win rate, then name), with the most-played role
   for that champion, mean score tier and "few games" under 3; at most 8.
-- **Lane matchups:** over **every loaded game** (a repeat opponent is rare inside
-  20), grouped by (enemy champion, role) when the enemy has the same role; ≥ 2 games. "You lose to" = the 5 lowest win rates under 50 %
+- **Lane matchups:** over **twice the window** (the last 40 games: a repeat
+  opponent is rare inside 20), grouped by (enemy champion, role) when the enemy has the same role; ≥ 2 games. "You lose to" = the 5 lowest win rates under 50 %
   (then more games, then name); "You beat" = the 3 highest above 50 %. An even
   record is in neither list.
 - **Headline** is descriptive only: "52% win rate over 20 games · strongest as

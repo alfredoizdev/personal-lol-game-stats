@@ -73,7 +73,7 @@ export default function PerformanceScreen() {
           <RolesCard profile={profile} />
           <AreasCard profile={profile} />
           <ChampionsCard profile={profile} />
-          <MatchupsCard profile={profile} loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onLoadAll={() => history.start()} />
+          <MatchupsCard profile={profile} />
         </>
       ) : null}
     </Screen>

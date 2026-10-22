@@ -69,7 +69,7 @@ export type PerformanceProfile = {
   weakestArea: AreaKey | null
   /** Games desc, win rate desc, name; at most 8. */
   champions: ChampionStat[]
-  /** Lane matchups use every loaded analyzable game (a repeat opponent is rare inside 20 games). */
+  /** Lane matchups use twice the period — the window and the one before it (a repeat opponent is rare inside 20 games). */
   toughest: MatchupStat[]
   best: MatchupStat[]
   matchupGames: number
@@ -123,8 +123,8 @@ export function performanceProfile(all: MatchSummary[], period: Period): Perform
     areas,
     weakestArea,
     champions: championStats(games),
-    ...matchupStats(analyzable),
-    matchupGames: analyzable.length,
+    ...matchupStats(analyzable.slice(0, period * 2)),
+    matchupGames: Math.min(analyzable.length, period * 2),
     headline: '',
   }
   profile.headline = headline(profile)
