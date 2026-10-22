@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { formatRiotId, performanceProfile, type Period } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
+import { AreasCard } from '@/components/performance/AreasCard'
 import { OverviewCard } from '@/components/performance/OverviewCard'
+import { RolesCard } from '@/components/performance/RolesCard'
 import { PeriodChips } from '@/components/performance/PeriodChips'
 import { BackfillBar } from '@/components/prematch/BackfillBar'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
@@ -26,7 +28,11 @@ export default function PerformanceScreen() {
           <Text style={styles.muted} maxFontSizeMultiplier={1.15}>Everything here is computed from your own Summoner's Rift games. Your recent Matches already count.</Text>
         </View>
       ) : (
-        <OverviewCard profile={profile} />
+        <>
+          <OverviewCard profile={profile} />
+          <RolesCard profile={profile} />
+          <AreasCard profile={profile} />
+        </>
       )}
     </Screen>
   )

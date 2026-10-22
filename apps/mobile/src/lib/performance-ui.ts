@@ -1,4 +1,4 @@
-import type { Period, PerformanceProfile, Streak } from '@lpp/shared'
+import { ROLE_LABEL, type AreaSubrowStat, type Period, type PerformanceProfile, type Streak } from '@lpp/shared'
 
 /** Copy and geometry for the Performance tab; pure so it is testable. */
 
@@ -24,4 +24,19 @@ export function gamesNote(p: PerformanceProfile): string {
 export function barHeight(score: number | null, max: number): number {
   if (score === null) return 0
   return Math.max(2, Math.round((max * score) / 100))
+}
+
+/** Footer of the Roles card: only what the engine ranked (≥ 3 games per role). */
+export function roleRankNote(p: PerformanceProfile): string {
+  if (!p.strongestRole) return 'Play 3 games in a role to rank it.'
+  const parts = [`Strongest: ${ROLE_LABEL[p.strongestRole]}`]
+  if (p.weakestRole) parts.push(`Weakest: ${ROLE_LABEL[p.weakestRole]}`)
+  return parts.join(' · ')
+}
+
+/** "CS / min 6.4 · target 7.0" — the average of a scored sub-row next to the (mean) role target. */
+export function subrowLine(s: AreaSubrowStat): string {
+  if (s.avg === null) return `${s.label} —`
+  const fmt = (n: number) => `${n.toFixed(s.decimals)}${s.suffix}`
+  return s.target === null ? `${s.label} ${fmt(s.avg)}` : `${s.label} ${fmt(s.avg)} · target ${fmt(s.target)}`
 }

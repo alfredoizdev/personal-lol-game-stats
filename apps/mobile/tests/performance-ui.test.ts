@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, gamesNote, periodLabel, recordLabel, streakLabel } from '../src/lib/performance-ui'
+import { barHeight, gamesNote, periodLabel, recordLabel, roleRankNote, streakLabel, subrowLine } from '../src/lib/performance-ui'
 
 const EMPTY = performanceProfile([], 20)
 
@@ -30,5 +30,18 @@ describe('performance-ui helpers', () => {
     expect(barHeight(0, 40)).toBe(2)
     expect(barHeight(50, 40)).toBe(20)
     expect(barHeight(100, 40)).toBe(40)
+  })
+})
+
+describe('performance-ui — roles and areas copy', () => {
+  it('ranks roles only when the engine did', () => {
+    expect(roleRankNote({ ...EMPTY, strongestRole: 'MIDDLE', weakestRole: 'TOP' })).toBe('Strongest: Mid · Weakest: Top')
+    expect(roleRankNote({ ...EMPTY, strongestRole: 'MIDDLE', weakestRole: null })).toBe('Strongest: Mid')
+    expect(roleRankNote(EMPTY)).toBe('Play 3 games in a role to rank it.')
+  })
+  it('writes a sub-row with its average and target in the metric format', () => {
+    expect(subrowLine({ key: 'total', label: 'CS / min', avg: 6.4, target: 7, decimals: 1, suffix: '', n: 12 })).toBe('CS / min 6.4 · target 7.0')
+    expect(subrowLine({ key: 'kp', label: 'Kill participation', avg: 48, target: 55, decimals: 0, suffix: '%', n: 12 })).toBe('Kill participation 48% · target 55%')
+    expect(subrowLine({ key: 'kp', label: 'Kill participation', avg: null, target: 55, decimals: 0, suffix: '%', n: 0 })).toBe('Kill participation —')
   })
 })
