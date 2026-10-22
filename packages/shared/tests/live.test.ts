@@ -11,7 +11,7 @@ import {
 
 const ME = { gameName: 'Hexed', tagLine: '7551' }
 
-function player(p: Partial<RawLivePlayer> & { team: 'ORDER' | 'CHAOS' }): RawLivePlayer {
+function player(p: Omit<Partial<RawLivePlayer>, 'team'> & { team: 'ORDER' | 'CHAOS' }): RawLivePlayer {
   return {
     riotIdGameName: p.riotIdGameName ?? 'Someone',
     riotIdTagLine: p.riotIdTagLine ?? 'NA1',
