@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, metricInfo, type Goal, type GoalMetric, type MatchSummary, type Role } from '@lpp/shared'
+import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalReference, metricInfo, type Goal, type GoalMetric, type MatchSummary, type Role } from '@lpp/shared'
+import { GoalReference } from './GoalReference'
 import { stepTarget } from '@/lib/goal-steps'
 import { colors, font, radius, space } from '@/theme/tokens'
 
@@ -92,6 +93,7 @@ export function GoalEditor({
         </Pressable>
       </View>
       <Text style={styles.source} maxFontSizeMultiplier={1.15}>{source}</Text>
+      <GoalReference metric={metric} role={role} reference={goalReference(summaries, championId, role, metric)} target={target} />
       {current ? (
         <Text style={styles.source} maxFontSizeMultiplier={1.15}>
           Current goal{current.championId === championId ? '' : ' (any champion in this role)'}: {formatGoal(current)}
