@@ -156,3 +156,36 @@ timeline no entran en la media (no bajamos 20 timelines).
 - Estructura de `packages/shared/src/analysis/` (puro, sin React): `targets.ts` (tabla), `score.ts` (curvas y pesos), `areas.ts` (cálculo por área), `sentences.ts`, `timeline-series.ts` (lectura de la serie reducida) con tests.
 - `docs/ANALYSIS.md` con la tabla, las curvas y un ejemplo numérico calculado a mano.
 - Orden de tareas del plan (sugerido): función + tabla → motor en shared → serie de timeline en el móvil → tarjetas y gráfico → pantalla y hoja "cómo se calcula" → aceptación con partidas reales del owner.
+
+## 6. Decisiones tras el chequeo del builder (2026-10-22)
+
+Un revisor independiente leyó el documento y dejó cinco preguntas. Cuatro las
+cierro yo (son mis decisiones, el owner puede cambiarlas); la quinta es del owner.
+
+1. **Subfilas sin objetivo en la tabla (KDA, daño/min, wards destruidas).** Son
+   filas de contexto: se muestran con sus deltas "vs oponente" y "vs tú" pero no
+   puntúan. Combat se puntúa con KP y muertes/10 min (pesos 50/50); Vision con
+   vision score/min y wards/min (60/40); Farming con CS/min total y los tres
+   tramos (40/20/20/20; sin timeline, 100 al total); Lane con las diferencias a
+   10 y 15 (ver 4). La frase de un área sale de su subfila puntuada más floja;
+   una fila de contexto nunca genera la frase.
+2. **Baseline "vs tú".** El review lanza en segundo plano los detalles que falten
+   de las últimas 20 partidas (como mucho ~10 llamadas la primera vez, luego 0
+   gracias a `match_details_cache`) y muestra "Calculando tu media…" mientras
+   tanto. La media usa siempre las 20 últimas del mismo rol y cola analizable,
+   sin remakes y sin la partida abierta, así no cambia según cuánto hayas
+   scrolleado. Presupuesto del primer review: 1 timeline + hasta 10 detalles.
+3. **Dónde vive el código de Supabase.** El fuente de `match-timeline` y la
+   migración de `match_timeline_cache` se escriben en este repo
+   (`supabase/functions/match-timeline/index.ts`,
+   `supabase/migrations/<fecha>_match_timeline_cache.sql`) y se copian al repo
+   de RiftLens en el mismo ciclo, como dice la sección 3 del diseño general.
+   **Pendiente del owner:** quién despliega al proyecto compartido de Supabase
+   (función + migración). Propuesta: lo hago yo desde el repo de RiftLens con
+   la sesión del CLI ya existente, avisando antes del comando exacto.
+4. **Lane por rol.** `UTILITY`: solo oro y XP a 10/15 (nada de CS). `JUNGLE`:
+   CS (incluye monstruos), oro y XP contra el jungla enemigo. Resto: CS, oro y XP.
+   Las plantillas de frase son por rol.
+5. **Colas analizables.** Solo Grieta del Invocador PvP: 400, 420, 430, 440,
+   480 (Swiftplay), 490 y 700. Bots (830/840/850), ARAM y Arena no se analizan
+   ni entran en la media.
