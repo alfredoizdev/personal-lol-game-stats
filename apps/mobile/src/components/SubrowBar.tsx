@@ -13,15 +13,15 @@ export function SubrowBar({ subrow, baselineN, baselineLoading }: { subrow: Subr
   return (
     <View style={styles.row}>
       <View style={styles.top}>
-        <Text style={styles.label}>{subrow.label}</Text>
-        <Text style={[styles.value, subrow.context && styles.valueMuted]}>{subrow.display}</Text>
+        <Text style={styles.label} maxFontSizeMultiplier={1.15}>{subrow.label}</Text>
+        <Text style={[styles.value, subrow.context && styles.valueMuted]} maxFontSizeMultiplier={1.15}>{subrow.display}</Text>
       </View>
       {subrow.context ? null : (
         <View style={styles.track}>
           <View style={[styles.fill, { width: `${Math.round(barFraction(subrow) * 100)}%`, backgroundColor: color }]} />
         </View>
       )}
-      {deltas.length ? <Text style={styles.deltas}>{deltas.join('  ·  ')}</Text> : null}
+      {deltas.length ? <Text style={styles.deltas} maxFontSizeMultiplier={1.15}>{deltas.join('  ·  ')}</Text> : null}
     </View>
   )
 }
@@ -29,8 +29,8 @@ export function SubrowBar({ subrow, baselineN, baselineLoading }: { subrow: Subr
 const styles = StyleSheet.create({
   row: { gap: 5, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  label: { color: colors.text, fontSize: font.body - 1, fontWeight: '600', flexShrink: 1 },
-  value: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  label: { color: colors.text, fontSize: font.body - 2, fontWeight: '600', flexShrink: 1 },
+  value: { color: colors.text, fontSize: font.body - 1, fontWeight: '800' },
   valueMuted: { color: colors.muted, fontWeight: '700' },
   track: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },

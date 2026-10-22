@@ -12,11 +12,11 @@ export function OverallScoreCard({ analysis, baselineLoading }: { analysis: Extr
       : 'Few games in this role yet — "vs you" hidden'
   return (
     <View style={styles.card}>
-      <SemiDonut score={analysis.overall} size={96} color={ratingColor(analysis.overallRating)} />
+      <SemiDonut score={analysis.overall} size={84} color={ratingColor(analysis.overallRating)} />
       <View style={styles.text}>
-        <Text style={styles.kicker}>Overall · {analysis.overallRating ?? '—'}</Text>
-        <Text style={styles.headline}>{analysis.headline}</Text>
-        <Text style={styles.note}>{note}</Text>
+        <Text style={styles.kicker} maxFontSizeMultiplier={1.15}>Overall · {analysis.overallRating ?? '—'}</Text>
+        <Text style={styles.headline} maxFontSizeMultiplier={1.15}>{analysis.headline}</Text>
+        <Text style={styles.note} maxFontSizeMultiplier={1.15}>{note}</Text>
       </View>
     </View>
   )
@@ -25,7 +25,7 @@ export function OverallScoreCard({ analysis, baselineLoading }: { analysis: Extr
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md },
   text: { flex: 1, gap: 3 },
-  kicker: { color: colors.muted, fontSize: font.caption, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-  headline: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
-  note: { color: colors.muted, fontSize: font.caption },
+  kicker: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
+  headline: { color: colors.text, fontSize: font.body - 1, fontWeight: '800' },
+  note: { color: colors.muted, fontSize: font.caption - 1 },
 })

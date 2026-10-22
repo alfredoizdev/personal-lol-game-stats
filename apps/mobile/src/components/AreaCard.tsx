@@ -30,13 +30,13 @@ export function AreaCard({
   return (
     <View style={styles.card}>
       <View style={styles.hero}>
-        <SemiDonut score={area.score} size={150} color={ratingColor(area.rating)} />
-        <Text style={styles.name}>{area.label}</Text>
-        <Text style={[styles.rating, { color: ratingColor(area.rating) }]}>{area.rating ?? 'Not scored'}</Text>
+        <SemiDonut score={area.score} size={120} color={ratingColor(area.rating)} />
+        <Text style={styles.name} maxFontSizeMultiplier={1.15}>{area.label}</Text>
+        <Text style={[styles.rating, { color: ratingColor(area.rating) }]} maxFontSizeMultiplier={1.15}>{area.rating ?? 'Not scored'}</Text>
       </View>
 
       {area.hiddenReason ? <Text style={styles.reason}>{area.hiddenReason}</Text> : null}
-      {area.sentence ? <Text style={styles.sentence}>{area.sentence}</Text> : null}
+      {area.sentence ? <Text style={styles.sentence} maxFontSizeMultiplier={1.15}>{area.sentence}</Text> : null}
 
       {needsTimeline && timelineError ? (
         <View style={styles.retryRow}>
@@ -65,9 +65,9 @@ export function AreaCard({
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.sm },
   hero: { alignItems: 'center', gap: 2, paddingTop: space.xs },
-  name: { color: colors.text, fontSize: font.title - 6, fontWeight: '800', marginTop: 2 },
-  rating: { fontSize: font.body, fontWeight: '700' },
-  sentence: { color: colors.text, fontSize: font.body, lineHeight: 23, textAlign: 'center', paddingHorizontal: space.xs },
+  name: { color: colors.text, fontSize: font.body + 3, fontWeight: '800', marginTop: 2 },
+  rating: { fontSize: font.body - 2, fontWeight: '700' },
+  sentence: { color: colors.text, fontSize: font.body - 2, lineHeight: 21, textAlign: 'center', paddingHorizontal: space.xs },
   reason: { color: colors.muted, fontSize: font.caption + 1, textAlign: 'center' },
   retryRow: { alignItems: 'center', gap: 6 },
   retry: { borderWidth: 1, borderColor: colors.accent, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 6 },

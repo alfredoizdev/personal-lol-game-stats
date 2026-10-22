@@ -18,8 +18,8 @@ export function AreaPills({ areas, active, onChange }: { areas: AreaResult[]; ac
             accessibilityState={{ selected: on }}
             style={[styles.pill, on && styles.pillOn, a.score === null && styles.pillHidden]}
           >
-            <Text style={[styles.label, on && styles.labelOn]}>{a.label}</Text>
-            <Text style={[styles.score, { color: a.score === null ? colors.muted : color }]}>{a.score === null ? '—' : a.score}</Text>
+            <Text style={[styles.label, on && styles.labelOn]} maxFontSizeMultiplier={1.15}>{a.label}</Text>
+            <Text style={[styles.score, { color: a.score === null ? colors.muted : color }]} maxFontSizeMultiplier={1.15}>{a.score === null ? '—' : a.score}</Text>
           </Pressable>
         )
       })}
@@ -34,5 +34,5 @@ const styles = StyleSheet.create({
   pillHidden: { opacity: 0.55 },
   label: { color: colors.muted, fontSize: font.caption, fontWeight: '700' },
   labelOn: { color: colors.text },
-  score: { fontSize: font.body, fontWeight: '800' },
+  score: { fontSize: font.body - 1, fontWeight: '800' },
 })

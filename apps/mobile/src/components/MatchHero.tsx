@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
   top: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
   titleBlock: { flex: 1, gap: 2 },
-  result: { fontSize: font.title - 4, fontWeight: '800' },
+  result: { fontSize: font.title - 8, fontWeight: '800' },
   champ: { color: colors.text, fontSize: font.body, fontWeight: '600' },
   meta: { color: colors.muted, fontSize: font.caption + 1 },
   items: { marginTop: space.sm },
