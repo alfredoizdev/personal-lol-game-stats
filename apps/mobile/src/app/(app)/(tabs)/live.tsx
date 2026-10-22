@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
-import { formatGoal, goalFor, goalStatus, liveMetrics } from '@lpp/shared'
+import { formatGoal, goalFor, goalStatus, liveMetrics, metricInfo } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { LiveHero } from '@/components/LiveHero'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
@@ -27,7 +27,9 @@ export default function LiveScreen() {
     if (!snapshot || !account || !snapshot.me.position) return null
     const g = goalFor(goals, account.puuid, byName(snapshot.me.championName), snapshot.me.position)
     if (!g) return null
-    return { text: formatGoal(g), status: goalStatus(g, liveMetrics(snapshot)[g.metric]) }
+    const value = liveMetrics(snapshot)[g.metric]
+    const m = metricInfo(g.metric)
+    return { text: formatGoal(g), status: goalStatus(g, value), now: value === null ? null : `${value.toFixed(m.decimals)}${g.metric === 'kpPct' ? '%' : ''}` }
   }, [snapshot, account, goals, byName])
 
   useEffect(() => {

@@ -22,7 +22,7 @@ function Side({ p, who, ring, align }: { p: LiveSnapshotV2['me']; who: 'You' | '
   )
 }
 
-export type LiveGoal = { text: string; status: 'on_track' | 'below' | 'unknown' }
+export type LiveGoal = { text: string; status: 'on_track' | 'below' | 'unknown'; now: string | null }
 
 const STATUS_TEXT: Record<LiveGoal['status'], string> = { on_track: 'On track', below: 'Below goal', unknown: '—' }
 
@@ -50,7 +50,7 @@ export function LiveHero({ snapshot, badge, goal = null }: { snapshot: LiveSnaps
           <Text style={styles.goal} maxFontSizeMultiplier={1.15}>{goal ? goal.text : 'Not set'}</Text>
           {goal ? (
             <Text style={[styles.goalStatus, { color: goal.status === 'on_track' ? colors.win : goal.status === 'below' ? colors.warn : colors.muted }]} maxFontSizeMultiplier={1.15}>
-              {STATUS_TEXT[goal.status]}
+              {STATUS_TEXT[goal.status]}{goal.now ? ` · now ${goal.now}` : ''}
             </Text>
           ) : null}
         </View>
