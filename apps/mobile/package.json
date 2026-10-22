@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@lpp/shared": "workspace:*",
+    "@react-navigation/bottom-tabs": "^7.21.0",
     "@supabase/supabase-js": "^2.106.2",
     "@tanstack/react-query": "^5.0.0",
     "expo": "~58.0.16",
