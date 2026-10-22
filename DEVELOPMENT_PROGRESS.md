@@ -8,7 +8,7 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 - [x] Phase 2 — Recent Matches — code complete 2026-10-21, verified with real data
 - [x] Phase 3 — Match Analysis v1
 - [x] Phase 4 — Live companion
-- [x] Phase 5 — Pre-match focus
+- [x] Phase 5 — Pre-match focus — code complete 2026-10-22; owner acceptance (saved goal → live → review) pending
 - [ ] Phase 6 — End-of-game sync, QA, beta readiness
 
 ## Phase 1 tasks

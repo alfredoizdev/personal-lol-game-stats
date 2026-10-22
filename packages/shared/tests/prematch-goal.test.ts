@@ -87,6 +87,9 @@ describe('liveMetrics / goalStatus / goalMet', () => {
     expect(goalMet({ metric: 'deathsPer10', target: 1.5 }, 2)).toBe(false)
     expect(goalMet({ metric: 'kpPct', target: 55 }, 60)).toBe(true)
     expect(goalMet({ metric: 'kpPct', target: 55 }, null)).toBeNull()
+    // compared at the metric's own precision, so what the player reads is what is judged
+    expect(goalMet({ metric: 'deathsPer10', target: 1.5 }, 1.53)).toBe(true)
+    expect(goalMet({ metric: 'csPerMin', target: 7 }, 6.96)).toBe(true)
   })
 })
 

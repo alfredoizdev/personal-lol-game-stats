@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { analyzeMatch, csCurve, goalFor, goldDiffCurve, metricsOf, summarizeMatch, type AreaKey, type GoalMetric, type PhaseKey } from '@lpp/shared'
 import { AreaCard } from '@/components/AreaCard'
@@ -21,12 +21,20 @@ import { identityOf, matchDetailQuery } from '@/hooks/useRecentMatches'
 import { analysisInputFromQueries, needsAnalysisData } from '@/lib/analysis-input'
 import { defaultArea } from '@/lib/area-ui'
 import { goalLine } from '@/lib/goal-line'
+import { setReviewOpen } from '@/lib/review-focus'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function MatchReviewScreen() {
   const { matchId } = useLocalSearchParams<{ matchId: string }>()
   const id = String(matchId)
+  // The pre-match backfill waits while a review is on screen (its timeline/baseline calls come first).
+  useFocusEffect(
+    useCallback(() => {
+      setReviewOpen(true)
+      return () => setReviewOpen(false)
+    }, []),
+  )
   const { data: account } = useLinkedAccount()
   const region = account?.region ?? 'NA'
   const detail = useQuery({ ...matchDetailQuery(id, region), enabled: !!matchId && !!account })

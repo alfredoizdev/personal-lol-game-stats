@@ -81,9 +81,12 @@ export function liveMetrics(s: LiveSnapshotV2): Record<GoalMetric, number | null
   }
 }
 
+/** Judged at the metric's own precision, so what the player reads is what is compared. */
 export function goalMet(goal: Pick<Goal, 'metric' | 'target'>, value: number | null): boolean | null {
   if (value === null) return null
-  return metricInfo(goal.metric).lowerIsBetter ? value <= goal.target : value >= goal.target
+  const m = metricInfo(goal.metric)
+  const v = roundTo(value, m.decimals)
+  return m.lowerIsBetter ? v <= goal.target : v >= goal.target
 }
 
 export function goalStatus(goal: Pick<Goal, 'metric' | 'target'>, value: number | null): 'on_track' | 'below' | 'unknown' {

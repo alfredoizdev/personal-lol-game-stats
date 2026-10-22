@@ -21,35 +21,41 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   const { goals, save, saving } = useGoals(account)
   const [role, setRole] = useState<Role | null>(null)
   const [championId, setChampionId] = useState<number | null>(null)
+  const [restored, setRestored] = useState(false)
 
-  // Restore the last pick; otherwise the role of the newest game.
+  // Restore the last pick first; only when there is none, default to the role of the newest game.
   useEffect(() => {
     void loadSelection().then((sel) => {
       if (sel) {
-        setRole((r) => r ?? sel.role)
-        setChampionId((c) => c ?? sel.championId)
+        setRole(sel.role)
+        setChampionId(sel.championId)
       }
+      setRestored(true)
     })
   }, [])
   useEffect(() => {
-    if (role === null && history.summaries.length) setRole(lastRole(history.summaries))
-  }, [role, history.summaries])
+    if (restored && role === null && history.summaries.length) setRole(lastRole(history.summaries))
+  }, [restored, role, history.summaries])
   useEffect(() => {
-    if (role && championId !== null) void saveSelection({ championId, role })
-  }, [role, championId])
+    if (restored && role && championId !== null) void saveSelection({ championId, role })
+  }, [restored, role, championId])
 
   const effectiveRole: Role = role ?? 'MIDDLE'
   const played = useMemo(() => playedChampions(history.summaries, effectiveRole), [history.summaries, effectiveRole])
   const selected = champions.find((c) => c.id === championId) ?? null
   const summary = useMemo(() => (championId === null ? null : championSummary(history.summaries, championId, effectiveRole)), [history.summaries, championId, effectiveRole])
-  const matchups = useMemo(() => toughestMatchups(history.summaries, effectiveRole), [history.summaries, effectiveRole])
+  // Display names from Data Dragon (Match-v5 carries internal names like "MonkeyKing").
+  const displayName = (id: number, fallback: string) => champions.find((c) => c.id === id)?.name ?? fallback
+  const allMatchups = useMemo(() => toughestMatchups(history.summaries, effectiveRole, Infinity), [history.summaries, effectiveRole])
+  const matchups = useMemo(() => allMatchups.slice(0, 5).map((r) => ({ ...r, championName: displayName(r.championId, r.championName) })), [allMatchups, champions])
+  const ban = banSuggestion(allMatchups.map((r) => ({ ...r, championName: displayName(r.championId, r.championName) })), ROLE_LABEL[effectiveRole])
   void byName
 
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Prepare your next game</Text>
       <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Your own games only. Pick what you are about to play.</Text>
-      <BackfillBar loaded={history.loaded} total={history.total} running={history.running} error={history.error} onStart={history.start} />
+      <BackfillBar loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onStart={history.start} />
       <RoleChips value={effectiveRole} onChange={setRole} />
       <ChampionPicker champions={champions} played={played} selected={selected} onSelect={(c) => setChampionId(c.id)} />
       {selected && summary ? (
@@ -57,6 +63,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
           <ChampionSummaryCard championName={selected.name} summary={summary} />
           <View style={styles.divider} />
           <GoalEditor
+            key={`${selected.id}:${effectiveRole}`}
             summaries={history.summaries}
             goals={goals}
             puuid={account.puuid}
@@ -69,7 +76,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
         </>
       ) : null}
       <View style={styles.divider} />
-      <MatchupsTable rows={matchups} ban={banSuggestion(matchups, ROLE_LABEL[effectiveRole])} />
+      <MatchupsTable rows={matchups} ban={ban} />
     </View>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, metricInfo, type Goal, type GoalMetric, type MatchSummary, type Role } from '@lpp/shared'
 import { stepTarget } from '@/lib/goal-steps'
@@ -7,6 +7,8 @@ import { colors, font, radius, space } from '@/theme/tokens'
 /**
  * One measurable goal for the next game: metric, target (stepper) and Save.
  * The default and where it came from are always stated (spec 2.4).
+ * Mounted with `key={champion:role}` by the parent, so a new champion or role
+ * starts from the saved goal for it (else the default) and never keeps stale state.
  */
 export function GoalEditor({
   summaries,
@@ -29,16 +31,27 @@ export function GoalEditor({
 }) {
   const current = goalFor(goals, puuid, championId, role)
   const exact = current && current.championId === championId ? current : null
-  const [metric, setMetric] = useState<GoalMetric>(exact?.metric ?? defaultGoal(summaries, championId, role).metric)
+  const [metric, setMetric] = useState<GoalMetric>(() => exact?.metric ?? defaultGoal(summaries, championId, role).metric)
   const suggested = defaultGoal(summaries, championId, role, metric)
-  const [target, setTarget] = useState<number | null>(exact?.metric === metric ? exact.target : suggested.target)
-  const [saved, setSaved] = useState(false)
+  const [target, setTarget] = useState<number | null>(() => (exact?.metric === metric ? exact.target : suggested.target))
+  const [touched, setTouched] = useState(false)
+  const [savedAt, setSavedAt] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const lastSuggested = useRef(suggested.target)
 
-  // A new champion / role / metric resets the field to the saved goal for it, else the default.
+  // Changing the metric starts from the saved goal for it, else the default.
   useEffect(() => {
-    setTarget(exact && exact.metric === metric ? exact.target : suggested.target)
-    setSaved(false)
-  }, [championId, role, metric, exact?.setAt, suggested.target])
+    setTarget(exact && exact.metric === metric ? exact.target : defaultGoal(summaries, championId, role, metric).target)
+    setTouched(false)
+  }, [metric])
+
+  // While the history is still loading, follow the moving default until the player touches the stepper.
+  useEffect(() => {
+    if (suggested.target !== lastSuggested.current) {
+      lastSuggested.current = suggested.target
+      if (!touched && !(exact && exact.metric === metric)) setTarget(suggested.target)
+    }
+  }, [suggested.target, touched, exact, metric])
 
   const info = metricInfo(metric)
   const source =
@@ -49,6 +62,12 @@ export function GoalEditor({
         : suggested.source === 'target'
           ? 'Default: the target for your role'
           : 'No default for this metric in this role — set it by hand'
+  const saved = savedAt !== null && exact?.setAt === savedAt
+  const step = (dir: 1 | -1) => {
+    setTouched(true)
+    setSaveError(null)
+    setTarget((t) => stepTarget(metric, t ?? 0, dir))
+  }
 
   return (
     <View style={styles.wrap}>
@@ -64,11 +83,11 @@ export function GoalEditor({
         })}
       </View>
       <View style={styles.stepper}>
-        <Pressable onPress={() => setTarget((t) => stepTarget(metric, t ?? 0, -1))} accessibilityRole="button" accessibilityLabel="Decrease" style={styles.stepBtn}>
+        <Pressable onPress={() => step(-1)} accessibilityRole="button" accessibilityLabel="Decrease" style={styles.stepBtn}>
           <Text style={styles.stepText}>−</Text>
         </Pressable>
         <Text style={styles.value} maxFontSizeMultiplier={1.15}>{target === null ? '—' : formatGoal({ metric, target })}</Text>
-        <Pressable onPress={() => setTarget((t) => stepTarget(metric, t ?? 0, 1))} accessibilityRole="button" accessibilityLabel="Increase" style={styles.stepBtn}>
+        <Pressable onPress={() => step(1)} accessibilityRole="button" accessibilityLabel="Increase" style={styles.stepBtn}>
           <Text style={styles.stepText}>+</Text>
         </Pressable>
       </View>
@@ -82,14 +101,20 @@ export function GoalEditor({
         disabled={target === null || saving}
         onPress={() => {
           if (target === null) return
-          void onSave({ championId, role, metric, target }).then(() => setSaved(true))
+          setSaveError(null)
+          onSave({ championId, role, metric, target })
+            .then(() => setSavedAt(new Date().toISOString()))
+            .catch((e: unknown) => setSaveError(e instanceof Error ? e.message : 'Could not save the goal'))
         }}
         accessibilityRole="button"
         style={[styles.save, (target === null || saving) && styles.saveOff]}
       >
-        <Text style={styles.saveText} maxFontSizeMultiplier={1.15}>{saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save goal'}</Text>
+        <Text style={styles.saveText} maxFontSizeMultiplier={1.15}>{saving ? 'Saving…' : saved || (savedAt && !exact) ? 'Saved ✓' : 'Save goal'}</Text>
       </Pressable>
-      <Text style={styles.hint} maxFontSizeMultiplier={1.15}>Shows on the Live tab when you play {championName} as {role === 'UTILITY' ? 'support' : role.toLowerCase()}, and is checked in the match review. Step {info.step}{info.unit.trim()}.</Text>
+      {saveError ? <Text style={styles.error} maxFontSizeMultiplier={1.15}>Couldn't save: {saveError}</Text> : null}
+      <Text style={styles.hint} maxFontSizeMultiplier={1.15}>
+        Shows on the Live tab when you play {championName} as {role === 'UTILITY' ? 'support' : role.toLowerCase()}, and is checked in the match review. Step {info.step}{info.unit.trim()}.
+      </Text>
     </View>
   )
 }
@@ -110,5 +135,6 @@ const styles = StyleSheet.create({
   save: { backgroundColor: colors.accent, borderRadius: radius.control, paddingVertical: 12, alignItems: 'center' },
   saveOff: { opacity: 0.5 },
   saveText: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  error: { color: colors.warn, fontSize: font.caption },
   hint: { color: colors.muted, fontSize: font.caption - 1, lineHeight: 17 },
 })

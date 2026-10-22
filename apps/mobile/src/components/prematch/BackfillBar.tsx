@@ -3,14 +3,14 @@ import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 /** "42 of 100 games loaded" + the only button that triggers Riot calls for the history (spec 5.3). */
-export function BackfillBar({ loaded, total, running, error, onStart }: { loaded: number; total: number; running: boolean; error: unknown | null; onStart: () => void }) {
+export function BackfillBar({ loaded, total, running, idsPending, error, onStart }: { loaded: number; total: number; running: boolean; idsPending: boolean; error: unknown | null; onStart: () => void }) {
   const done = total > 0 && loaded >= total
   const pct = total > 0 ? Math.round((loaded / total) * 100) : 0
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
         <Text style={styles.text} maxFontSizeMultiplier={1.15}>
-          {total === 0 ? 'Finding your recent games…' : `${loaded} of ${total} games loaded`}
+          {total === 0 ? (idsPending ? 'Finding your recent games…' : error ? "Couldn't list your games" : 'No recent games found') : `${loaded} of ${total} games loaded`}
         </Text>
         {!done && total > 0 ? (
           <Pressable onPress={onStart} disabled={running} accessibilityRole="button" style={[styles.btn, running && styles.btnOff]}>
@@ -23,7 +23,7 @@ export function BackfillBar({ loaded, total, running, error, onStart }: { loaded
       </View>
       {error ? (
         <Text style={styles.err} maxFontSizeMultiplier={1.15}>
-          {riotErrorCode(error) === 'RATE_LIMITED' ? 'Riot is rate-limiting; try again in a minute.' : "Couldn't load some games — try again."}
+          {riotErrorCode(error) === 'RATE_LIMITED' ? 'Riot is rate-limiting; try again in a minute.' : error instanceof Error && !(error as { code?: string }).code ? error.message : "Couldn't load some games — try again."}
         </Text>
       ) : null}
     </View>
