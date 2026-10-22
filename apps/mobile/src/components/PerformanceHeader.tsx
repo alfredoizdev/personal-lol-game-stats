@@ -22,7 +22,7 @@ export function PerformanceHeader({ games, donuts }: { games: number; donuts: He
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Last {games || 10} Games</Text>
-      <Text style={styles.subtitle} maxFontSizeMultiplier={1.15}>Overall Performance</Text>
+      <Text style={styles.subtitle} maxFontSizeMultiplier={1.15}>Recent form · your full picture is in Performance</Text>
       <View style={styles.row}>
         {donuts.map((d) => <Stat key={d.key} donut={d} />)}
       </View>
