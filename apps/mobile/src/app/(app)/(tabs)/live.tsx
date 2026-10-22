@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
+import { formatGoal, goalFor, goalStatus, liveMetrics } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { LiveHero } from '@/components/LiveHero'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
 import { LiveStatTiles } from '@/components/LiveStatTiles'
 import { LiveTrendChart } from '@/components/LiveTrendChart'
 import { PrepareCard } from '@/components/prematch/PrepareCard'
+import { useChampionList } from '@/hooks/useChampionList'
+import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useLiveSnapshot } from '@/hooks/useLiveSnapshot'
 import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
@@ -15,7 +18,17 @@ import { colors, font, radius, space } from '@/theme/tokens'
 export default function LiveScreen() {
   const { snapshot, state, connected } = useLiveSnapshot()
   const { data: account } = useLinkedAccount()
+  const { goals } = useGoals(account ?? null)
+  const { byName } = useChampionList()
   const [trend, setTrend] = useState<TrendPoint[]>([])
+
+  // The goal for the champion you are playing (by name → Data Dragon id), else the newest one for the role.
+  const liveGoal = useMemo(() => {
+    if (!snapshot || !account || !snapshot.me.position) return null
+    const g = goalFor(goals, account.puuid, byName(snapshot.me.championName), snapshot.me.position)
+    if (!g) return null
+    return { text: formatGoal(g), status: goalStatus(g, liveMetrics(snapshot)[g.metric]) }
+  }, [snapshot, account, goals, byName])
 
   useEffect(() => {
     if (snapshot) setTrend((h) => appendTrendPoint(h, snapshot))
@@ -37,6 +50,7 @@ export default function LiveScreen() {
           <LiveHero
             snapshot={snapshot}
             badge={state === 'ended' ? 'ENDED' : state === 'stale' ? 'RECONNECTING' : snapshot.gameMode === 'DEMO' ? 'DEMO' : 'LIVE'}
+            goal={liveGoal}
           />
           {state === 'stale' ? <Text style={styles.warn}>No update from the desktop for a while. Reconnecting…</Text> : null}
           <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} />

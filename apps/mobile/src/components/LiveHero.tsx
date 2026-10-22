@@ -22,7 +22,11 @@ function Side({ p, who, ring, align }: { p: LiveSnapshotV2['me']; who: 'You' | '
   )
 }
 
-export function LiveHero({ snapshot, badge }: { snapshot: LiveSnapshotV2; badge: 'LIVE' | 'DEMO' | 'RECONNECTING' | 'ENDED' }) {
+export type LiveGoal = { text: string; status: 'on_track' | 'below' | 'unknown' }
+
+const STATUS_TEXT: Record<LiveGoal['status'], string> = { on_track: 'On track', below: 'Below goal', unknown: '—' }
+
+export function LiveHero({ snapshot, badge, goal = null }: { snapshot: LiveSnapshotV2; badge: 'LIVE' | 'DEMO' | 'RECONNECTING' | 'ENDED'; goal?: LiveGoal | null }) {
   const badgeColor = badge === 'LIVE' || badge === 'DEMO' ? colors.enemy : badge === 'RECONNECTING' ? colors.warn : colors.muted
   const op = snapshot.opponent
   return (
@@ -43,7 +47,12 @@ export function LiveHero({ snapshot, badge }: { snapshot: LiveSnapshotV2; badge:
           <Text style={styles.timer}>{snapshot.gameTimeSeconds === null ? '--:--' : formatDuration(snapshot.gameTimeSeconds)}</Text>
           <View style={styles.vsLine} />
           <Text style={styles.goalLabel}>Personal goal</Text>
-          <Text style={styles.goal}>{snapshot.focus ? `Keep ${snapshot.focus.target.toFixed(1)}+ CS/min` : 'Not set'}</Text>
+          <Text style={styles.goal} maxFontSizeMultiplier={1.15}>{goal ? goal.text : 'Not set'}</Text>
+          {goal ? (
+            <Text style={[styles.goalStatus, { color: goal.status === 'on_track' ? colors.win : goal.status === 'below' ? colors.warn : colors.muted }]} maxFontSizeMultiplier={1.15}>
+              {STATUS_TEXT[goal.status]}
+            </Text>
+          ) : null}
         </View>
         {op ? (
           <Side p={op} who="Enemy" ring="enemy" align="right" />
@@ -58,6 +67,7 @@ export function LiveHero({ snapshot, badge }: { snapshot: LiveSnapshotV2; badge:
 }
 
 const styles = StyleSheet.create({
+  goalStatus: { fontSize: font.caption, fontWeight: '800', textAlign: 'center' },
   card: { borderRadius: radius.card, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSolid },
   artRow: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row' },
   art: { flex: 1, height: '100%', opacity: 0.55 },

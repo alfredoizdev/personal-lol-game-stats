@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
-import { analyzeMatch, csCurve, goldDiffCurve, summarizeMatch, type AreaKey, type PhaseKey } from '@lpp/shared'
+import { analyzeMatch, csCurve, goalFor, goldDiffCurve, metricsOf, summarizeMatch, type AreaKey, type GoalMetric, type PhaseKey } from '@lpp/shared'
 import { AreaCard } from '@/components/AreaCard'
 import { AreaPills } from '@/components/AreaPills'
 import { CsCurveChart } from '@/components/CsCurveChart'
@@ -14,11 +14,13 @@ import { MatchHero } from '@/components/MatchHero'
 import { OverallScoreCard } from '@/components/OverallScoreCard'
 import { RiotErrorView } from '@/components/RiotErrorView'
 import { useBaseline } from '@/hooks/useBaseline'
+import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useMatchTimeline } from '@/hooks/useMatchTimeline'
 import { identityOf, matchDetailQuery } from '@/hooks/useRecentMatches'
 import { analysisInputFromQueries, needsAnalysisData } from '@/lib/analysis-input'
 import { defaultArea } from '@/lib/area-ui'
+import { goalLine } from '@/lib/goal-line'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
@@ -36,6 +38,18 @@ export default function MatchReviewScreen() {
   const wantsAnalysis = needsAnalysisData(summary)
   const timeline = useMatchTimeline(wantsAnalysis ? id : undefined, region)
   const baseline = useBaseline(account ?? null, wantsAnalysis ? summary?.me.role ?? null : null, id)
+  const { goals } = useGoals(account ?? null)
+
+  // The goal in force when this game ended (set at or before game end), attached to the area that owns its metric.
+  const goalByArea = useMemo(() => {
+    if (!summary || !account || !summary.me.role) return {} as Partial<Record<AreaKey, { text: string; met: boolean | null }>>
+    const end = Date.parse(summary.startedAt) + summary.durationSec * 1000
+    const g = goalFor(goals, account.puuid, summary.me.championId, summary.me.role, end)
+    if (!g) return {}
+    const value = metricsOf(summary.me, summary.durationSec, summary.teamKills)[g.metric]
+    const owner: Record<GoalMetric, AreaKey> = { csPerMin: 'farming', visionPerMin: 'vision', deathsPer10: 'combat', kpPct: 'combat' }
+    return { [owner[g.metric]]: goalLine(g, value) }
+  }, [summary, account, goals])
 
   const { input, timelineError, baselineLoading } = analysisInputFromQueries({
     summary,
@@ -97,6 +111,7 @@ export default function MatchReviewScreen() {
                     chart={chart}
                     timelineError={timelineError}
                     onRetryTimeline={() => void timeline.refetch()}
+                    goalLine={goalByArea[area.key] ?? null}
                   />
                 ) : null}
                 {timeline.isPending ? <Text style={styles.hint}>Loading the timeline for phases and lane leads…</Text> : null}
