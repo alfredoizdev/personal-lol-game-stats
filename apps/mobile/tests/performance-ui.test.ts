@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, gamesNote, periodLabel, recordLabel, roleRankNote, streakLabel, subrowLine } from '../src/lib/performance-ui'
+import { barHeight, gamesNote, periodLabel, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
+import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
 
@@ -43,5 +44,12 @@ describe('performance-ui — roles and areas copy', () => {
     expect(subrowLine({ key: 'total', label: 'CS / min', avg: 6.4, target: 7, decimals: 1, suffix: '', n: 12 })).toBe('CS / min 6.4 · target 7.0')
     expect(subrowLine({ key: 'kp', label: 'Kill participation', avg: 48, target: 55, decimals: 0, suffix: '%', n: 12 })).toBe('Kill participation 48% · target 55%')
     expect(subrowLine({ key: 'kp', label: 'Kill participation', avg: null, target: 55, decimals: 0, suffix: '%', n: 0 })).toBe('Kill participation —')
+  })
+})
+
+describe('performance-ui — win rate colour', () => {
+  it('green from 50 %, red below', () => {
+    expect(winRateColor(50)).toBe(colors.win)
+    expect(winRateColor(49)).toBe(colors.loss)
   })
 })

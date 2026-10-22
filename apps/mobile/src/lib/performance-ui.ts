@@ -1,3 +1,4 @@
+import { colors } from '@/theme/tokens'
 import { ROLE_LABEL, type AreaSubrowStat, type Period, type PerformanceProfile, type Streak } from '@lpp/shared'
 
 /** Copy and geometry for the Performance tab; pure so it is testable. */
@@ -39,4 +40,8 @@ export function subrowLine(s: AreaSubrowStat): string {
   if (s.avg === null) return `${s.label} —`
   const fmt = (n: number) => `${n.toFixed(s.decimals)}${s.suffix}`
   return s.target === null ? `${s.label} ${fmt(s.avg)}` : `${s.label} ${fmt(s.avg)} · target ${fmt(s.target)}`
+}
+
+export function winRateColor(winRate: number): string {
+  return winRate >= 50 ? colors.win : colors.loss
 }

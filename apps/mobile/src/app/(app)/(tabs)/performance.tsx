@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from 'react-native'
 import { formatRiotId, performanceProfile, type Period } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { AreasCard } from '@/components/performance/AreasCard'
+import { ChampionsCard } from '@/components/performance/ChampionsCard'
+import { MatchupsCard } from '@/components/performance/MatchupsCard'
 import { OverviewCard } from '@/components/performance/OverviewCard'
 import { RolesCard } from '@/components/performance/RolesCard'
 import { PeriodChips } from '@/components/performance/PeriodChips'
@@ -32,6 +34,8 @@ export default function PerformanceScreen() {
           <OverviewCard profile={profile} />
           <RolesCard profile={profile} />
           <AreasCard profile={profile} />
+          <ChampionsCard profile={profile} />
+          <MatchupsCard profile={profile} />
         </>
       )}
     </Screen>
