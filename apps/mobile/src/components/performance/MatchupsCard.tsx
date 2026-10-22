@@ -43,11 +43,11 @@ export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
         <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent faced twice yet.</Text>
       ) : (
         <>
-          {profile.toughest.length ? <Text style={styles.section} maxFontSizeMultiplier={1.15}>You lose to</Text> : null}
+          {profile.toughest.length ? <Text style={[styles.section, styles.sectionGap]} maxFontSizeMultiplier={1.15}>You lose to</Text> : null}
           {list(profile.toughest)}
-          {profile.best.length ? <Text style={[styles.section, profile.toughest.length ? styles.sectionGap : null]} maxFontSizeMultiplier={1.15}>You beat</Text> : null}
+          {profile.best.length ? <Text style={[styles.section, styles.sectionGap]} maxFontSizeMultiplier={1.15}>You beat</Text> : null}
           {list(profile.best)}
-          {profile.even.length ? <Text style={[styles.section, profile.toughest.length || profile.best.length ? styles.sectionGap : null]} maxFontSizeMultiplier={1.15}>Even</Text> : null}
+          {profile.even.length ? <Text style={[styles.section, styles.sectionGap]} maxFontSizeMultiplier={1.15}>Even</Text> : null}
           {list(profile.even)}
         </>
       )}
@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.xs },
   title: { color: colors.text, fontSize: font.body + 2, fontWeight: '800' },
   sub: { color: colors.muted, fontSize: font.caption, marginBottom: space.xs },
-  section: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
-  sectionGap: { marginTop: space.sm },
+  section: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', paddingBottom: 2 },
+  sectionGap: { marginTop: space.md },
   muted: { color: colors.muted, fontSize: font.caption + 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
   name: { flex: 1, gap: 2 },
