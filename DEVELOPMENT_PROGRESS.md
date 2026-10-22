@@ -7,7 +7,7 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 - [x] Phase 1 — Foundation (monorepo, shared package, Electron collector, Expo app with login and tabs) — code complete 2026-10-21; credentialed acceptance pending (see below)
 - [x] Phase 2 — Recent Matches — code complete 2026-10-21, verified with real data
 - [ ] Phase 3 — Match Analysis v1
-- [ ] Phase 4 — Live companion
+- [x] Phase 4 — Live companion
 - [ ] Phase 5 — Pre-match focus
 - [ ] Phase 6 — End-of-game sync, QA, beta readiness
 
@@ -63,3 +63,20 @@ Limitations: macOS only. Matches and Live tabs are placeholders; Profile is func
 - 2026-10-21 (later) — Visual direction switched to mockups 06–08 (navy + violet palette in tokens). Profile tab added with multi-account support.
 - 2026-10-21 — Tasks 1–7 done. Phase 1 code complete; see verification section.
 - 2026-10-21 — Task 1 done. `@lpp/shared` with `parseRiotId`, regions, `LeagueStatus` types, Riot disclaimer. 8 tests green.
+
+## Phase 4 verification (2026-10-22)
+
+Plan: `docs/superpowers/plans/2026-10-21-phase-4-live.md`. Screenshots: `docs/screenshots/phase4-live.png`, `docs/screenshots/phase4-live-trend.png`.
+
+Verified with the owner's account:
+- Real game (owner on Caitlyn/Samira, bot lane): desktop logged `In game as <champion> · m:ss` every 2 s; the phone's Live tab showed LIVE badge, timer, You vs lane opponent (Tahm Kench), Lane Matchup with CS lead chip and comparison bars, KP / Vision / Level tiles, CS/min trend; at the end it showed ENDED with "Match ended → Go to Matches".
+- While queueing the desktop shows "Searching for a match…", then "Champion select", "Loading into the game…".
+- Vision score arrives from the Live Client API as a long float (13.0152835…); it is rounded in the collector and in the tile.
+- Snapshots older than 10 minutes (ended or stale) are forgotten and the tab returns to "Waiting for a match".
+- Payload check: the broadcast carries only `LiveSnapshotV2` (champion names, position, level, K/D/A, CS, CS/min, vision score, item ids, team kills, game time, queue, focus). No token, email, puuid or roster leaves the desktop. Channel is the public broadcast `user:<userId>` (private channels deferred to Phase 6).
+- Desktop is now a menu-bar app: tray icon from the logo, closing the window hides it, Quit from the tray menu, no Dock icon.
+- Dev-only DEMO feed (`LPP_LIVE_DEMO=1`, never in packaged builds) runs without League open so the pipeline can be exercised offline. Never run it while League is open.
+- Navigation fix found during this phase: Expo Router 58 hidden tabs (`href: null`) bounce navigation, so Match Review moved into a nested stack under the Matches tab (`(app)/(tabs)/matches/[matchId]`); tapping a row now opens the review.
+- `pnpm -r test`: shared 62, desktop 54, mobile 71. Lint and typecheck clean. No `RGAPI-` / JWT / service_role in sources.
+
+Riot budget unchanged: live data comes from the local Live Client API (no Riot Web API calls).
