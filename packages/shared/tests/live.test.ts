@@ -1,0 +1,151 @@
+import { describe, it, expect } from 'vitest'
+import {
+  buildLiveSnapshot,
+  liveViewState,
+  parseLiveSnapshot,
+  shouldPublish,
+  type LiveSnapshotV2,
+  type RawAllGameData,
+  type RawLivePlayer,
+} from '../src/live'
+
+const ME = { gameName: 'Hexed', tagLine: '7551' }
+
+function player(p: Partial<RawLivePlayer> & { team: 'ORDER' | 'CHAOS' }): RawLivePlayer {
+  return {
+    riotIdGameName: p.riotIdGameName ?? 'Someone',
+    riotIdTagLine: p.riotIdTagLine ?? 'NA1',
+    summonerName: p.summonerName,
+    championName: p.championName ?? 'Annie',
+    team: p.team,
+    position: p.position ?? 'TOP',
+    level: p.level ?? 1,
+    scores: p.scores ?? { kills: 0, deaths: 0, assists: 0, creepScore: 0, wardScore: 0 },
+    items: p.items ?? [],
+  }
+}
+
+function raw(opts: { me?: Partial<RawLivePlayer>; enemies?: RawLivePlayer[]; allies?: RawLivePlayer[]; gameTime?: number }): RawAllGameData {
+  const me = player({
+    team: 'ORDER', riotIdGameName: 'Hexed', riotIdTagLine: '7551', championName: 'Yasuo', position: 'MIDDLE', level: 11,
+    scores: { kills: 4, deaths: 1, assists: 3, creepScore: 112, wardScore: 9 },
+    items: [{ itemID: 3031 }, { itemID: 0 }, { itemID: 3006 }],
+    ...opts.me,
+  })
+  const allies = opts.allies ?? [
+    player({ team: 'ORDER', position: 'TOP', scores: { kills: 2, deaths: 0, assists: 1, creepScore: 90, wardScore: 5 } }),
+    player({ team: 'ORDER', position: 'JUNGLE', scores: { kills: 1, deaths: 2, assists: 5, creepScore: 80, wardScore: 12 } }),
+  ]
+  const enemies = opts.enemies ?? [
+    player({ team: 'CHAOS', position: 'MIDDLE', championName: 'Yone', level: 10, scores: { kills: 3, deaths: 4, assists: 2, creepScore: 100, wardScore: 6 }, items: [{ itemID: 6673 }] }),
+    player({ team: 'CHAOS', position: 'TOP' }),
+  ]
+  return {
+    activePlayer: { riotIdGameName: 'Hexed', riotIdTagLine: '7551', level: 11 },
+    allPlayers: [me, ...allies, ...enemies],
+    gameData: { gameTime: opts.gameTime ?? 872, gameMode: 'CLASSIC' },
+  }
+}
+
+const extra = { ts: 1_000_000, queueId: 420, isFinal: false, focus: null }
+
+describe('buildLiveSnapshot', () => {
+  it('maps me and the lane opponent with nullable numbers', () => {
+    const s = buildLiveSnapshot(raw({}), ME, extra)
+    expect(s).not.toBeNull()
+    expect(s!.v).toBe(2)
+    expect(s!.gameTimeSeconds).toBe(872)
+    expect(s!.gameMode).toBe('CLASSIC')
+    expect(s!.queueId).toBe(420)
+    expect(s!.teamKills).toBe(7) // 4 + 2 + 1
+    expect(s!.me).toEqual({
+      championName: 'Yasuo', position: 'MIDDLE', level: 11, kills: 4, deaths: 1, assists: 3, cs: 112, csPerMin: 7.7, wardScore: 9, items: [3031, 3006],
+    })
+    expect(s!.opponent).toMatchObject({ championName: 'Yone', position: 'MIDDLE', cs: 100, csPerMin: 6.9, items: [6673] })
+  })
+
+  it('csPerMin is null under 60 s of game time', () => {
+    const s = buildLiveSnapshot(raw({ gameTime: 30 }), ME, extra)
+    expect(s!.me.csPerMin).toBeNull()
+    expect(s!.opponent?.csPerMin).toBeNull()
+  })
+
+  it('opponent is null when two enemies share my position', () => {
+    const s = buildLiveSnapshot(
+      raw({ enemies: [player({ team: 'CHAOS', position: 'MIDDLE' }), player({ team: 'CHAOS', position: 'MIDDLE' })] }),
+      ME,
+      extra,
+    )
+    expect(s!.opponent).toBeNull()
+  })
+
+  it('ARAM (empty position) has no role and no opponent', () => {
+    const s = buildLiveSnapshot(raw({ me: { position: '' }, enemies: [player({ team: 'CHAOS', position: '' })] }), ME, extra)
+    expect(s!.me.position).toBeNull()
+    expect(s!.opponent).toBeNull()
+  })
+
+  it('matches the active player case-insensitively and falls back to summonerName', () => {
+    expect(buildLiveSnapshot(raw({}), { gameName: 'hexed', tagLine: '7551' }, extra)).not.toBeNull()
+    const legacy = raw({ me: { riotIdGameName: '', riotIdTagLine: '', summonerName: 'Hexed' } })
+    expect(buildLiveSnapshot(legacy, ME, extra)).not.toBeNull()
+  })
+
+  it('returns null when the player is not in allPlayers', () => {
+    expect(buildLiveSnapshot(raw({}), { gameName: 'Nobody', tagLine: 'XX' }, extra)).toBeNull()
+  })
+
+  it('carries isFinal and focus through', () => {
+    const s = buildLiveSnapshot(raw({}), ME, { ...extra, isFinal: true, focus: { metric: 'csPerMin', target: 7 } })
+    expect(s!.isFinal).toBe(true)
+    expect(s!.focus).toEqual({ metric: 'csPerMin', target: 7 })
+  })
+})
+
+describe('parseLiveSnapshot', () => {
+  const good = buildLiveSnapshot(raw({}), ME, extra)!
+  it('round-trips a built snapshot', () => {
+    expect(parseLiveSnapshot(JSON.parse(JSON.stringify(good)))).toEqual(good)
+  })
+  it('rejects foreign or corrupted payloads', () => {
+    expect(parseLiveSnapshot({})).toBeNull()
+    expect(parseLiveSnapshot({ v: 1 })).toBeNull()
+    expect(parseLiveSnapshot({ players: [], gameTimeSec: 10 })).toBeNull()
+    expect(parseLiveSnapshot({ ...good, me: { ...good.me, kills: '3' } })).toBeNull()
+    expect(parseLiveSnapshot(null)).toBeNull()
+    expect(parseLiveSnapshot('x')).toBeNull()
+  })
+  it('accepts a snapshot without opponent', () => {
+    expect(parseLiveSnapshot({ ...good, opponent: null })).toEqual({ ...good, opponent: null })
+  })
+})
+
+describe('liveViewState', () => {
+  const base = buildLiveSnapshot(raw({}), ME, extra)!
+  it('waiting without a snapshot', () => {
+    expect(liveViewState(null, 0)).toBe('waiting')
+  })
+  it('live when fresh, stale after 15 s, ended when final', () => {
+    expect(liveViewState(base, base.ts + 3_000)).toBe('live')
+    expect(liveViewState(base, base.ts + 16_000)).toBe('stale')
+    expect(liveViewState({ ...base, isFinal: true }, base.ts + 60_000)).toBe('ended')
+  })
+})
+
+describe('shouldPublish', () => {
+  const a = buildLiveSnapshot(raw({}), ME, extra)!
+  it('publishes the first snapshot', () => {
+    expect(shouldPublish(null, a)).toBe(true)
+  })
+  it('skips an identical snapshot within the heartbeat window', () => {
+    expect(shouldPublish(a, { ...a, ts: a.ts + 3_000 })).toBe(false)
+  })
+  it('publishes after the heartbeat interval even if unchanged', () => {
+    expect(shouldPublish(a, { ...a, ts: a.ts + 10_000 })).toBe(true)
+  })
+  it('publishes on any data change and on final', () => {
+    const b: LiveSnapshotV2 = { ...a, ts: a.ts + 2_000, me: { ...a.me, cs: 113 } }
+    expect(shouldPublish(a, b)).toBe(true)
+    expect(shouldPublish(a, { ...a, ts: a.ts + 1_000, isFinal: true })).toBe(true)
+  })
+})
