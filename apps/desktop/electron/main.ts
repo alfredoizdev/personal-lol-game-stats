@@ -78,8 +78,13 @@ function broadcastStatus(status: LeagueStatus): void {
     startLive()
   } else {
     lockfileCache = null
-    stopLive()
+    if (!isDemo()) stopLive()
   }
+}
+
+/** DEV ONLY: scripted live feed, independent of League (see live/demo-feed.ts). */
+function isDemo(): boolean {
+  return process.env.LPP_LIVE_DEMO === '1' && !app.isPackaged
 }
 
 function onLiveState(state: LiveState): void {
@@ -95,9 +100,13 @@ function onLiveState(state: LiveState): void {
 function startLive(): void {
   if (livePoller || !supabaseClient || !userId) return
   publisher = publisher ?? createLivePublisher(supabaseClient, userId)
+  const demo = isDemo()
   const identity = () =>
-    lastStatus.state === 'CONNECTED' ? { gameName: lastStatus.summoner.gameName, tagLine: lastStatus.summoner.tagLine } : null
-  const demo = process.env.LPP_LIVE_DEMO === '1' && !app.isPackaged
+    lastStatus.state === 'CONNECTED'
+      ? { gameName: lastStatus.summoner.gameName, tagLine: lastStatus.summoner.tagLine }
+      : demo
+        ? { gameName: 'Demo', tagLine: 'LPP' }
+        : null
   livePoller = startLivePoller({
     getLockfile: () => (demo ? { port: 0, password: '', protocol: 'https' } : lockfileCache),
     identity,
@@ -153,6 +162,7 @@ function onAuthState(state: AuthState): void {
   if (state.status === 'signed-in') {
     userId = state.userId
     startCollector()
+    if (isDemo()) startLive() // demo does not wait for League
   } else if (state.status === 'signed-out') {
     userId = null
     stopLive()

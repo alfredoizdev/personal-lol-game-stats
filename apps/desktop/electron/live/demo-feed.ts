@@ -38,7 +38,7 @@ export function createDemoDeps(opts: { appPath: string; identity: () => { gameNa
         return {
           ...p,
           level: 1 + Math.floor(t / 6),
-          scores: { ...p.scores, creepScore: cs, kills: isMe && t >= 20 ? 1 : 0, deaths: isEnemyMid && t >= 20 ? 1 : 0, wardScore: Math.floor(t / 10) },
+          scores: { ...p.scores, creepScore: cs, kills: isMe && t >= 20 ? 1 : 0, deaths: isEnemyMid && t >= 20 ? 1 : 0, wardScore: t / 10 + 0.0152835845 }, // float like the real Live Client API
         }
       })
       return { ...fixture, allPlayers: players, gameData: { gameTime: t * 10 + 600, gameMode: 'DEMO' } }
