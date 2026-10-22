@@ -10,6 +10,7 @@ there (design doc, section 3).
 |---|---|
 | `functions/match-timeline/` | Riot MATCH-V5 timeline proxy; caches the full blob, returns a reduced per-minute series (`reduce.ts`, unit-tested from `packages/shared/tests/timeline-reduce.test.ts`). |
 | `migrations/20261022000001_match_timeline_cache.sql` | `match_timeline_cache` table (service_role only). |
+| `migrations/20261022000002_pre_match_focus.sql` | `pre_match_focus` table: append-only personal goals per Riot account, RLS own (read/written by the phone). |
 
 Deploy (from the RiftLens repo, after copying):
 
