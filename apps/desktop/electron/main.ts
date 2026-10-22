@@ -7,7 +7,12 @@ import { createMainSupabaseClient } from './auth/supabase-main'
 import { createAuthController, type AuthController, type AuthState } from './auth/auth-controller'
 import { store } from './store'
 import { startDetector, type DetectorHandle } from './league/detector'
-import { statusLabel } from '../shared/status-label'
+import { readLockfile } from './league/lockfile'
+import type { LockfileData } from './league/lockfile'
+import { startLivePoller, type LivePollerHandle, type LiveState } from './league/live-poller'
+import { createLivePublisher, type LivePublisher } from './live/live-publisher'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { liveLabel, statusLabel } from '../shared/status-label'
 import { logger } from './logger'
 
 loadEnv({ path: path.join(app.getAppPath(), '.env') })
@@ -17,6 +22,12 @@ let tray: Tray | null = null
 let detector: DetectorHandle | null = null
 let lastStatus: LeagueStatus = { state: 'CLOSED' }
 let auth: AuthController | null = null
+let supabaseClient: SupabaseClient | null = null
+let userId: string | null = null
+let livePoller: LivePollerHandle | null = null
+let publisher: LivePublisher | null = null
+let lastLive: LiveState = { kind: 'idle' }
+let lockfileCache: LockfileData | null = null
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -59,6 +70,43 @@ function broadcastStatus(status: LeagueStatus): void {
   logger.info(`status: ${statusLabel(status)}`)
   tray?.setToolTip(statusLabel(status))
   mainWindow?.webContents.send(IPC.StatusChanged, status)
+  if (status.state === 'CONNECTED') {
+    void readLockfile().then((lf) => {
+      lockfileCache = lf
+    })
+    startLive()
+  } else {
+    lockfileCache = null
+    stopLive()
+  }
+}
+
+function onLiveState(state: LiveState): void {
+  lastLive = state
+  logger.info(`live: ${liveLabel(state)}`)
+  mainWindow?.webContents.send(IPC.LiveChanged, state)
+  if ((state.kind === 'live' || state.kind === 'ended') && publisher) {
+    publisher.publish(state.snapshot).catch((err) => logger.warn(`publish failed: ${String(err)}`))
+  }
+}
+
+/** Live poller + publisher run only while signed in AND League is connected. */
+function startLive(): void {
+  if (livePoller || !supabaseClient || !userId) return
+  publisher = publisher ?? createLivePublisher(supabaseClient, userId)
+  livePoller = startLivePoller({
+    getLockfile: () => lockfileCache,
+    identity: () => (lastStatus.state === 'CONNECTED' ? { gameName: lastStatus.summoner.gameName, tagLine: lastStatus.summoner.tagLine } : null),
+    focus: () => null,
+    onChange: onLiveState,
+  })
+  logger.info('live poller started')
+}
+
+function stopLive(): void {
+  livePoller?.stop()
+  livePoller = null
+  if (lastLive.kind !== 'idle') onLiveState({ kind: 'idle' })
 }
 
 function createTray(): Tray {
@@ -97,8 +145,16 @@ export function stopCollector(): void {
 function onAuthState(state: AuthState): void {
   logger.info(`auth: ${state.status}`)
   mainWindow?.webContents.send(IPC.AuthStateChanged, state)
-  if (state.status === 'signed-in') startCollector()
-  else if (state.status === 'signed-out' && detector) stopCollector()
+  if (state.status === 'signed-in') {
+    userId = state.userId
+    startCollector()
+  } else if (state.status === 'signed-out') {
+    userId = null
+    stopLive()
+    void publisher?.stop()
+    publisher = null
+    if (detector) stopCollector()
+  }
 }
 
 ipcMain.handle(IPC.GetStatus, () => lastStatus)
@@ -108,11 +164,13 @@ ipcMain.handle(IPC.AuthSignIn, (_e, { email, password }: { email: string; passwo
   auth ? auth.signIn(String(email), String(password)) : { error: 'Auth not ready' },
 )
 ipcMain.handle(IPC.AuthSignOut, () => auth?.signOut())
+ipcMain.handle(IPC.GetLive, () => lastLive)
 
 void app.whenReady().then(async () => {
   tray = createTray()
   mainWindow = createWindow()
-  auth = createAuthController(createMainSupabaseClient(), onAuthState)
+  supabaseClient = createMainSupabaseClient()
+  auth = createAuthController(supabaseClient, onAuthState)
   await auth.start()
 })
 

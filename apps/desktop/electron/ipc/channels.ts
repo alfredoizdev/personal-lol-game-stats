@@ -7,4 +7,6 @@ export const IPC = {
   AuthSignIn: 'lpp:auth-sign-in',
   AuthSignOut: 'lpp:auth-sign-out',
   AuthStateChanged: 'lpp:auth-state-changed',
+  GetLive: 'lpp:get-live',
+  LiveChanged: 'lpp:live-changed',
 } as const

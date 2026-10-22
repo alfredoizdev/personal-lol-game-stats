@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { LeagueStatus } from '@lpp/shared'
+import type { LiveState } from './league/live-poller'
 
 // Inlined copy of electron/ipc/channels.ts: a sandboxed preload cannot
 // require() relative modules. Keep both in sync.
@@ -11,6 +12,8 @@ const IPC = {
   AuthSignIn: 'lpp:auth-sign-in',
   AuthSignOut: 'lpp:auth-sign-out',
   AuthStateChanged: 'lpp:auth-state-changed',
+  GetLive: 'lpp:get-live',
+  LiveChanged: 'lpp:live-changed',
 } as const
 
 export type AuthState =
@@ -29,6 +32,8 @@ const api = {
   forceRefresh: (): Promise<LeagueStatus> => ipcRenderer.invoke(IPC.ForceRefresh),
   onStatusChanged: (cb: (status: LeagueStatus) => void): (() => void) =>
     subscribe<LeagueStatus>(IPC.StatusChanged, cb),
+  getLive: (): Promise<LiveState> => ipcRenderer.invoke(IPC.GetLive),
+  onLiveChanged: (cb: (state: LiveState) => void): (() => void) => subscribe<LiveState>(IPC.LiveChanged, cb),
   auth: {
     getState: (): Promise<AuthState> => ipcRenderer.invoke(IPC.AuthGetState),
     signIn: (email: string, password: string): Promise<{ error: string | null }> =>
