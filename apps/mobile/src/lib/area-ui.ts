@@ -1,6 +1,9 @@
 import { BASELINE_MIN_GAMES, type AreaKey, type MatchAnalysis, type Rating, type Subrow } from '@lpp/shared'
 import { colors } from '@/theme/tokens'
 
+/** Sub-rows that have an own-average (vs you) metric at all. */
+const BASELINE_ROWS: ReadonlySet<string> = new Set(['total', 'kp', 'deaths', 'visionPerMin', 'wardsPerMin'])
+
 export function ratingColor(r: Rating | null): string {
   switch (r) {
     case 'Poor':
@@ -36,6 +39,15 @@ export function deltaLabel(d: number | null, unit: string, who: 'opponent' | 'yo
   const sign = d > 0 ? '+' : d < 0 ? '−' : '±'
   const tail = who === 'you' && n !== undefined ? ` (${n} games)` : ''
   return `${sign}${num}${unit} vs ${who}${tail}`
+}
+
+/**
+ * The vs-you label for a sub-row: nothing while the average is loading or for
+ * rows that never have one; "few games" only where an average would apply.
+ */
+export function youDeltaLabel(subrow: Subrow, baselineN: number, baselineLoading: boolean): string | null {
+  if (baselineLoading || subrow.context || !BASELINE_ROWS.has(subrow.key)) return null
+  return deltaLabel(subrow.delta.vsYou, unitFor(subrow.key), 'you', baselineN)
 }
 
 /** Which area card opens first: the weakest, else the first scored one. */

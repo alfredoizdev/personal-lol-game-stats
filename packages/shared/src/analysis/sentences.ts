@@ -23,10 +23,14 @@ const AREA_LABEL: Record<AreaKey, string> = { farming: 'Farming', combat: 'Comba
 
 export const STRONG_FROM = 60
 
+/** The score's reference is always the role target; the opponent is added as context when known. */
 function reference(row: SentenceSubrow, kind: 'target' | 'max'): string {
-  if (row.opponentDisplay !== null) return `${row.opponentDisplay} for your opponent`
-  return `the ${row.targetDisplay ?? '—'} ${kind} for your role`
+  const base = `the ${row.targetDisplay ?? '—'} ${kind} for your role`
+  return row.opponentDisplay !== null ? `${base}, opponent ${row.opponentDisplay}` : base
 }
+
+/** Lane rows cite one number (me − opponent); the adjective must agree with its sign, not with the mean score. */
+const cited = (row: SentenceSubrow) => !row.display.startsWith('-') && !row.display.startsWith('−')
 
 /** Sentence for an area, from its weakest scored subrow. Empty when nothing was scored. */
 export function areaSentence(area: AreaKey, weakest: SentenceSubrow | null): string {
@@ -53,11 +57,11 @@ export function areaSentence(area: AreaKey, weakest: SentenceSubrow | null): str
     case 'wardsPerMin':
       return strong ? `Good warding: ${v} wards/min vs ${reference(weakest, 'target')}.` : `Few wards: ${v} wards/min vs ${reference(weakest, 'target')}.`
     case 'cs':
-      return strong ? `Ahead in lane: ${v} vs your opponent.` : `Behind in lane: ${v} vs your opponent.`
+      return cited(weakest) ? `Ahead in lane: ${v} vs your opponent.` : `Behind in lane: ${v} vs your opponent.`
     case 'gold':
-      return strong ? `Gold lead: ${v} vs your opponent.` : `Gold deficit: ${v} vs your opponent.`
+      return cited(weakest) ? `Gold lead: ${v} vs your opponent.` : `Gold deficit: ${v} vs your opponent.`
     case 'xp':
-      return strong ? `XP lead: ${v} vs your opponent.` : `XP deficit: ${v} vs your opponent.`
+      return cited(weakest) ? `XP lead: ${v} vs your opponent.` : `XP deficit: ${v} vs your opponent.`
     default:
       return ''
   }

@@ -14,12 +14,14 @@ import { colors, font, radius, space } from '@/theme/tokens'
 export function AreaCard({
   area,
   baselineN,
+  baselineLoading,
   chart,
   timelineError,
   onRetryTimeline,
 }: {
   area: AreaResult
   baselineN: number
+  baselineLoading: boolean
   chart?: ReactNode
   timelineError?: unknown
   onRetryTimeline?: () => void
@@ -50,7 +52,7 @@ export function AreaCard({
       {area.subrows.length ? (
         <View>
           {area.subrows.map((r) => (
-            <SubrowBar key={r.key} subrow={r} baselineN={baselineN} />
+            <SubrowBar key={r.key} subrow={r} baselineN={baselineN} baselineLoading={baselineLoading} />
           ))}
         </View>
       ) : null}

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { reduceTimeline, type RiotTimeline } from '../../../supabase/functions/match-timeline/reduce'
+import { laneDiffAt } from '../src/analysis/timeline-series'
 
 function rawFixture(): RiotTimeline {
   const participants = Array.from({ length: 10 }, (_, i) => ({ participantId: i + 1, puuid: `p${i + 1}` }))
@@ -28,13 +29,25 @@ describe('reduceTimeline', () => {
     expect(out.participants[5]).toEqual({ participantId: 6, puuid: 'p6' })
     expect(out.frames[0]!.cs).toEqual(new Array(10).fill(0))
   })
-  it('keeps array length 10 and zero-fills a missing participant frame', () => {
+  it('keeps array length 10 and emits null (not 0) for a missing or corrupt participant frame', () => {
     const raw = rawFixture()
     delete raw.info.frames[1]!.participantFrames['4']
+    raw.info.frames[1]!.participantFrames['7'] = { participantId: 7, minionsKilled: 'x' as unknown as number }
     const out = reduceTimeline(raw)
     expect(out.frames[1]!.cs.length).toBe(10)
-    expect(out.frames[1]!.cs[3]).toBe(0)
+    expect(out.frames[1]!.cs[3]).toBeNull()
+    expect(out.frames[1]!.gold[3]).toBeNull()
+    expect(out.frames[1]!.cs[6]).toBeNull()
     expect(out.frames[1]!.cs[4]).toBe(8)
+  })
+  it('a frame missing the opponent yields no lane diff and no fake lead downstream', () => {
+    const raw = rawFixture()
+    const clone = (ts: number) => ({ ...raw.info.frames[1]!, timestamp: ts, participantFrames: { ...raw.info.frames[1]!.participantFrames } })
+    raw.info.frames.push(clone(600000), clone(900000))
+    delete raw.info.frames[2]!.participantFrames['6']
+    const out = reduceTimeline(raw)
+    expect(laneDiffAt(out, 1, 6, 10, 'gold')).toBeNull()
+    expect(laneDiffAt(out, 1, 6, 15, 'gold')).toBe(raw.info.frames[3]!.participantFrames['1']!.totalGold! - raw.info.frames[3]!.participantFrames['6']!.totalGold!)
   })
   it('drops the events: the reduced payload carries only the per-minute numbers', () => {
     const out = reduceTimeline(rawFixture())

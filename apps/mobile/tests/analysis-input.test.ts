@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchSummary, TimelineSeries, Baseline } from '@lpp/shared'
-import { analysisInputFromQueries, type AnalysisQueryState } from '../src/lib/analysis-input'
+import { analysisInputFromQueries, needsAnalysisData, type AnalysisQueryState } from '../src/lib/analysis-input'
 
 const summary = { matchId: 'NA1_1' } as MatchSummary
 const series = { v: 1, matchId: 'NA1_1', participants: [], frames: [] } as TimelineSeries
@@ -36,5 +36,13 @@ describe('analysisInputFromQueries', () => {
   })
   it('passes the series through when the timeline succeeded', () => {
     expect(analysisInputFromQueries(state({})).input?.series).toBe(series)
+  })
+
+  it('needsAnalysisData gates the timeline and baseline fetches to analyzable, non-remake games', () => {
+    expect(needsAnalysisData({ queueId: 420, remake: false } as MatchSummary)).toBe(true)
+    expect(needsAnalysisData({ queueId: 450, remake: false } as MatchSummary)).toBe(false)
+    expect(needsAnalysisData({ queueId: 830, remake: false } as MatchSummary)).toBe(false)
+    expect(needsAnalysisData({ queueId: 420, remake: true } as MatchSummary)).toBe(false)
+    expect(needsAnalysisData(null)).toBe(false)
   })
 })

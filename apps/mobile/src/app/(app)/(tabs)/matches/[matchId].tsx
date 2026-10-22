@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -18,7 +18,7 @@ import { useBaseline } from '@/hooks/useBaseline'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useMatchTimeline } from '@/hooks/useMatchTimeline'
 import { identityOf, matchDetailQuery } from '@/hooks/useRecentMatches'
-import { analysisInputFromQueries } from '@/lib/analysis-input'
+import { analysisInputFromQueries, needsAnalysisData } from '@/lib/analysis-input'
 import { defaultArea } from '@/lib/area-ui'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
@@ -34,8 +34,9 @@ export default function MatchReviewScreen() {
     () => (detail.data && account ? summarizeMatch(detail.data, identityOf(account)) : null),
     [detail.data, account],
   )
-  const timeline = useMatchTimeline(summary ? id : undefined, region)
-  const baseline = useBaseline(account ?? null, summary?.me.role ?? null, id)
+  const wantsAnalysis = needsAnalysisData(summary)
+  const timeline = useMatchTimeline(wantsAnalysis ? id : undefined, region)
+  const baseline = useBaseline(account ?? null, wantsAnalysis ? summary?.me.role ?? null : null, id)
 
   const { input, timelineError, baselineLoading } = analysisInputFromQueries({
     summary,
@@ -44,11 +45,11 @@ export default function MatchReviewScreen() {
   })
   const analysis = useMemo(() => (input ? analyzeMatch(input) : null), [input])
 
-  const [active, setActive] = useState<AreaKey | null>(null)
-  useEffect(() => {
-    if (analysis && active === null) setActive(defaultArea(analysis))
-  }, [analysis, active])
-  const area = analysis?.analyzable ? analysis.areas.find((a) => a.key === (active ?? defaultArea(analysis))) ?? null : null
+  // The weakest area can change once the timeline lands (Lane and the phases join),
+  // so the default follows the data until the user taps a pill.
+  const [picked, setPicked] = useState<AreaKey | null>(null)
+  const active = picked ?? (analysis ? defaultArea(analysis) : null)
+  const area = analysis?.analyzable ? analysis.areas.find((a) => a.key === active) ?? null : null
 
   const chart = useMemo(() => {
     if (!summary || !area || !input?.series) return null
@@ -88,11 +89,12 @@ export default function MatchReviewScreen() {
             {analysis?.analyzable ? (
               <>
                 <OverallScoreCard analysis={analysis} baselineLoading={baselineLoading} />
-                <AreaPills areas={analysis.areas} active={area?.key ?? analysis.areas[0]!.key} onChange={setActive} />
+                <AreaPills areas={analysis.areas} active={area?.key ?? analysis.areas[0]!.key} onChange={setPicked} />
                 {area ? (
                   <AreaCard
                     area={area}
                     baselineN={analysis.baselineN}
+                    baselineLoading={baselineLoading}
                     chart={chart}
                     timelineError={timelineError}
                     onRetryTimeline={() => void timeline.refetch()}

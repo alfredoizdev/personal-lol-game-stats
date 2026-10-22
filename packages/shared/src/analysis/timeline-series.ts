@@ -5,7 +5,8 @@
  */
 import { PHASES, PHASE_MIN_SEC, type PhaseKey } from './targets'
 
-export type TimelineFrame = { t: number; cs: number[]; gold: number[]; xp: number[] }
+/** Arrays indexed by participantId − 1; null = that participant's frame was missing or corrupt. */
+export type TimelineFrame = { t: number; cs: Array<number | null>; gold: Array<number | null>; xp: Array<number | null> }
 
 export type TimelineSeries = {
   v: 1
@@ -48,10 +49,13 @@ function phaseWindow(phase: PhaseKey, durationSec: number): { startSec: number; 
 export function phaseCs(series: TimelineSeries, participantId: number, phase: PhaseKey, durationSec: number): number | null {
   const w = phaseWindow(phase, durationSec)
   if (!w) return null
-  const start = valueAt(frameAt(series, w.startSec), participantId, 'cs')
-  const end = valueAt(frameAt(series, w.endSec), participantId, 'cs')
-  if (start === null || end === null) return null
-  const minutes = (w.endSec - w.startSec) / 60
+  const startFrame = frameAt(series, w.startSec)
+  const endFrame = frameAt(series, w.endSec)
+  const start = valueAt(startFrame, participantId, 'cs')
+  const end = valueAt(endFrame, participantId, 'cs')
+  if (start === null || end === null || !startFrame || !endFrame) return null
+  // Divide by the span the frames actually cover: Riot's last frame may land just past gameDuration.
+  const minutes = (endFrame.t - startFrame.t) / 60
   return minutes > 0 ? (end - start) / minutes : null
 }
 

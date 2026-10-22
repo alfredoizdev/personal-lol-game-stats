@@ -64,15 +64,20 @@ is that weighted mean.
 
 ## 5. "vs you" baseline
 
-Your average over your last 20 analyzable games in the same role, excluding
-remakes and the game being reviewed. With fewer than 3 games the average is
+Your average over the games in the same role among your last 20 analyzable
+games, excluding remakes and the game being reviewed (so `n` is usually well
+under 20). With fewer than 3 games the average is
 labelled "few games" and the "vs you" deltas are hidden.
 
 ## 6. Sentences
 
 Each area's sentence names its weakest scored sub-row with the concrete number
-and its reference: "for your opponent" when the opponent's value exists,
-otherwise "the N target for your role". Context rows never drive a sentence.
+and **the reference the score was built from**: the role target ("vs the 7.5
+target for your role"), with the opponent's value appended as context when it
+exists (", opponent 5.9"). Lane sentences cite one number (you − opponent at 15
+min, or at 10 when 15 is missing) and their adjective (lead / deficit) follows
+the sign of that number, never the mean score. Context rows never drive a
+sentence.
 The headline names the weakest area when it is below 60, otherwise "Solid all
 around". No tactical advice, no win probability.
 
@@ -94,4 +99,8 @@ Timeline CS: 105 at 14 min, 170 at 25 min, 210 at 30 min. Lane diffs: CS +5 @10,
   +300 → 72 → 70. Area = mean → **69, Good**.
 - **Overall:** (62·35 + 99·30 + 69·20 + 96·15)/100 = 79.6 → **80, Great**.
 - Sentence (Farming, weakest sub-row = mid game): "Slow mid game: 5.9 CS/min vs
-  5.9 for your opponent (14–25 min)." Headline: "Solid all around".
+  the 7.5 target for your role, opponent 5.9 (14–25 min)." Headline: "Solid all
+  around".
+- A timeline frame that lacks a participant is `null` in the reduced series and
+  simply drops out (no lead or deficit is invented); phase CS/min divides by the
+  minutes the two frames really cover.

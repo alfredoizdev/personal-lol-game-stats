@@ -1,4 +1,9 @@
-import type { AnalysisInput, Baseline, MatchSummary, TimelineSeries } from '@lpp/shared'
+import { ANALYZABLE_QUEUES, type AnalysisInput, type Baseline, type MatchSummary, type TimelineSeries } from '@lpp/shared'
+
+/** Only analyzable, non-remake games fetch the timeline and the baseline (Riot budget). */
+export function needsAnalysisData(summary: MatchSummary | null): boolean {
+  return !!summary && ANALYZABLE_QUEUES.has(summary.queueId) && !summary.remake
+}
 
 /** What the Match Review screen has at hand, as plain data so the assembly is testable. */
 export type AnalysisQueryState = {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchAnalysis, Subrow } from '@lpp/shared'
-import { ratingColor, barFraction, deltaLabel, defaultArea } from '../src/lib/area-ui'
+import { ratingColor, barFraction, deltaLabel, defaultArea, youDeltaLabel } from '../src/lib/area-ui'
 import { colors } from '../src/theme/tokens'
 
 const subrow = (p: Partial<Subrow>): Subrow => ({
@@ -34,5 +34,20 @@ describe('area ui helpers', () => {
     const noWeakest = { analyzable: true, weakest: null, areas: [{ key: 'farming', score: null, hiddenReason: 'x' }, { key: 'combat', score: 50 }] } as unknown as MatchAnalysis
     expect(defaultArea(noWeakest)).toBe('combat')
     expect(defaultArea({ analyzable: false, reason: 'r' })).toBeNull()
+  })
+
+  it('youDeltaLabel: nothing while loading, "few games" only on rows that have an own-average metric', () => {
+    expect(youDeltaLabel(subrow({ key: 'total', delta: { vsOpponent: null, vsYou: 0.5 } }), 9, true)).toBeNull()
+    expect(youDeltaLabel(subrow({ key: 'total', delta: { vsOpponent: null, vsYou: 0.5 } }), 9, false)).toBe('+0.5 CS/min vs you (9 games)')
+    expect(youDeltaLabel(subrow({ key: 'total', delta: { vsOpponent: null, vsYou: null } }), 2, false)).toBe('few games')
+    expect(youDeltaLabel(subrow({ key: 'mid', delta: { vsOpponent: null, vsYou: null } }), 2, false)).toBeNull()
+    expect(youDeltaLabel(subrow({ key: 'gold', delta: { vsOpponent: null, vsYou: null } }), 0, false)).toBeNull()
+    expect(youDeltaLabel(subrow({ key: 'kda', context: true, delta: { vsOpponent: null, vsYou: null } }), 0, false)).toBeNull()
+  })
+  it('defaultArea follows the data until the user picks: a late-arriving Lane that is weakest wins', () => {
+    const partial = { analyzable: true, weakest: 'farming', areas: [{ key: 'farming', score: 62 }, { key: 'lane', score: null }] } as unknown as MatchAnalysis
+    const full = { analyzable: true, weakest: 'lane', areas: [{ key: 'farming', score: 62 }, { key: 'lane', score: 20 }] } as unknown as MatchAnalysis
+    expect(defaultArea(partial)).toBe('farming')
+    expect(defaultArea(full)).toBe('lane')
   })
 })

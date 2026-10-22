@@ -57,7 +57,7 @@ export default function HowScoredScreen() {
 
         <Section title='"vs you"'>
           <Text style={styles.body}>
-            Your average over your last 20 games in this role, excluding remakes and the game you are reading. Right now: {n} games{n < BASELINE_MIN_GAMES ? ` (fewer than ${BASELINE_MIN_GAMES}, so "vs you" is hidden)` : ''}.
+            Your average over the games in this role among your last 20, excluding remakes and the game you are reading. Right now: {n} games{n < BASELINE_MIN_GAMES ? ` (fewer than ${BASELINE_MIN_GAMES}, so "vs you" is hidden)` : ''}.
           </Text>
         </Section>
 

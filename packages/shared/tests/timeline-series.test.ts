@@ -46,6 +46,10 @@ describe('phaseCs', () => {
     const longer = series([[0, 0, 0], [1500, 190, 180], [1620, 200, 190]])
     expect(phaseCs(longer, 1, 'late', 1620)).toBeCloseTo(10 / 2, 2)
   })
+  it('divides by the real frame span, so a final frame just past gameDuration does not bias the late phase', () => {
+    const s = series([[0, 0, 0], [1500, 190, 180], [1620, 200, 190], [1651, 205, 195]])
+    expect(phaseCs(s, 1, 'late', 1650)).toBeCloseTo((200 - 190) / 2, 2) // frames 1500→1620 = 2 minutes
+  })
   it('null for a participant outside the arrays', () => {
     const s = series([[0, 0, 0], [840, 100, 90]])
     expect(phaseCs(s, 11, 'lane', 840)).toBeNull()

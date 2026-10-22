@@ -57,11 +57,12 @@ describe('analyzeMatch — the worked ADC example (docs/ANALYSIS.md)', () => {
     expect(rows[0]!.display).toBe('+5 @10 · +8 @15')
     expect(rows[0]!.value).toBe(8)
     expect(area(a, 'lane').sentence).toBe('Gold lead: +300 gold at 15 min vs your opponent.')
+    expect(area(a, 'combat').sentence).toBe('Strong kill participation: 70% vs the 55% target for your role.')
   })
   it('the weakest area drives the headline and the farming sentence names the mid game with its numbers', () => {
     expect(a.weakest).toBe('farming')
     expect(a.headline).toBe('Solid all around')
-    expect(area(a, 'farming').sentence).toBe('Slow mid game: 5.9 CS/min vs 5.9 for your opponent (14–25 min).')
+    expect(area(a, 'farming').sentence).toBe('Slow mid game: 5.9 CS/min vs the 7.5 target for your role, opponent 5.9 (14–25 min).')
     expect(a.baselineN).toBe(14)
     expect(a.timelineMissing).toBe(false)
   })
@@ -120,6 +121,23 @@ describe('analyzeMatch — degraded inputs', () => {
     expect(a.weakest).toBe('vision')
     expect(a.headline).toBe('What holds you back most: Vision')
     expect(area(a, 'vision').sentence).toBe('Low vision: 0.17 vision score/min vs the 0.60 target for your role.')
+  })
+})
+
+describe('analyzeMatch — sentence references', () => {
+  it('a lane sentence takes its adjective from the sign of the number it cites, not from the mean score', () => {
+    const s = adcSeries()
+    // @10: me +600 gold (76 pts), @15: me −100 (56 pts) → mean 66 but the cited @15 number is a deficit
+    s.frames[1]!.gold[3] = s.frames[1]!.gold[8]! + 600
+    s.frames[3]!.gold[3] = s.frames[3]!.gold[8]! - 100
+    const a = ok(analyzeMatch({ summary: game({ ...ADC_ME, role: 'UTILITY' }, { opponent: line({ ...ADC_OPP, role: 'UTILITY' }) }), series: s, baseline: null }))
+    const gold = area(a, 'lane').subrows.find((r) => r.key === 'gold')!
+    expect(gold.score).toBe(66) // (76 + 56) / 2
+    expect(area(a, 'lane').sentence).toMatch(/^(Gold deficit: −100 gold at 15 min vs your opponent\.|XP)/)
+  })
+  it('a deaths sentence cites the role ceiling, with the opponent as extra context', () => {
+    const a = ok(analyzeMatch({ summary: game({ ...ADC_ME, deaths: 6 }, { opponent: line({ ...ADC_OPP, deaths: 9 }) }), series: null, baseline: null }))
+    expect(area(a, 'combat').sentence).toBe('Too many deaths: 2.0 per 10 min vs the 1.5 max for your role, opponent 3.0.')
   })
 })
 

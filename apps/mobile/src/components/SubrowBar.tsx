@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { rating, type Subrow } from '@lpp/shared'
-import { barFraction, deltaLabel, ratingColor, unitFor } from '@/lib/area-ui'
+import { barFraction, deltaLabel, ratingColor, unitFor, youDeltaLabel } from '@/lib/area-ui'
 import { colors, font } from '@/theme/tokens'
 
 /** One explained metric: label, value, score bar, and the "vs opponent" / "vs you" deltas underneath. */
-export function SubrowBar({ subrow, baselineN }: { subrow: Subrow; baselineN: number }) {
+export function SubrowBar({ subrow, baselineN, baselineLoading }: { subrow: Subrow; baselineN: number; baselineLoading: boolean }) {
   const unit = unitFor(subrow.key)
-  const deltas = [deltaLabel(subrow.delta.vsOpponent, unit, 'opponent'), deltaLabel(subrow.delta.vsYou, unit, 'you', baselineN)].filter(
+  const deltas = [deltaLabel(subrow.delta.vsOpponent, unit, 'opponent'), youDeltaLabel(subrow, baselineN, baselineLoading)].filter(
     (d): d is string => d !== null,
   )
   const color = subrow.score === null ? colors.muted : ratingColor(rating(subrow.score))

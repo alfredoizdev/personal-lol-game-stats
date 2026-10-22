@@ -66,7 +66,7 @@ const MIN_SEC_FOR_RATE = 60
 
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
 const fmt = (n: number | null, d: number) => (n === null ? '—' : n.toFixed(d))
-const signed = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n)}`
+const signed = (n: number) => (n < 0 ? `−${Math.abs(Math.round(n))}` : `+${Math.round(n)}`)
 const diff = (a: number | null, b: number | null, d = 2) => (a === null || b === null ? null : round(a - b, d))
 
 export function metricsOf(line: PlayerLine, durationSec: number, teamKills: number): Metrics {
