@@ -40,7 +40,7 @@ export default function LiveScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Match ended</Text>
               <Text style={styles.muted}>Your review will appear in Matches in a minute.</Text>
-              <Pressable style={styles.button} onPress={() => router.navigate('/(app)/matches')} accessibilityRole="button">
+              <Pressable style={styles.button} onPress={() => router.navigate('/(app)/(tabs)/matches')} accessibilityRole="button">
                 <Text style={styles.buttonText}>Go to Matches</Text>
               </Pressable>
             </View>

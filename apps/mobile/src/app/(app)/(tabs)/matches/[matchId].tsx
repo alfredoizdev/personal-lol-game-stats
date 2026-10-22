@@ -27,7 +27,7 @@ export default function MatchReviewScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/matches'))} hitSlop={10} accessibilityRole="button" style={styles.back}>
+          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/(tabs)/matches'))} hitSlop={10} accessibilityRole="button" style={styles.back}>
             <Text style={styles.backText}>‹</Text>
           </Pressable>
           <View>
