@@ -33,10 +33,10 @@ jugador decide cuándo cargar; nada automático.
 
 ### 2.2 Periodo
 
-Chips **Last 20 · Last 50 · All loaded** sobre las partidas analizables
-(colas de la Grieta, sin remakes), de la más reciente a la más antigua. Por
-defecto Last 20. La selección no se persiste. Cada tarjeta dice sobre cuántas
-partidas está calculada.
+Decisión del owner (2026-10-22, tras la primera captura): **las últimas 20
+partidas** analizables (colas de la Grieta, sin remakes) y sin selector de
+periodo; el subtítulo de la pantalla lo dice ("last 20 games" o "your 7 loaded
+games"). El motor sigue aceptando 20/50/100 por si cambia.
 
 ### 2.3 Tarjeta Overview
 
@@ -46,9 +46,10 @@ partidas está calculada.
 - Récord "12W – 8L · 60 % win rate" y, si hay, la racha actual ("3-game loss
   streak", mínimo 2).
 - **Last 10 games**: diez barras (de la más antigua a la más reciente), altura
-  = puntuación, color = victoria/derrota.
-- Una frase descriptiva, nunca un consejo: "60 % win rate over 20 games ·
-  strongest as Mid · Vision is your weakest area".
+  = puntuación, color = victoria/derrota, una sola leyenda.
+- Owner (2026-10-22): la tarjeta se veía "muy regada"; se quitó la frase
+  descriptiva (repetía lo de las tarjetas de abajo) y la nota de periodo. El
+  motor sigue generando `headline` (testeado) por si se usa en otra vista.
 
 ### 2.4 Tarjeta Roles ("Where you are strongest")
 
@@ -80,7 +81,9 @@ Hasta 8 campeones por partidas jugadas: retrato (anillo verde ≥ 50 %, rojo
 
 ### 2.7 Tarjeta Lane matchups ("Who beats you")
 
-Agrupado por (campeón enemigo de línea, rol) sobre todos los roles, con ≥ 2
+Agrupado por (campeón enemigo de línea, rol) sobre todos los roles y sobre
+**todas las partidas cargadas** (no solo las 20 del periodo: un rival repetido
+es raro en 20 partidas; ajuste del builder tras la primera captura), con ≥ 2
 partidas, igual que la Fase 5 pero sin filtrar por rol:
 
 - **You lose to**: 5 peores con win rate < 50 % (ascendente; desempate: más

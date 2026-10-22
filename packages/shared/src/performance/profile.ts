@@ -55,8 +55,10 @@ export type PerformanceProfile = {
   weakestArea: AreaKey | null
   /** Games desc, win rate desc, name; at most 8. */
   champions: ChampionStat[]
+  /** Lane matchups use every loaded analyzable game (a repeat opponent is rare inside 20 games). */
   toughest: MatchupStat[]
   best: MatchupStat[]
+  matchupGames: number
   headline: string
 }
 
@@ -71,11 +73,8 @@ const meanInt = (xs: number[]) => {
 }
 
 export function performanceProfile(all: MatchSummary[], period: Period): PerformanceProfile {
-  const games = all
-    .filter((s) => ANALYZABLE_QUEUES.has(s.queueId) && !s.remake)
-    .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
-    .slice(0, period)
-    .map(scoreGame)
+  const analyzable = all.filter((s) => ANALYZABLE_QUEUES.has(s.queueId) && !s.remake).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
+  const games = analyzable.slice(0, period).map(scoreGame)
 
   const wins = games.filter((g) => g.s.me.win).length
   const scores = games.map((g) => g.score).filter((v): v is number => v !== null)
@@ -104,7 +103,8 @@ export function performanceProfile(all: MatchSummary[], period: Period): Perform
     areas,
     weakestArea,
     champions: championStats(games),
-    ...matchupStats(games),
+    ...matchupStats(analyzable),
+    matchupGames: analyzable.length,
     headline: '',
   }
   profile.headline = headline(profile)
@@ -219,9 +219,9 @@ function mostPlayedRole(gs: Scored[]): Role | null {
   return best
 }
 
-function matchupStats(games: Scored[]): { toughest: MatchupStat[]; best: MatchupStat[] } {
+function matchupStats(games: MatchSummary[]): { toughest: MatchupStat[]; best: MatchupStat[] } {
   const byKey = new Map<string, { championId: number; name: string; role: Role; games: number; wins: number }>()
-  for (const { s } of games) {
+  for (const s of games) {
     const role = s.me.role
     if (!role || !s.opponent || s.opponent.role !== role) continue
     const key = `${s.opponent.championId}:${role}`

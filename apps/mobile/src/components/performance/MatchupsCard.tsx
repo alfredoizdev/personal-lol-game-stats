@@ -38,7 +38,7 @@ export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Lane matchups</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents you faced at least twice</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents faced at least twice in your {profile.matchupGames} loaded games</Text>
       {none ? (
         <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent with a winning or losing record yet (faced twice, not 50 %).</Text>
       ) : (

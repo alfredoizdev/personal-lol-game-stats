@@ -29,7 +29,7 @@ const loss = (me: Partial<PlayerLine> = WEAK, extra: Partial<MatchSummary> = {},
 describe('performanceProfile — overview', () => {
   it('is empty and honest with no games', () => {
     const p = performanceProfile([], 20)
-    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [] })
+    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], matchupGames: 0 })
     expect(p.headline).toBe("No Summoner's Rift games loaded yet.")
     expect(PERIODS).toEqual([20, 50, 100])
   })
@@ -152,6 +152,15 @@ describe('performanceProfile — champions and matchups', () => {
       ['Draven', 'BOTTOM', 3, 1, 33, false],
     ])
     expect(p.best.map((m) => [m.championName, m.role, m.winRate])).toEqual([['Caitlyn', 'BOTTOM', 100]])
+  })
+  it('matchups use every loaded game, not just the period, and say how many', () => {
+    const draven = { championId: 119, championName: 'Draven' }
+    const old = [loss(WEAK, {}, draven), loss(WEAK, {}, draven)]
+    const recent = Array.from({ length: 20 }, () => win())
+    const p = performanceProfile([...old, ...recent], 20)
+    expect(p.games).toBe(20)
+    expect(p.matchupGames).toBe(22)
+    expect(p.toughest.map((m) => [m.championName, m.games])).toEqual([['Draven', 2]])
   })
   it('an even matchup (50 %) is in neither list', () => {
     const mf = { championId: 21, championName: 'MissFortune' }

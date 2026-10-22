@@ -144,8 +144,8 @@ non-remake games.
   (a "typical" target when roles are mixed). Weakest area needs ≥ 3 games.
 - **Champions:** by games (then win rate, then name), with the most-played role
   for that champion, mean score tier and "few games" under 3; at most 8.
-- **Lane matchups:** grouped by (enemy champion, role) when the enemy has the
-  same role; ≥ 2 games. "You lose to" = the 5 lowest win rates under 50 %
+- **Lane matchups:** over **every loaded game** (a repeat opponent is rare inside
+  20), grouped by (enemy champion, role) when the enemy has the same role; ≥ 2 games. "You lose to" = the 5 lowest win rates under 50 %
   (then more games, then name); "You beat" = the 3 highest above 50 %. An even
   record is in neither list.
 - **Headline** is descriptive only: "52% win rate over 20 games · strongest as
