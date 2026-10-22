@@ -3,15 +3,17 @@ import type { MatchupStat, PerformanceProfile } from '@lpp/shared'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { RoleIcon } from '@/components/RoleIcon'
 import { useChampionList } from '@/hooks/useChampionList'
-import { winRateColor, WINDOW } from '@/lib/performance-ui'
+import { matchupLoadingLine, winRateColor } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
+type LoadProps = { loaded: number; total: number; running: boolean }
+
 /**
- * Lane opponents you lose to most and beat most, across roles, over the last
- * 40 games (spec 2.7): the window plus the one before it, which the tab already
- * loads for "vs previous". A repeat opponent is rare inside 20 games.
+ * Lane opponents you lose to most, beat most, and split evenly with, across
+ * roles, over every loaded game (spec 2.7): the tab loads the last 100 by
+ * itself. A repeat opponent is rare inside 20 games.
  */
-export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
+export function MatchupsCard({ profile, ...load }: { profile: PerformanceProfile } & LoadProps) {
   const { champions } = useChampionList()
   const displayName = (m: MatchupStat) => champions.find((x) => x.id === m.championId)?.name ?? m.championName
   const list = (rows: MatchupStat[]) =>
@@ -38,19 +40,22 @@ export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
         </View>
       )
     })
-  const none = profile.toughest.length === 0 && profile.best.length === 0
+  const none = profile.toughest.length === 0 && profile.best.length === 0 && profile.even.length === 0
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Lane matchups</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents faced at least twice in your last {profile.matchupGames} games (twice the {WINDOW}-game window)</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents faced at least twice in your last {profile.matchupGames} games</Text>
+      {matchupLoadingLine(load) ? <Text style={styles.loading} maxFontSizeMultiplier={1.15}>{matchupLoadingLine(load)}</Text> : null}
       {none ? (
-        <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent with a winning or losing record yet (faced twice, not 50 %).</Text>
+        <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent faced twice yet.</Text>
       ) : (
         <>
           {profile.toughest.length ? <Text style={styles.section} maxFontSizeMultiplier={1.15}>You lose to</Text> : null}
           {list(profile.toughest)}
           {profile.best.length ? <Text style={[styles.section, profile.toughest.length ? styles.sectionGap : null]} maxFontSizeMultiplier={1.15}>You beat</Text> : null}
           {list(profile.best)}
+          {profile.even.length ? <Text style={[styles.section, profile.toughest.length || profile.best.length ? styles.sectionGap : null]} maxFontSizeMultiplier={1.15}>Even</Text> : null}
+          {list(profile.even)}
         </>
       )}
     </View>
@@ -64,6 +69,7 @@ const styles = StyleSheet.create({
   section: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
   sectionGap: { marginTop: space.sm },
   muted: { color: colors.muted, fontSize: font.caption + 1 },
+  loading: { color: colors.accent, fontSize: font.caption },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
   name: { flex: 1, gap: 2 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

@@ -81,3 +81,9 @@ export function loadState(s: { idsPending: boolean; total: number; loadedInWindo
   if (s.running || !s.attempted) return 'loading'
   return 'short'
 }
+
+/** Progress of the background load that feeds the matchups; null once every game is in. */
+export function matchupLoadingLine(s: { loaded: number; total: number; running: boolean }): string | null {
+  if (s.total === 0 || s.loaded >= s.total) return null
+  return s.running ? `Loading more games for matchups… ${s.loaded} / ${s.total}` : `${s.loaded} of your last ${s.total} games loaded`
+}
