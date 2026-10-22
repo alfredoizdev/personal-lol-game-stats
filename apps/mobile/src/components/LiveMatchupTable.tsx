@@ -12,18 +12,44 @@ function cmp(a: number | null, b: number | null): Cmp {
 const fmt = (n: number | null, d = 0) => (n === null ? '—' : n.toFixed(d))
 const kda = (p: LivePlayerV2) => (p.kills === null ? '—' : `${p.kills}/${p.deaths ?? '—'}/${p.assists ?? '—'}`)
 
-function Row({ icon, label, me, enemy, better, last }: { icon: React.ReactNode; label: string; me: string; enemy: string; better: Cmp; last?: boolean }) {
+/** Two bars growing from the centre: your share to the left, the enemy's to the right. */
+function CompareBar({ me, enemy }: { me: number | null; enemy: number | null }) {
+  if (me === null || enemy === null) return <View style={styles.barTrack} />
+  const total = me + enemy
+  const meShare = total > 0 ? me / total : 0.5
   return (
-    <View style={[styles.row, last && styles.rowLast]}>
-      <Text style={[styles.cell, better === 'me' && styles.me]}>{me}</Text>
-      <View style={styles.labelBlock}>
-        {icon}
-        <Text style={styles.label}>{label}</Text>
+    <View style={styles.barTrack}>
+      <View style={styles.barHalf}>
+        <View style={[styles.barFill, styles.barMe, { width: `${Math.round(meShare * 100)}%` }]} />
       </View>
-      <Text style={[styles.cell, better === 'enemy' && styles.enemy]}>{enemy}</Text>
+      <View style={styles.barGap} />
+      <View style={[styles.barHalf, { justifyContent: 'flex-start' }]}>
+        <View style={[styles.barFill, styles.barEnemy, { width: `${Math.round((1 - meShare) * 100)}%` }]} />
+      </View>
     </View>
   )
 }
+
+function Row({ icon, label, me, enemy, meNum, enemyNum, better, delta, last }: {
+  icon: React.ReactNode; label: string; me: string; enemy: string; meNum: number | null; enemyNum: number | null; better: Cmp; delta?: string; last?: boolean
+}) {
+  return (
+    <View style={[styles.row, last && styles.rowLast]}>
+      <View style={styles.rowTop}>
+        <Text style={[styles.cell, better === 'me' && styles.me]}>{me}</Text>
+        <View style={styles.labelBlock}>
+          {icon}
+          <Text style={styles.label}>{label}</Text>
+          {delta ? <Text style={[styles.delta, better === 'me' ? styles.me : better === 'enemy' ? styles.enemy : null]}>{delta}</Text> : null}
+        </View>
+        <Text style={[styles.cell, better === 'enemy' && styles.enemy]}>{enemy}</Text>
+      </View>
+      <CompareBar me={meNum} enemy={enemyNum} />
+    </View>
+  )
+}
+
+const signed = (a: number | null, b: number | null, d = 0) => (a === null || b === null ? undefined : `${a - b >= 0 ? '+' : ''}${(a - b).toFixed(d)}`)
 
 const ICON = (name: React.ComponentProps<typeof MaterialCommunityIcons>['name']) => <MaterialCommunityIcons name={name} size={14} color={colors.muted} />
 const ION = (name: React.ComponentProps<typeof Ionicons>['name']) => <Ionicons name={name} size={14} color={colors.muted} />
@@ -58,11 +84,11 @@ export function LiveMatchupTable({ me, opponent }: { me: LivePlayerV2; opponent:
           <Text style={[styles.headName, { color: colors.enemy }]}>{e ? 'Enemy' : '—'}</Text>
         </View>
       </View>
-      <Row icon={ICON('sword-cross')} label="KDA" me={kda(me)} enemy={e ? kda(e) : ''} better="tie" />
-      <Row icon={ICON('diamond-stone')} label="CS" me={fmt(me.cs)} enemy={e ? fmt(e.cs) : ''} better={e ? cmp(me.cs, e.cs) : 'tie'} />
-      <Row icon={ION('time-outline')} label="CS / min" me={fmt(me.csPerMin, 1)} enemy={e ? fmt(e.csPerMin, 1) : ''} better={e ? cmp(me.csPerMin, e.csPerMin) : 'tie'} />
-      <Row icon={ION('bar-chart-outline')} label="Level" me={fmt(me.level)} enemy={e ? fmt(e.level) : ''} better={e ? cmp(me.level, e.level) : 'tie'} />
-      <Row icon={ION('eye-outline')} label="Vision" me={fmt(me.wardScore)} enemy={e ? fmt(e.wardScore) : ''} better={e ? cmp(me.wardScore, e.wardScore) : 'tie'} last />
+      <Row icon={ICON('sword-cross')} label="KDA" me={kda(me)} enemy={e ? kda(e) : ''} meNum={me.kills} enemyNum={e?.kills ?? null} better={e ? cmp(me.kills, e.kills) : 'tie'} />
+      <Row icon={ICON('diamond-stone')} label="CS" me={fmt(me.cs)} enemy={e ? fmt(e.cs) : ''} meNum={me.cs} enemyNum={e?.cs ?? null} better={e ? cmp(me.cs, e.cs) : 'tie'} delta={e ? signed(me.cs, e.cs) : undefined} />
+      <Row icon={ION('time-outline')} label="CS / min" me={fmt(me.csPerMin, 1)} enemy={e ? fmt(e.csPerMin, 1) : ''} meNum={me.csPerMin} enemyNum={e?.csPerMin ?? null} better={e ? cmp(me.csPerMin, e.csPerMin) : 'tie'} delta={e ? signed(me.csPerMin, e.csPerMin, 1) : undefined} />
+      <Row icon={ION('bar-chart-outline')} label="Level" me={fmt(me.level)} enemy={e ? fmt(e.level) : ''} meNum={me.level} enemyNum={e?.level ?? null} better={e ? cmp(me.level, e.level) : 'tie'} delta={e ? signed(me.level, e.level) : undefined} />
+      <Row icon={ION('eye-outline')} label="Vision" me={fmt(me.wardScore)} enemy={e ? fmt(e.wardScore) : ''} meNum={me.wardScore} enemyNum={e?.wardScore ?? null} better={e ? cmp(me.wardScore, e.wardScore) : 'tie'} delta={e ? signed(me.wardScore, e.wardScore) : undefined} last />
     </View>
   )
 }
@@ -78,11 +104,19 @@ const styles = StyleSheet.create({
   head: { flex: 1, alignItems: 'center', gap: 2 },
   headSpacer: { width: 96 },
   headName: { fontSize: font.caption + 1, fontWeight: '800' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border },
+  row: { paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border, gap: 6 },
+  rowTop: { flexDirection: 'row', alignItems: 'center' },
+  delta: { fontSize: font.caption - 1, fontWeight: '700', color: colors.muted, marginLeft: 2 },
+  barTrack: { flexDirection: 'row', height: 4, marginHorizontal: 8 },
+  barHalf: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', overflow: 'hidden' },
+  barGap: { width: 2 },
+  barFill: { height: 4, borderRadius: 2 },
+  barMe: { backgroundColor: '#0E9DB5', alignSelf: 'flex-end' },
+  barEnemy: { backgroundColor: '#E8486F', alignSelf: 'flex-start' },
   rowLast: { borderBottomWidth: 1, borderBottomColor: colors.border },
   cell: { flex: 1, color: colors.text, fontSize: font.body, fontWeight: '700', textAlign: 'center' },
   me: { color: colors.you },
   enemy: { color: colors.enemy },
-  labelBlock: { width: 96, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  labelBlock: { width: 110, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
   label: { color: colors.muted, fontSize: font.caption + 1 },
 })

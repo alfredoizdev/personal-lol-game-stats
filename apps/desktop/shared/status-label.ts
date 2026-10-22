@@ -16,12 +16,20 @@ export function statusLabel(status: LeagueStatus): string {
   }
 }
 
+const WAITING_LABEL: Partial<Record<string, string>> = {
+  Matchmaking: 'Searching for a match…',
+  ReadyCheck: 'Match found — accept it!',
+  ChampSelect: 'Champion select',
+  GameStart: 'Loading into the game…',
+  Lobby: 'In lobby',
+}
+
 export function liveLabel(state: LiveState): string {
   switch (state.kind) {
     case 'idle':
       return 'Not in a game'
     case 'waiting':
-      return `Waiting for a match (${state.phase})`
+      return WAITING_LABEL[state.phase] ?? 'Waiting for a match'
     case 'live':
       return `In game as ${state.snapshot.me.championName} · ${state.snapshot.gameTimeSeconds === null ? '--:--' : formatDuration(state.snapshot.gameTimeSeconds)}`
     case 'ended':

@@ -16,7 +16,7 @@ function Side({ p, who, ring, align }: { p: LiveSnapshotV2['me']; who: 'You' | '
       <Text style={styles.champ} numberOfLines={1}>{p.championName || '—'}</Text>
       <Text style={styles.meta}>{p.position ? ROLE_LABEL[p.position] : ' '}</Text>
       <View style={styles.items}>
-        <ItemRow items={p.items.slice(0, 6)} trinket={p.items[6] ?? 0} size={20} />
+        <ItemRow items={p.items.slice(0, 6)} trinket={p.items[6] ?? 0} size={22} wrap />
       </View>
     </View>
   )
