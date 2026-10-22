@@ -223,7 +223,7 @@ Elementos de 06–08 que **no** se construyen tal cual, y por qué:
 ## 11b. Decisiones añadidas el 2026-10-22
 
 5. **Objetivo: aprobación de Riot.** El owner va a someter LanePulse al portal de desarrolladores de Riot para producción. Toda función se diseña para pasar esa revisión: nada de consejo táctico en vivo, ni en pantalla ni en notificaciones; solo datos propios y estado neutro.
-6. **Notificaciones de objetivo en partida (petición del owner):** se harán en la Fase 6, enviadas por el desktop a través del servicio push de Expo (el móvil registra su token en Supabase), cada 5 minutos o solo al cambiar de estado (opción), con texto de estado ("15:00 · Goal 7.0 CS/min · Below goal, now 5.2"), nunca una instrucción. Requieren build de desarrollo con EAS.
+6. **Notificaciones de objetivo en partida (petición del owner):** se harán en la Fase 6, enviadas por el desktop a través del servicio push de Expo (el móvil registra su token en Supabase), cada 5 minutos o solo al cambiar de estado (opción), con texto de estado ("15:00 · Goal 7.0 CS/min · Below goal, now 5.2"), nunca una instrucción. Requieren build de desarrollo con EAS. **Hecho en la Fase 7** (`2026-10-22-phase-7-riot-submission-design.md`): canal privado `lanepulse:<uid>`, `goal-notifier` compartido, envío desde el desktop, textos legales, sitio público y documento de solicitud en `docs/riot/`.
 
 ## 12. Lo que queda al builder
 

@@ -10,7 +10,8 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 - [x] Phase 4 — Live companion
 - [x] Phase 5 — Pre-match focus — code complete 2026-10-22; owner acceptance (saved goal → live → review) pending
 - [x] Phase 6 — Performance page — code complete 2026-10-22; owner acceptance on device pending
-- [ ] Phase 7 — Riot submission package (status-only goal notifications, terms & privacy, EAS build, private channel, application write-up), then end-of-game sync / QA / installer
+- [x] Phase 7 — Riot submission package — code complete 2026-10-22; owner steps pending (EAS build + push acceptance, site deploy, legal entity review)
+- [ ] Phase 8 — end-of-game sync / QA / installer
 
 ## Phase 1 tasks
 
@@ -114,3 +115,15 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-6-performance.md`. Spec: `docs/su
 - No new Riot calls, Edge Functions or desktop changes. Copy is descriptive only.
 - Engine cases covered by tests: empty; ARAM/remakes excluded; period larger than loaded; recent order and cap; streak 1 / 3 / 10; single rankable role; support without Farming; weakest area needs 3 games; champion limit 8 with most-played role; matchups needing 2 games, same role only, limits 5/3; headline.
 - Verified in the simulator with temporary launch hacks (redirect + auto-start + scroll, reverted) on the owner's account: 100 games loaded, overview 47 "5+ · Needs Work", Mid 60 % / Bot 30 %, Farming weakest (5.5 CS/min vs 7.3 target), 8 champions, matchups over 98 games. The owner reviewed the first version on device and asked for the leaner overview and the fixed 20-game window (done). Acceptance of the final layout pending.
+
+## Phase 7 verification (2026-10-22)
+
+Plan: `docs/superpowers/plans/2026-10-22-phase-7-riot-submission.md`. Spec: `docs/superpowers/specs/2026-10-22-phase-7-riot-submission-design.md`. Riot package: `docs/riot/{application,call-budget,deletion,build}.md`.
+
+- Legal text once in `packages/shared/src/legal.ts` (Terms 10 sections, Privacy 11; no TBD; entity marked for review), rendered into the static site `apps/site` (`node build.mjs` → `dist/`, Vercel-ready, disclaimer on every page) and into `/legal/terms` and `/legal/privacy` in the app (outside the auth group, pushed from the sign-up checkbox links so the form keeps its values). Sign-up stores `accepted_legal_version`; Profile → Legal shows it.
+- Migrations applied to the shared project: `lanepulse_push_tokens`, `notification_prefs`, Realtime Authorization policies for the private topic `lanepulse:<uid>`.
+- Live channel renamed and private on both ends (`liveTopic(userId)`); verified with the demo feed (`docs/screenshots/phase7-live-private-channel.png`).
+- Goal notifier engine (pure, shared): first status after 60 s, change/interval modes, 60 s gap, one final. Desktop `createGoalPush` reads prefs/tokens/goals/linked accounts under RLS and posts to Expo; revokes dead tokens; never blocks the poller.
+- Mobile: lazy `expo-notifications` registration (skipped in Expo Go and simulators), Profile → Notifications (switch, two cadence rows, "Status only — never tips."), tap routing that ignores non-LanePulse payloads, `eas.json` profiles, delete-account dialog lists what is removed.
+- Tests: shared 180, desktop 72, mobile 152, site 1. Lint and typecheck clean. No secrets.
+- Owner steps (not blocking merge): `eas init` + development build on a device, one real game with the toggle on, `vercel deploy` of `apps/site`, legal entity and regions review before submitting (`docs/riot/application.md` checklist).
