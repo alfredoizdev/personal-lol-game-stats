@@ -67,7 +67,7 @@ const MIN_SEC_FOR_RATE = 60
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
 const fmt = (n: number | null, d: number) => (n === null ? '—' : n.toFixed(d))
 const signed = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n)}`
-const diff = (a: number | null, b: number | null) => (a === null || b === null ? null : round(a - b, 2))
+const diff = (a: number | null, b: number | null, d = 2) => (a === null || b === null ? null : round(a - b, d))
 
 export function metricsOf(line: PlayerLine, durationSec: number, teamKills: number): Metrics {
   const minutes = durationSec / 60
@@ -132,14 +132,14 @@ function finish(key: AreaKey, weight: number, subrows: Subrow[], hiddenReason: s
 }
 
 /** Opponent/target displays travel with the subrow so the sentence can cite them. */
-const sentenceInfo = new WeakMap<Subrow, { targetDisplay: string | null; opponentDisplay: string | null }>()
+const sentenceInfo = new WeakMap<Subrow, { sentenceDisplay: string | null; targetDisplay: string | null; opponentDisplay: string | null }>()
 function toSentenceRow(r: Subrow): SentenceSubrow {
-  const info = sentenceInfo.get(r) ?? { targetDisplay: null, opponentDisplay: null }
-  return { key: r.key, score: r.score, display: r.display, ...info }
+  const info = sentenceInfo.get(r) ?? { sentenceDisplay: null, targetDisplay: null, opponentDisplay: null }
+  return { key: r.key, score: r.score, display: info.sentenceDisplay ?? r.display, targetDisplay: info.targetDisplay, opponentDisplay: info.opponentDisplay }
 }
 
 function row(
-  p: { key: string; label: string; value: number | null; decimals: number; suffix?: string; target: number | null; mode: 'higher' | 'lower'; weight: number; opponent: number | null; you: number | null; context?: boolean; score?: number | null; display?: string },
+  p: { key: string; label: string; value: number | null; decimals: number; suffix?: string; target: number | null; mode: 'higher' | 'lower'; weight: number; opponent: number | null; you: number | null; context?: boolean; score?: number | null; display?: string; sentenceDisplay?: string },
 ): Subrow {
   const score = p.context ? null : p.score !== undefined ? p.score : scoreRatio(p.value, p.target, p.mode)
   const r: Subrow = {
@@ -150,10 +150,11 @@ function row(
     target: p.target,
     score,
     weight: p.weight,
-    delta: { vsOpponent: diff(p.value, p.opponent), vsYou: diff(p.value, p.you) },
+    delta: { vsOpponent: diff(p.value, p.opponent, Math.max(1, p.decimals)), vsYou: diff(p.value, p.you, Math.max(1, p.decimals)) },
     context: p.context ?? false,
   }
   sentenceInfo.set(r, {
+    sentenceDisplay: p.sentenceDisplay ?? null,
     targetDisplay: p.target === null ? null : `${fmt(p.target, p.decimals)}${p.suffix ?? ''}`,
     opponentDisplay: p.opponent === null ? null : `${fmt(p.opponent, p.decimals)}${p.suffix ?? ''}`,
   })
@@ -217,7 +218,9 @@ function laneArea(c: Ctx, weight: number): AreaResult {
     const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null
     const value = at15 ?? at10
     const display = [at10 === null ? null : `${signed(at10)} @10`, at15 === null ? null : `${signed(at15)} @15`].filter(Boolean).join(' · ') || '—'
-    rows.push(row({ key: m, label: labels[m], value, decimals: 0, target: null, mode: 'higher', weight: Math.round(100 / metrics.length), opponent: null, you: null, score, display: value === null ? '—' : display }))
+    const unitWord = { cs: 'CS', gold: 'gold', xp: 'XP' }[m]
+    const sentenceDisplay = value === null ? '—' : `${signed(value)} ${unitWord} at ${at15 === null ? 10 : 15} min`
+    rows.push(row({ key: m, label: labels[m], value, decimals: 0, target: null, mode: 'higher', weight: Math.round(100 / metrics.length), opponent: null, you: null, score, display: value === null ? '—' : display, sentenceDisplay }))
   }
   if (rows.every((r) => r.score === null)) return finish('lane', weight, rows, 'Game too short for lane comparisons.')
   return finish('lane', weight, rows)

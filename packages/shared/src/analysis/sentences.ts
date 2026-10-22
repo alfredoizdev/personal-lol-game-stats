@@ -53,11 +53,11 @@ export function areaSentence(area: AreaKey, weakest: SentenceSubrow | null): str
     case 'wardsPerMin':
       return strong ? `Good warding: ${v} wards/min vs ${reference(weakest, 'target')}.` : `Few wards: ${v} wards/min vs ${reference(weakest, 'target')}.`
     case 'cs':
-      return strong ? `Ahead in lane: ${v} CS vs your opponent.` : `Behind in lane: ${v} CS vs your opponent.`
+      return strong ? `Ahead in lane: ${v} vs your opponent.` : `Behind in lane: ${v} vs your opponent.`
     case 'gold':
-      return strong ? `Gold lead: ${v} gold vs your opponent.` : `Gold deficit: ${v} gold vs your opponent.`
+      return strong ? `Gold lead: ${v} vs your opponent.` : `Gold deficit: ${v} vs your opponent.`
     case 'xp':
-      return strong ? `XP lead: ${v} XP vs your opponent.` : `XP deficit: ${v} XP vs your opponent.`
+      return strong ? `XP lead: ${v} vs your opponent.` : `XP deficit: ${v} vs your opponent.`
     default:
       return ''
   }

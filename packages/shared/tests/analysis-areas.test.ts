@@ -56,6 +56,7 @@ describe('analyzeMatch — the worked ADC example (docs/ANALYSIS.md)', () => {
     expect(rows.map((r) => [r.key, r.score])).toEqual([['cs', 71], ['gold', 67], ['xp', 70]])
     expect(rows[0]!.display).toBe('+5 @10 · +8 @15')
     expect(rows[0]!.value).toBe(8)
+    expect(area(a, 'lane').sentence).toBe('Gold lead: +300 gold at 15 min vs your opponent.')
   })
   it('the weakest area drives the headline and the farming sentence names the mid game with its numbers', () => {
     expect(a.weakest).toBe('farming')
