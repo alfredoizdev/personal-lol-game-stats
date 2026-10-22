@@ -87,3 +87,12 @@ describe('performance-ui — load state of the window', () => {
     expect(loadState({ idsPending: false, total: 100, loadedInWindow: 12, running: false, attempted: true })).toBe('short')
   })
 })
+
+describe('performance-ui — matchup loading line', () => {
+  it('says how many games are still coming for the matchups, nothing once complete', async () => {
+    const { matchupLoadingLine } = await import('../src/lib/performance-ui')
+    expect(matchupLoadingLine({ loaded: 60, total: 100, running: true })).toBe('Loading more games for matchups… 60 / 100')
+    expect(matchupLoadingLine({ loaded: 100, total: 100, running: false })).toBeNull()
+    expect(matchupLoadingLine({ loaded: 60, total: 100, running: false })).toBe('60 of your last 100 games loaded')
+  })
+})

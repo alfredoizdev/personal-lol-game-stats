@@ -29,7 +29,7 @@ const loss = (me: Partial<PlayerLine> = WEAK, extra: Partial<MatchSummary> = {},
 describe('performanceProfile — overview', () => {
   it('is empty and honest with no games', () => {
     const p = performanceProfile([], 20)
-    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], matchupGames: 0, previousAvgScore: null, previousN: 0, bestScore: null, worstScore: null, onTargetGames: 0 })
+    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], even: [], matchupGames: 0, previousAvgScore: null, previousN: 0, bestScore: null, worstScore: null, onTargetGames: 0 })
     expect(p.headline).toBe("No Summoner's Rift games loaded yet.")
     expect(PERIODS).toEqual([20, 50, 100])
   })
@@ -177,7 +177,7 @@ describe('performanceProfile — champions and matchups', () => {
     ])
     expect(p.best.map((m) => [m.championName, m.role, m.winRate])).toEqual([['Caitlyn', 'BOTTOM', 100]])
   })
-  it('matchups use twice the period (the window plus the one before it), and say how many', () => {
+  it('matchups use every loaded game, not just the period, and say how many', () => {
     const draven = { championId: 119, championName: 'Draven' }
     const old = [loss(WEAK, {}, draven), loss(WEAK, {}, draven)]
     const recent = Array.from({ length: 20 }, () => win())
@@ -186,14 +186,15 @@ describe('performanceProfile — champions and matchups', () => {
     expect(p.matchupGames).toBe(22)
     expect(p.toughest.map((m) => [m.championName, m.games])).toEqual([['Draven', 2]])
     const many = performanceProfile([...old, ...recent, ...Array.from({ length: 30 }, () => win())], 20)
-    expect(many.matchupGames).toBe(40)
-    expect(many.toughest).toEqual([]) // Draven games are older than the 40
+    expect(many.matchupGames).toBe(52)
+    expect(many.toughest.map((m) => m.championName)).toEqual(['Draven'])
   })
-  it('an even matchup (50 %) is in neither list', () => {
+  it('an even matchup (50 %) goes to the even list, never to lose/beat', () => {
     const mf = { championId: 21, championName: 'MissFortune' }
     const p = performanceProfile([win(STRONG, {}, mf), loss(WEAK, {}, mf)], 20)
     expect(p.toughest).toEqual([])
     expect(p.best).toEqual([])
+    expect(p.even.map((m) => [m.championName, m.games, m.winRate])).toEqual([['MissFortune', 2, 50]])
   })
   it('limits toughest to 5 and best to 3', () => {
     const lost = Array.from({ length: 7 }, (_, i) => [loss(WEAK, {}, { championId: 10 + i, championName: `E${i}` }), loss(WEAK, {}, { championId: 10 + i, championName: `E${i}` })]).flat()

@@ -9,12 +9,13 @@ import { OverviewCard } from '@/components/performance/OverviewCard'
 import { RolesCard } from '@/components/performance/RolesCard'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useOwnHistory } from '@/hooks/useOwnHistory'
+import { BACKFILL_COUNT } from '@/lib/backfill'
 import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-/** The tab fetches its own window on open: the last 20 games plus the 20 before them (for "vs previous"). Once per account; cached forever. */
-const AUTO_LOAD = WINDOW * 2
+/** The tab fetches the last 100 games by itself on open (owner's call): cards show once the 20-game window is in, the rest feeds the matchups. Once per account; cached. */
+const AUTO_LOAD = BACKFILL_COUNT
 
 /** Your performance from your last 20 Summoner's Rift games (Phase 6 spec; owner's window). */
 export default function PerformanceScreen() {
@@ -73,7 +74,7 @@ export default function PerformanceScreen() {
           <RolesCard profile={profile} />
           <AreasCard profile={profile} />
           <ChampionsCard profile={profile} />
-          <MatchupsCard profile={profile} />
+          <MatchupsCard profile={profile} loaded={history.loaded} total={history.total} running={history.running} />
         </>
       ) : null}
     </Screen>

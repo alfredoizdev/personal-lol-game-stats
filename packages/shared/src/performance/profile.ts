@@ -32,6 +32,7 @@ const AGGREGATED_AREAS: AreaKey[] = ['farming', 'combat', 'vision']
 const MATCHUP_MIN_GAMES = 2
 const TOUGHEST_LIMIT = 5
 const BEST_LIMIT = 3
+const EVEN_LIMIT = 3
 const CHAMPIONS_LIMIT = 8
 
 export type RoleStat = { role: Role; games: number; wins: number; winRate: number; avgScore: number | null; fewGames: boolean }
@@ -69,9 +70,11 @@ export type PerformanceProfile = {
   weakestArea: AreaKey | null
   /** Games desc, win rate desc, name; at most 8. */
   champions: ChampionStat[]
-  /** Lane matchups use twice the period — the window and the one before it (a repeat opponent is rare inside 20 games). */
+  /** Lane matchups use every loaded analyzable game (a repeat opponent is rare inside 20 games). */
   toughest: MatchupStat[]
   best: MatchupStat[]
+  /** Even records (exactly 50 %), so a repeated opponent is never hidden. */
+  even: MatchupStat[]
   matchupGames: number
   headline: string
 }
@@ -123,8 +126,8 @@ export function performanceProfile(all: MatchSummary[], period: Period): Perform
     areas,
     weakestArea,
     champions: championStats(games),
-    ...matchupStats(analyzable.slice(0, period * 2)),
-    matchupGames: Math.min(analyzable.length, period * 2),
+    ...matchupStats(analyzable),
+    matchupGames: analyzable.length,
     headline: '',
   }
   profile.headline = headline(profile)
@@ -239,7 +242,7 @@ function mostPlayedRole(gs: Scored[]): Role | null {
   return best
 }
 
-function matchupStats(games: MatchSummary[]): { toughest: MatchupStat[]; best: MatchupStat[] } {
+function matchupStats(games: MatchSummary[]): { toughest: MatchupStat[]; best: MatchupStat[]; even: MatchupStat[] } {
   const byKey = new Map<string, { championId: number; name: string; role: Role; games: number; wins: number }>()
   for (const s of games) {
     const role = s.me.role
@@ -254,10 +257,11 @@ function matchupStats(games: MatchSummary[]): { toughest: MatchupStat[]; best: M
     .filter((e) => e.games >= MATCHUP_MIN_GAMES)
     .map((e) => ({ championId: e.championId, championName: e.name, role: e.role, games: e.games, wins: e.wins, winRate: pct(e.wins, e.games), fewGames: e.games < FEW_GAMES }))
   const byName = (a: MatchupStat, b: MatchupStat) => b.games - a.games || a.championName.localeCompare(b.championName) || ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role)
-  // Losing and winning matchups are disjoint: an even record (50 %) is in neither list.
+  // The three lists are disjoint: losing (< 50 %), winning (> 50 %), even (= 50 %).
   return {
     toughest: rows.filter((r) => r.winRate < 50).sort((a, b) => a.winRate - b.winRate || byName(a, b)).slice(0, TOUGHEST_LIMIT),
     best: rows.filter((r) => r.winRate > 50).sort((a, b) => b.winRate - a.winRate || byName(a, b)).slice(0, BEST_LIMIT),
+    even: rows.filter((r) => r.winRate === 50).sort(byName).slice(0, EVEN_LIMIT),
   }
 }
 
