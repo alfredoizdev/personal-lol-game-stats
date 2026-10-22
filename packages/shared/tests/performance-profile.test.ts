@@ -29,7 +29,7 @@ const loss = (me: Partial<PlayerLine> = WEAK, extra: Partial<MatchSummary> = {},
 describe('performanceProfile — overview', () => {
   it('is empty and honest with no games', () => {
     const p = performanceProfile([], 20)
-    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], matchupGames: 0 })
+    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], matchupGames: 0, previousAvgScore: null, previousN: 0, bestScore: null, worstScore: null })
     expect(p.headline).toBe("No Summoner's Rift games loaded yet.")
     expect(PERIODS).toEqual([20, 50, 100])
   })
@@ -53,6 +53,19 @@ describe('performanceProfile — overview', () => {
       { matchId: newer.matchId, win: true, score: 82, championName: 'Jinx' },
     ])
     expect(p.headline).toBe('Only 2 games loaded — load more for a clearer picture.')
+  })
+  it('compares with the previous window of the same size and reports the best and worst game', () => {
+    const older = [loss(), loss(), loss(), loss(), loss()] // games 21–25 (older)
+    const recent = Array.from({ length: 19 }, () => win()).concat([loss()]) // 20 newest
+    const p = performanceProfile([...older, ...recent], 20)
+    expect(p.games).toBe(20)
+    expect(p.previousN).toBe(5)
+    expect(p.previousAvgScore).toBe(score(older[0]!))
+    expect(p.bestScore).toBe(82)
+    expect(p.worstScore).toBe(score(older[0]!))
+    const only = performanceProfile(recent, 20)
+    expect(only.previousAvgScore).toBeNull()
+    expect(only.previousN).toBe(0)
   })
   it('recent is oldest → newest, capped at RECENT_N', () => {
     const all = Array.from({ length: 12 }, () => win())
