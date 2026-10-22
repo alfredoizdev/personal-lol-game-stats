@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen } from 'electron'
 import path from 'node:path'
 import { config as loadEnv } from 'dotenv'
 import type { LeagueStatus } from '@lpp/shared'
@@ -29,6 +29,7 @@ let livePoller: LivePollerHandle | null = null
 let publisher: LivePublisher | null = null
 let lastLive: LiveState = { kind: 'idle' }
 let lockfileCache: LockfileData | null = null
+let quitting = false
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -51,19 +52,42 @@ function createWindow(): BrowserWindow {
   } else {
     void win.loadFile(path.join(app.getAppPath(), 'dist-renderer', 'index.html'))
   }
+  // Menu-bar app: closing the window only hides it; the collector keeps running.
+  win.on('close', (e) => {
+    if (quitting) return
+    e.preventDefault()
+    win.hide()
+  })
   win.on('closed', () => {
     mainWindow = null
   })
   return win
 }
 
+/** Place the window just below the tray icon (menu-bar popover feel), kept inside that display. */
+function positionUnderTray(win: BrowserWindow): void {
+  const b = tray?.getBounds()
+  if (!b || b.width === 0 || b.height === 0) return // bounds unknown (e.g. before first layout): keep default position
+  const { width, height } = win.getBounds()
+  const area = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea
+  const x = Math.min(Math.max(Math.round(b.x + b.width / 2 - width / 2), area.x), area.x + area.width - width)
+  const y = Math.min(Math.round(b.y + b.height + 4), area.y + area.height - height)
+  win.setPosition(x, y, false)
+}
+
 function showWindow(): void {
-  if (mainWindow) {
-    mainWindow.show()
-    mainWindow.focus()
+  if (!mainWindow) mainWindow = createWindow()
+  positionUnderTray(mainWindow)
+  mainWindow.show()
+  mainWindow.focus()
+}
+
+function toggleWindow(): void {
+  if (mainWindow?.isVisible() && mainWindow.isFocused()) {
+    mainWindow.hide()
     return
   }
-  mainWindow = createWindow()
+  showWindow()
 }
 
 function broadcastStatus(status: LeagueStatus): void {
@@ -130,12 +154,12 @@ function createTray(): Tray {
   t.setToolTip(statusLabel(lastStatus))
   t.setContextMenu(
     Menu.buildFromTemplate([
-      { label: 'Open', click: () => showWindow() },
+      { label: 'Open LanePulse', click: () => showWindow() },
       { type: 'separator' },
-      { label: 'Quit', click: () => app.quit() },
+      { label: 'Quit LanePulse', click: () => app.quit() },
     ]),
   )
-  t.on('click', () => showWindow())
+  t.on('click', () => toggleWindow())
   return t
 }
 
@@ -182,8 +206,10 @@ ipcMain.handle(IPC.AuthSignOut, () => auth?.signOut())
 ipcMain.handle(IPC.GetLive, () => lastLive)
 
 void app.whenReady().then(async () => {
+  app.dock?.hide() // lives in the menu bar, not the Dock
   tray = createTray()
   mainWindow = createWindow()
+  mainWindow.center()
   supabaseClient = createMainSupabaseClient()
   auth = createAuthController(supabaseClient, onAuthState)
   await auth.start()
@@ -192,6 +218,10 @@ void app.whenReady().then(async () => {
 // Tray app: closing the window keeps the collector running.
 app.on('window-all-closed', () => {
   /* keep running */
+})
+
+app.on('before-quit', () => {
+  quitting = true
 })
 
 app.on('activate', () => {
