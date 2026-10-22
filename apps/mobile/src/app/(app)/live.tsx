@@ -1,13 +1,22 @@
+import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { Screen } from '@/components/Screen'
 import { LiveHero } from '@/components/LiveHero'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
+import { LiveStatTiles } from '@/components/LiveStatTiles'
+import { LiveTrendChart } from '@/components/LiveTrendChart'
 import { useLiveSnapshot } from '@/hooks/useLiveSnapshot'
+import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function LiveScreen() {
   const { snapshot, state, connected } = useLiveSnapshot()
+  const [trend, setTrend] = useState<TrendPoint[]>([])
+
+  useEffect(() => {
+    if (snapshot) setTrend((h) => appendTrendPoint(h, snapshot))
+  }, [snapshot])
 
   return (
     <Screen title="Live Match" subtitle="In-game performance">
@@ -23,7 +32,10 @@ export default function LiveScreen() {
             snapshot={snapshot}
             badge={state === 'ended' ? 'ENDED' : state === 'stale' ? 'RECONNECTING' : snapshot.gameMode === 'DEMO' ? 'DEMO' : 'LIVE'}
           />
-          <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} teamKills={snapshot.teamKills} />
+          {state === 'stale' ? <Text style={styles.warn}>No update from the desktop for a while. Reconnecting…</Text> : null}
+          <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} />
+          <LiveStatTiles me={snapshot.me} teamKills={snapshot.teamKills} />
+          <LiveTrendChart points={trend} />
           {state === 'ended' ? (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Match ended</Text>
@@ -33,7 +45,6 @@ export default function LiveScreen() {
               </Pressable>
             </View>
           ) : null}
-          {state === 'stale' ? <Text style={styles.warn}>No update from the desktop for a while. Reconnecting…</Text> : null}
         </>
       )}
     </Screen>
