@@ -33,10 +33,12 @@ jugador decide cuándo cargar; nada automático.
 
 ### 2.2 Periodo
 
-Decisión del owner (2026-10-22, tras la primera captura): **las últimas 20
-partidas** analizables (colas de la Grieta, sin remakes) y sin selector de
-periodo; el subtítulo de la pantalla lo dice ("last 20 games" o "your 7 loaded
-games"). El motor sigue aceptando 20/50/100 por si cambia.
+Decisiones del owner (2026-10-22): primero "las últimas 20 partidas" y sin
+selector; después, al ver que la pestaña carga sola las 100 para los matchups,
+**una sola regla: todas las tarjetas sobre las últimas 100 partidas**
+analizables, esperando la carga completa tras una sola barra de progreso. La
+forma reciente se conserva como comparable ("last 20 · −0.3") y en las barras
+de las últimas 10. El subtítulo dice "last 100 games" o "your 57 loaded games".
 
 ### 2.3 Tarjeta Overview
 

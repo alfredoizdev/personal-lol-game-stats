@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine, Role } from '../src/match-v5'
 import { analyzeMatch } from '../src/analysis/areas'
 import { performanceTier } from '../src/analysis/performance-tier'
-import { ON_TARGET_SCORE, performanceProfile, PERIODS, RECENT_N, ROLE_LABEL, scoreOn10 } from '../src/performance/profile'
+import { ON_TARGET_SCORE, performanceProfile, PERIODS, RECENT_FORM_N, RECENT_N, ROLE_LABEL, scoreOn10 } from '../src/performance/profile'
 import { game, line } from './analysis-fixtures'
 
 /** The worked ADC example (score 82) and a weak game (single digits). */
@@ -29,7 +29,7 @@ const loss = (me: Partial<PlayerLine> = WEAK, extra: Partial<MatchSummary> = {},
 describe('performanceProfile — overview', () => {
   it('is empty and honest with no games', () => {
     const p = performanceProfile([], 20)
-    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], even: [], matchupGames: 0, previousAvgScore: null, previousN: 0, bestScore: null, worstScore: null, onTargetGames: 0 })
+    expect(p).toMatchObject({ period: 20, games: 0, wins: 0, winRate: null, avgScore: null, tier: null, recent: [], streak: null, roles: [], strongestRole: null, weakestRole: null, areas: [], weakestArea: null, champions: [], toughest: [], best: [], even: [], matchupGames: 0, recentAvgScore: null, recentN: 0, bestScore: null, worstScore: null, onTargetGames: 0 })
     expect(p.headline).toBe("No Summoner's Rift games loaded yet.")
     expect(PERIODS).toEqual([20, 50, 100])
   })
@@ -54,18 +54,20 @@ describe('performanceProfile — overview', () => {
     ])
     expect(p.headline).toBe('Only 2 games loaded — load more for a clearer picture.')
   })
-  it('compares with the previous window of the same size and reports the best and worst game', () => {
-    const older = [loss(), loss(), loss(), loss(), loss()] // games 21–25 (older)
+  it('reports recent form (the newest 20 of the window) and the best and worst game', () => {
+    const older = [loss(), loss(), loss(), loss(), loss()] // games 21–25
     const recent = Array.from({ length: 19 }, () => win()).concat([loss()]) // 20 newest
-    const p = performanceProfile([...older, ...recent], 20)
-    expect(p.games).toBe(20)
-    expect(p.previousN).toBe(5)
-    expect(p.previousAvgScore).toBe(score(older[0]!))
+    const p = performanceProfile([...older, ...recent], 100)
+    expect(RECENT_FORM_N).toBe(20)
+    expect(p.games).toBe(25)
+    expect(p.recentN).toBe(20)
+    expect(p.recentAvgScore).toBe(Math.round((82 * 19 + score(older[0]!)!) / 20))
+    expect(p.avgScore).toBe(Math.round((82 * 19 + score(older[0]!)! * 6) / 25))
     expect(p.bestScore).toBe(82)
     expect(p.worstScore).toBe(score(older[0]!))
-    const only = performanceProfile(recent, 20)
-    expect(only.previousAvgScore).toBeNull()
-    expect(only.previousN).toBe(0)
+    const few = performanceProfile(older, 100)
+    expect(few.recentN).toBe(5)
+    expect(few.recentAvgScore).toBe(few.avgScore)
   })
   it('counts the games that reached the on-target score (70 = every role target met)', () => {
     expect(ON_TARGET_SCORE).toBe(70)

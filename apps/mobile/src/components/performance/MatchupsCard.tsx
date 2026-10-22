@@ -3,17 +3,11 @@ import type { MatchupStat, PerformanceProfile } from '@lpp/shared'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { RoleIcon } from '@/components/RoleIcon'
 import { useChampionList } from '@/hooks/useChampionList'
-import { matchupLoadingLine, winRateColor } from '@/lib/performance-ui'
+import { winRateColor } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-type LoadProps = { loaded: number; total: number; running: boolean }
-
-/**
- * Lane opponents you lose to most, beat most, and split evenly with, across
- * roles, over every loaded game (spec 2.7): the tab loads the last 100 by
- * itself. A repeat opponent is rare inside 20 games.
- */
-export function MatchupsCard({ profile, ...load }: { profile: PerformanceProfile } & LoadProps) {
+/** Lane opponents you lose to most, beat most, and split evenly with, across roles, over the same 100 games (spec 2.7). */
+export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
   const { champions } = useChampionList()
   const displayName = (m: MatchupStat) => champions.find((x) => x.id === m.championId)?.name ?? m.championName
   const list = (rows: MatchupStat[]) =>
@@ -45,7 +39,6 @@ export function MatchupsCard({ profile, ...load }: { profile: PerformanceProfile
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Lane matchups</Text>
       <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents faced at least twice in your last {profile.matchupGames} games</Text>
-      {matchupLoadingLine(load) ? <Text style={styles.loading} maxFontSizeMultiplier={1.15}>{matchupLoadingLine(load)}</Text> : null}
       {none ? (
         <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent faced twice yet.</Text>
       ) : (
@@ -69,7 +62,6 @@ const styles = StyleSheet.create({
   section: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
   sectionGap: { marginTop: space.sm },
   muted: { color: colors.muted, fontSize: font.caption + 1 },
-  loading: { color: colors.accent, fontSize: font.caption },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
   name: { flex: 1, gap: 2 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

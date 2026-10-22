@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, fewGamesNote, gamesNote, loadState, on10, onTargetLabel, previousDelta, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
+import { barHeight, fewGamesNote, gamesNote, loadState, on10, onTargetLabel, recentForm, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -17,9 +17,9 @@ describe('performance-ui helpers', () => {
     expect(streakLabel(null)).toBeNull()
   })
   it('says how many games the numbers cover', () => {
-    expect(gamesNote({ ...EMPTY, period: 20, games: 20 })).toBe('Last 20 games')
-    expect(gamesNote({ ...EMPTY, period: 20, games: 7 })).toBe('Your 7 loaded games')
-    expect(gamesNote({ ...EMPTY, period: 20, games: 1 })).toBe('Your 1 loaded game')
+    expect(gamesNote({ ...EMPTY, period: 100, games: 100 })).toBe('Last 100 games')
+    expect(gamesNote({ ...EMPTY, period: 100, games: 7 })).toBe('Your 7 loaded games')
+    expect(gamesNote({ ...EMPTY, period: 100, games: 1 })).toBe('Your 1 loaded game')
   })
   it('bar height scales with the score, 2 px floor, 0 for null', () => {
     expect(barHeight(null, 40)).toBe(0)
@@ -63,11 +63,11 @@ describe('performance-ui — score context (on the 10 ladder)', () => {
     expect(on10(100)).toBe('10.0')
     expect(on10(null)).toBe('—')
   })
-  it('compares the average with the previous window as a signed decimal', () => {
-    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 50, previousN: 20 })).toBe('−0.4')
-    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 40, previousN: 7 })).toBe('+0.6')
-    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 46, previousN: 20 })).toBe('±0.0')
-    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: null, previousN: 0 })).toBeNull()
+  it('recent form: the last-20 average on 10 and whether it is above, below or level with the window average', () => {
+    expect(recentForm({ ...EMPTY, avgScore: 49, recentAvgScore: 46, recentN: 20 })).toEqual({ value: '4.6', label: 'last 20 · −0.3', trend: 'down' })
+    expect(recentForm({ ...EMPTY, avgScore: 40, recentAvgScore: 46, recentN: 20 })).toEqual({ value: '4.6', label: 'last 20 · +0.6', trend: 'up' })
+    expect(recentForm({ ...EMPTY, avgScore: 46, recentAvgScore: 46, recentN: 7 })).toEqual({ value: '4.6', label: 'last 7 · ±0.0', trend: 'level' })
+    expect(recentForm({ ...EMPTY, avgScore: null, recentAvgScore: null, recentN: 0 })).toBeNull()
   })
   it('counts games on target out of the window', () => {
     expect(onTargetLabel({ ...EMPTY, games: 20, onTargetGames: 3 })).toBe('3 / 20')
@@ -77,22 +77,14 @@ describe('performance-ui — score context (on the 10 ladder)', () => {
 
 describe('performance-ui — load state of the window', () => {
   it('is loading until the window is cached or the auto-load gave up, ready when the window is cached, short when a run ended early', () => {
-    expect(WINDOW).toBe(20)
+    expect(WINDOW).toBe(100)
     expect(loadState({ idsPending: true, total: 0, loadedInWindow: 0, running: false, attempted: false })).toBe('loading')
     expect(loadState({ idsPending: false, total: 0, loadedInWindow: 0, running: false, attempted: true })).toBe('empty')
-    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 5, running: true, attempted: true })).toBe('loading')
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 60, running: true, attempted: true })).toBe('loading')
     expect(loadState({ idsPending: false, total: 100, loadedInWindow: 10, running: false, attempted: false })).toBe('loading') // auto-load not started yet
-    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 20, running: false, attempted: true })).toBe('ready')
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 100, running: false, attempted: true })).toBe('ready')
     expect(loadState({ idsPending: false, total: 12, loadedInWindow: 12, running: false, attempted: true })).toBe('ready')
-    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 12, running: false, attempted: true })).toBe('short')
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 60, running: false, attempted: true })).toBe('short')
   })
 })
 
-describe('performance-ui — matchup loading line', () => {
-  it('says how many games are still coming for the matchups, nothing once complete', async () => {
-    const { matchupLoadingLine } = await import('../src/lib/performance-ui')
-    expect(matchupLoadingLine({ loaded: 60, total: 100, running: true })).toBe('Loading more games for matchups… 60 / 100')
-    expect(matchupLoadingLine({ loaded: 100, total: 100, running: false })).toBeNull()
-    expect(matchupLoadingLine({ loaded: 60, total: 100, running: false })).toBe('60 of your last 100 games loaded')
-  })
-})

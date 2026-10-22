@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { ON_TARGET_SCORE, scoreOn10, TIER_LABELS, tierBucket, type PerformanceProfile } from '@lpp/shared'
 import { SemiDonut } from '@/components/SemiDonut'
-import { fewGamesNote, on10, onTargetLabel, previousDelta, recordLabel, streakLabel } from '@/lib/performance-ui'
+import { fewGamesNote, on10, onTargetLabel, recentForm, recordLabel, streakLabel } from '@/lib/performance-ui'
 import { tierColor } from '@/lib/row-rating'
 import { colors, font, radius, space } from '@/theme/tokens'
 import { RecentStrip } from './RecentStrip'
@@ -10,15 +10,16 @@ import { RecentStrip } from './RecentStrip'
 const TARGET_ON_10 = scoreOn10(ON_TARGET_SCORE).toFixed(1)
 
 /**
- * Average match score on the owner's 1–10 ladder, with three own comparables
- * (previous window, best/worst, games on target), the record, the streak and
- * the last-10 strip. One visual + one line per fact (owner, 2026-10-22).
+ * Average match score on the owner's 1–10 ladder over the last 100 games, with
+ * three own comparables (recent form = last 20, best/worst, games on target),
+ * the record, the streak and the last-10 strip. One visual + one line per fact
+ * (owner, 2026-10-22).
  */
 export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
   const color = profile.tier ? tierColor(tierBucket(profile.tier)) : colors.muted
   const streak = streakLabel(profile.streak)
   const few = fewGamesNote(profile)
-  const delta = previousDelta(profile)
+  const recent = recentForm(profile)
   const role = profile.roles[0]?.role ?? 'MIDDLE'
   return (
     <View style={styles.card}>
@@ -31,7 +32,7 @@ export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
         </View>
       </View>
       <View style={styles.facts}>
-        <Fact value={delta ?? '—'} label={profile.previousN ? `vs previous ${profile.previousN}` : 'vs previous'} color={delta?.startsWith('+') ? colors.win : delta?.startsWith('−') ? colors.loss : colors.text} />
+        <Fact value={recent?.value ?? '—'} label={recent?.label ?? 'recent form'} color={recent?.trend === 'up' ? colors.win : recent?.trend === 'down' ? colors.loss : colors.text} />
         <View style={styles.divider} />
         <Fact value={profile.bestScore === null ? '—' : `${on10(profile.bestScore)} / ${on10(profile.worstScore)}`} label="best / worst" />
         <View style={styles.divider} />

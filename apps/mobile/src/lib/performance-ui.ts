@@ -52,11 +52,14 @@ export function on10(score: number | null): string {
   return score === null ? '—' : scoreOn10(score).toFixed(1)
 }
 
-/** "−0.4": the average against the previous window of the same size, on the 10 ladder. */
-export function previousDelta(p: PerformanceProfile): string | null {
-  if (p.avgScore === null || p.previousAvgScore === null) return null
-  const d = Math.round(p.avgScore - p.previousAvgScore) / 10
-  return `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(1)}`
+export type RecentForm = { value: string; label: string; trend: 'up' | 'down' | 'level' }
+
+/** Recent form: the newest-20 average on 10, with its signed gap to the window average. */
+export function recentForm(p: PerformanceProfile): RecentForm | null {
+  if (p.avgScore === null || p.recentAvgScore === null) return null
+  const d = Math.round(p.recentAvgScore - p.avgScore) / 10
+  const sign = d > 0 ? '+' : d < 0 ? '−' : '±'
+  return { value: on10(p.recentAvgScore), label: `last ${p.recentN} · ${sign}${Math.abs(d).toFixed(1)}`, trend: d > 0 ? 'up' : d < 0 ? 'down' : 'level' }
 }
 
 /** "3 / 20": games in the window that reached the on-target score. */
@@ -64,8 +67,8 @@ export function onTargetLabel(p: PerformanceProfile): string {
   return p.games === 0 ? '—' : `${p.onTargetGames} / ${p.games}`
 }
 
-/** The window the tab is built on (owner: the last 20 games). The auto-load fetches twice that for "vs previous". */
-export const WINDOW = 20
+/** The window every card is built on (owner, 2026-10-22: the last 100 games, one rule for the whole tab). */
+export const WINDOW = 100
 
 export type LoadState = 'loading' | 'empty' | 'ready' | 'short'
 
@@ -80,10 +83,4 @@ export function loadState(s: { idsPending: boolean; total: number; loadedInWindo
   if (s.loadedInWindow >= Math.min(WINDOW, s.total)) return 'ready'
   if (s.running || !s.attempted) return 'loading'
   return 'short'
-}
-
-/** Progress of the background load that feeds the matchups; null once every game is in. */
-export function matchupLoadingLine(s: { loaded: number; total: number; running: boolean }): string | null {
-  if (s.total === 0 || s.loaded >= s.total) return null
-  return s.running ? `Loading more games for matchups… ${s.loaded} / ${s.total}` : `${s.loaded} of your last ${s.total} games loaded`
 }

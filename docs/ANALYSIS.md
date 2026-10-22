@@ -126,11 +126,11 @@ Timeline CS: 105 at 14 min, 170 at 25 min, 210 at 30 min. Lane diffs: CS +5 @10,
 
 ## 8. Performance page aggregates (`performance/profile.ts`)
 
-The Performance tab is built on the player's last 20 analyzable, non-remake
-games. On open it fetches the last 100 match details by itself (cards appear as
-soon as the 20-game window is cached; the rest keeps loading for the matchups),
-once per account, through the same cached `match-detail` function; nothing on
-the tab asks the player to load more.
+The Performance tab is built on the player's last 100 analyzable, non-remake
+games (owner's call, 2026-10-22: one rule for every card). On open it fetches
+the last 100 match details by itself behind one progress bar, once per account,
+through the same cached `match-detail` function; nothing on the tab asks the
+player to load more.
 
 - **Game score** = the Matches-row score: `analyzeMatch` with no timeline and no
   baseline (section 1 rules, Farming "total" only). Overview = mean of those

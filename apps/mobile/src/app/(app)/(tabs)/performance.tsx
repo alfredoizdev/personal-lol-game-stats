@@ -14,10 +14,10 @@ import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-/** The tab fetches the last 100 games by itself on open (owner's call): cards show once the 20-game window is in, the rest feeds the matchups. Once per account; cached. */
+/** The tab fetches the last 100 games by itself on open (owner's call), behind one progress bar. Once per account; cached. */
 const AUTO_LOAD = BACKFILL_COUNT
 
-/** Your performance from your last 20 Summoner's Rift games (Phase 6 spec; owner's window). */
+/** Your performance from your last 100 Summoner's Rift games (Phase 6 spec; owner's window). */
 export default function PerformanceScreen() {
   const { data: account } = useLinkedAccount()
   const history = useOwnHistory(account ?? null, false)
@@ -46,7 +46,7 @@ export default function PerformanceScreen() {
       {state === 'loading' ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle} maxFontSizeMultiplier={1.15}>Loading your last {WINDOW} games…</Text>
-          <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{history.total ? `${loadedInWindow} of ${windowSize} ready` : 'Finding your recent games…'}</Text>
+          <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{history.total ? `${loadedInWindow} of ${windowSize} ready · once per account, then instant` : 'Finding your recent games…'}</Text>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${windowSize ? Math.round((loadedInWindow / windowSize) * 100) : 0}%` }]} />
           </View>
@@ -74,7 +74,7 @@ export default function PerformanceScreen() {
           <RolesCard profile={profile} />
           <AreasCard profile={profile} />
           <ChampionsCard profile={profile} />
-          <MatchupsCard profile={profile} loaded={history.loaded} total={history.total} running={history.running} />
+          <MatchupsCard profile={profile} />
         </>
       ) : null}
     </Screen>
