@@ -17,22 +17,9 @@ export function MatchRow({ summary, now, onPress }: { summary: MatchSummary; now
   const rating = quickRating(summary)
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <PortraitWithBadges championName={me.championName} size={60} ring={r.ring} result={resultOf(summary)} role={me.role} />
+      <PortraitWithBadges championName={me.championName} size={60} ring={r.ring} result={resultOf(summary)} role={me.role} tier={rating ? { text: rating.tier, color: tierColor(rating.bucket) } : null} />
       <View style={styles.main}>
         <View style={styles.topRow}>
-          <View style={styles.colTier}>
-            {rating ? (
-              <>
-                <Text style={[styles.big, { color: tierColor(rating.bucket) }]} numberOfLines={1} allowFontScaling={false}>{rating.tier}</Text>
-                <Text style={styles.meta} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{rating.label}</Text>
-              </>
-            ) : (
-              <>
-                <Text style={[styles.big, { color: colors.muted }]} numberOfLines={1}>—</Text>
-                <Text style={styles.meta} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{summary.queueLabel}</Text>
-              </>
-            )}
-          </View>
           <View style={styles.colKda}>
             <Text style={styles.big} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {me.kills}/{me.deaths}/{me.assists}
@@ -67,11 +54,10 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.85 },
   main: { flex: 1, gap: space.sm },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  colTier: { flex: 1, alignItems: 'flex-start', minWidth: 56 },
-  colKda: { width: 62, alignItems: 'center' },
-  colCs: { width: 46, alignItems: 'center' },
-  colTime: { width: 66, alignItems: 'center' },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', gap: 6 },
+  colKda: { flex: 1, alignItems: 'center' },
+  colCs: { flex: 1, alignItems: 'center' },
+  colTime: { flex: 1.2, alignItems: 'center' },
   meta: { color: colors.muted, fontSize: font.caption - 1 },
   big: { color: colors.text, fontSize: font.caption + 2, fontWeight: '700', letterSpacing: -0.3 },
 })
