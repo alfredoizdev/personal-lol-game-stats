@@ -4,7 +4,7 @@ import { aggregateMatches } from '../src/lib/match-aggregates'
 
 function line(p: Partial<PlayerLine>): PlayerLine {
   return {
-    puuid: 'me', championId: 1, championName: 'Annie', role: 'MIDDLE',
+    puuid: 'me', participantId: 1, championId: 1, championName: 'Annie', role: 'MIDDLE', wardsPlaced: 0, wardsKilled: 0,
     kills: 0, deaths: 0, assists: 0, cs: 0, csPerMin: 0, visionScore: 0, damageToChampions: 0, gold: 0, level: 1,
     items: [0, 0, 0, 0, 0, 0], trinket: 0, win: false, ...p,
   }
@@ -13,7 +13,7 @@ function line(p: Partial<PlayerLine>): PlayerLine {
 function game(p: Partial<PlayerLine>, extra: Partial<MatchSummary> = {}): MatchSummary {
   return {
     matchId: 'x', queueId: 420, queueLabel: 'Ranked Solo', gameMode: 'CLASSIC', durationSec: 1800,
-    startedAt: '2026-10-21T00:00:00.000Z', remake: false, me: line(p), opponent: null, ...extra,
+    startedAt: '2026-10-21T00:00:00.000Z', remake: false, teamKills: 0, me: line(p), opponent: null, ...extra,
   }
 }
 
