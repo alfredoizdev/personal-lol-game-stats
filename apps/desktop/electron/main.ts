@@ -11,6 +11,7 @@ import { readLockfile } from './league/lockfile'
 import type { LockfileData } from './league/lockfile'
 import { startLivePoller, type LivePollerHandle, type LiveState } from './league/live-poller'
 import { createLivePublisher, type LivePublisher } from './live/live-publisher'
+import { createDemoDeps } from './live/demo-feed'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveLabel, statusLabel } from '../shared/status-label'
 import { logger } from './logger'
@@ -94,13 +95,17 @@ function onLiveState(state: LiveState): void {
 function startLive(): void {
   if (livePoller || !supabaseClient || !userId) return
   publisher = publisher ?? createLivePublisher(supabaseClient, userId)
+  const identity = () =>
+    lastStatus.state === 'CONNECTED' ? { gameName: lastStatus.summoner.gameName, tagLine: lastStatus.summoner.tagLine } : null
+  const demo = process.env.LPP_LIVE_DEMO === '1' && !app.isPackaged
   livePoller = startLivePoller({
-    getLockfile: () => lockfileCache,
-    identity: () => (lastStatus.state === 'CONNECTED' ? { gameName: lastStatus.summoner.gameName, tagLine: lastStatus.summoner.tagLine } : null),
+    getLockfile: () => (demo ? { port: 0, password: '', protocol: 'https' } : lockfileCache),
+    identity,
     focus: () => null,
     onChange: onLiveState,
+    deps: demo ? createDemoDeps({ appPath: app.getAppPath(), identity }) : undefined,
   })
-  logger.info('live poller started')
+  logger.info(demo ? 'live poller started (DEMO feed)' : 'live poller started')
 }
 
 function stopLive(): void {

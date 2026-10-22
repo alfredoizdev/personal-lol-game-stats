@@ -1,0 +1,197 @@
+{
+  "activePlayer": {
+    "riotIdGameName": "__ME__",
+    "riotIdTagLine": "__TAG__",
+    "level": 1
+  },
+  "allPlayers": [
+    {
+      "riotIdGameName": "__ME__",
+      "riotIdTagLine": "__TAG__",
+      "summonerName": "__ME__#__TAG__",
+      "championName": "Yasuo",
+      "team": "ORDER",
+      "position": "MIDDLE",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": [
+        {
+          "itemID": 1055
+        },
+        {
+          "itemID": 3006
+        }
+      ]
+    },
+    {
+      "riotIdGameName": "AllyTop",
+      "riotIdTagLine": "NA1",
+      "summonerName": "AllyTop#NA1",
+      "championName": "Garen",
+      "team": "ORDER",
+      "position": "TOP",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "AllyJg",
+      "riotIdTagLine": "NA1",
+      "summonerName": "AllyJg#NA1",
+      "championName": "LeeSin",
+      "team": "ORDER",
+      "position": "JUNGLE",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "AllyBot",
+      "riotIdTagLine": "NA1",
+      "summonerName": "AllyBot#NA1",
+      "championName": "Jinx",
+      "team": "ORDER",
+      "position": "BOTTOM",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "AllySup",
+      "riotIdTagLine": "NA1",
+      "summonerName": "AllySup#NA1",
+      "championName": "Thresh",
+      "team": "ORDER",
+      "position": "UTILITY",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "EnemyMid",
+      "riotIdTagLine": "NA1",
+      "summonerName": "EnemyMid#NA1",
+      "championName": "Yone",
+      "team": "CHAOS",
+      "position": "MIDDLE",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": [
+        {
+          "itemID": 1055
+        },
+        {
+          "itemID": 3006
+        }
+      ]
+    },
+    {
+      "riotIdGameName": "EnemyTop",
+      "riotIdTagLine": "NA1",
+      "summonerName": "EnemyTop#NA1",
+      "championName": "Darius",
+      "team": "CHAOS",
+      "position": "TOP",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "EnemyJg",
+      "riotIdTagLine": "NA1",
+      "summonerName": "EnemyJg#NA1",
+      "championName": "Vi",
+      "team": "CHAOS",
+      "position": "JUNGLE",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "EnemyBot",
+      "riotIdTagLine": "NA1",
+      "summonerName": "EnemyBot#NA1",
+      "championName": "Caitlyn",
+      "team": "CHAOS",
+      "position": "BOTTOM",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    },
+    {
+      "riotIdGameName": "EnemySup",
+      "riotIdTagLine": "NA1",
+      "summonerName": "EnemySup#NA1",
+      "championName": "Lux",
+      "team": "CHAOS",
+      "position": "UTILITY",
+      "level": 1,
+      "scores": {
+        "kills": 0,
+        "deaths": 0,
+        "assists": 0,
+        "creepScore": 0,
+        "wardScore": 0
+      },
+      "items": []
+    }
+  ],
+  "gameData": {
+    "gameTime": 0,
+    "gameMode": "DEMO"
+  }
+}
