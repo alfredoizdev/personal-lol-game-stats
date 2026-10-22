@@ -92,6 +92,16 @@ describe('buildLiveSnapshot', () => {
     expect(buildLiveSnapshot(legacy, ME, extra)).not.toBeNull()
   })
 
+  it('rounds the live vision score to a whole number', () => {
+    const s = buildLiveSnapshot(
+      raw({ me: { scores: { kills: 0, deaths: 0, assists: 0, creepScore: 0, wardScore: 13.0152835845 } }, enemies: [player({ team: 'CHAOS', position: 'MIDDLE', scores: { kills: 0, deaths: 0, assists: 0, creepScore: 0, wardScore: 7.5 } })] }),
+      ME,
+      extra,
+    )!
+    expect(s.me.wardScore).toBe(13)
+    expect(s.opponent?.wardScore).toBe(8)
+  })
+
   it('returns null when the player is not in allPlayers', () => {
     expect(buildLiveSnapshot(raw({}), { gameName: 'Nobody', tagLine: 'XX' }, extra)).toBeNull()
   })

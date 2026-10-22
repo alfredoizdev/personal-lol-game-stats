@@ -21,7 +21,7 @@ export function LiveStatTiles({ me, teamKills }: { me: LivePlayerV2; teamKills: 
   return (
     <View style={styles.row}>
       <Tile icon={<MaterialCommunityIcons name="sword-cross" size={16} color={colors.accent} />} label="KP" value={kp} accent={colors.accent} />
-      <Tile icon={<Ionicons name="eye-outline" size={16} color={colors.you} />} label="Vision" value={me.wardScore === null ? '—' : String(me.wardScore)} accent={colors.you} />
+      <Tile icon={<Ionicons name="eye-outline" size={16} color={colors.you} />} label="Vision" value={me.wardScore === null ? '—' : String(Math.round(me.wardScore))} accent={colors.you} />
       <Tile icon={<Ionicons name="bar-chart-outline" size={16} color={colors.win} />} label="Level" value={me.level === null ? '—' : String(me.level)} accent={colors.win} />
     </View>
   )

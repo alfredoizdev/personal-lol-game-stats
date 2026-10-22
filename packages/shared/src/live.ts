@@ -61,6 +61,8 @@ const MIN_SEC_FOR_RATE = 60
 const MAX_ITEMS = 7
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+// Live Client Data reports wardScore as a long float (e.g. 13.0152835…); show whole points.
+const roundInt = (n: number | null): number | null => (n === null ? null : Math.round(n))
 const norm = (s: string | undefined) => (s ?? '').trim().toLowerCase()
 const round1 = (n: number) => Math.round(n * 10) / 10
 
@@ -81,7 +83,7 @@ function toLine(p: RawLivePlayer, gameTime: number | null): LivePlayerV2 {
     assists: num(p.scores?.assists),
     cs,
     csPerMin,
-    wardScore: num(p.scores?.wardScore),
+    wardScore: roundInt(num(p.scores?.wardScore)),
     items: (p.items ?? [])
       .map((it) => num(it?.itemID) ?? 0)
       .filter((id) => id > 0)

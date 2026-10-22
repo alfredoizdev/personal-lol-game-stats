@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { LiveSnapshotV2 } from '@lpp/shared'
-import { appendTrendPoint, type TrendPoint } from '../src/lib/live-trend'
+import { appendTrendPoint, separatedEndLabels, type TrendPoint } from '../src/lib/live-trend'
 
 function snap(gameTime: number, meCs: number | null, enemyCs: number | null = 0, ts = 1): LiveSnapshotV2 {
   const line = (cs: number | null) => ({ championName: 'X', position: 'MIDDLE' as const, level: 1, kills: 0, deaths: 0, assists: 0, cs, csPerMin: cs === null || gameTime < 60 ? null : Math.round((cs / (gameTime / 60)) * 10) / 10, wardScore: 0, items: [] })
@@ -33,5 +33,19 @@ describe('appendTrendPoint', () => {
     for (let m = 1; m <= 70; m++) h = appendTrendPoint(h, snap(m * 60, m * 7, m * 6))
     expect(h.length).toBe(60)
     expect(h[0]!.minute).toBe(11)
+  })
+})
+
+describe('separatedEndLabels', () => {
+  it('keeps default offsets when the lines end far apart', () => {
+    expect(separatedEndLabels(40, 100)).toEqual({ me: 34, enemy: 104 })
+  })
+  it('pushes the labels apart when the lines end close together', () => {
+    const r = separatedEndLabels(60, 62)
+    expect(r.enemy - r.me).toBeGreaterThanOrEqual(13)
+    expect(r.me).toBeLessThan(r.enemy)
+  })
+  it('handles a missing enemy line', () => {
+    expect(separatedEndLabels(60, null)).toEqual({ me: 54, enemy: 0 })
   })
 })

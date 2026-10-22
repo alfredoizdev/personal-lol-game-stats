@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from 'react-native'
 import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg'
-import type { TrendPoint } from '@/lib/live-trend'
+import { separatedEndLabels, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 // Series colours validated with the dataviz palette checker (dark surface #1B1742):
@@ -69,6 +69,7 @@ export function LiveTrendChart({ points }: { points: TrendPoint[] }) {
   }
 
   const last = points[points.length - 1]
+  const endLabels = last && geom ? separatedEndLabels(last.me === null ? null : geom.y(last.me), last.enemy === null || last.enemy === undefined ? null : geom.y(last.enemy)) : { me: 0, enemy: 0 }
   const hovered = hover !== null ? points[hover] : null
 
   return (
@@ -100,13 +101,13 @@ export function LiveTrendChart({ points }: { points: TrendPoint[] }) {
             {last?.enemy !== null && last?.enemy !== undefined ? (
               <>
                 <Circle cx={geom.x(last.minute)} cy={geom.y(last.enemy)} r={5} fill={TREND_ENEMY} stroke={colors.surfaceSolid} strokeWidth={2} />
-                <SvgText x={geom.x(last.minute) + 8} y={geom.y(last.enemy) + 4} fontSize={11} fontWeight="700" fill={colors.text}>{last.enemy.toFixed(1)}</SvgText>
+                <SvgText x={geom.x(last.minute) + 8} y={endLabels.enemy} fontSize={11} fontWeight="700" fill={colors.text}>{last.enemy.toFixed(1)}</SvgText>
               </>
             ) : null}
             {last && last.me !== null ? (
               <>
                 <Circle cx={geom.x(last.minute)} cy={geom.y(last.me)} r={5} fill={TREND_YOU} stroke={colors.surfaceSolid} strokeWidth={2} />
-                <SvgText x={geom.x(last.minute) + 8} y={geom.y(last.me) - 6} fontSize={11} fontWeight="700" fill={colors.text}>{last.me.toFixed(1)}</SvgText>
+                <SvgText x={geom.x(last.minute) + 8} y={endLabels.me} fontSize={11} fontWeight="700" fill={colors.text}>{last.me.toFixed(1)}</SvgText>
               </>
             ) : null}
             {hovered ? (
