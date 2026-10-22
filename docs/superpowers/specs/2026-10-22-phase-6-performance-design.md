@@ -83,9 +83,10 @@ Hasta 8 campeones por partidas jugadas: retrato (anillo verde ≥ 50 %, rojo
 Agrupado por (campeón enemigo de línea, rol) sobre todos los roles, con ≥ 2
 partidas, igual que la Fase 5 pero sin filtrar por rol:
 
-- **You lose to**: 5 peores por win rate ascendente (desempate: más partidas,
-  nombre).
-- **You beat**: 3 mejores por win rate descendente.
+- **You lose to**: 5 peores con win rate < 50 % (ascendente; desempate: más
+  partidas, nombre).
+- **You beat**: 3 mejores con win rate > 50 %. Un 50 % no sale en ninguna
+  (ajuste tras la primera captura: el mismo oponente salía en las dos listas).
 
 Fila: retrato, nombre, icono de rol, "W – L", win rate y barra. Sin
 sugerencia de ban aquí (ya está en Prepare); sin consejos.

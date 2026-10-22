@@ -234,9 +234,10 @@ function matchupStats(games: Scored[]): { toughest: MatchupStat[]; best: Matchup
     .filter((e) => e.games >= MATCHUP_MIN_GAMES)
     .map((e) => ({ championId: e.championId, championName: e.name, role: e.role, games: e.games, wins: e.wins, winRate: pct(e.wins, e.games), fewGames: e.games < FEW_GAMES }))
   const byName = (a: MatchupStat, b: MatchupStat) => b.games - a.games || a.championName.localeCompare(b.championName) || ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role)
+  // Losing and winning matchups are disjoint: an even record (50 %) is in neither list.
   return {
-    toughest: [...rows].sort((a, b) => a.winRate - b.winRate || byName(a, b)).slice(0, TOUGHEST_LIMIT),
-    best: [...rows].sort((a, b) => b.winRate - a.winRate || byName(a, b)).slice(0, BEST_LIMIT),
+    toughest: rows.filter((r) => r.winRate < 50).sort((a, b) => a.winRate - b.winRate || byName(a, b)).slice(0, TOUGHEST_LIMIT),
+    best: rows.filter((r) => r.winRate > 50).sort((a, b) => b.winRate - a.winRate || byName(a, b)).slice(0, BEST_LIMIT),
   }
 }
 

@@ -150,17 +150,19 @@ describe('performanceProfile — champions and matchups', () => {
     expect(p.toughest.map((m) => [m.championName, m.role, m.games, m.wins, m.winRate, m.fewGames])).toEqual([
       ['Draven', 'MIDDLE', 2, 0, 0, true],
       ['Draven', 'BOTTOM', 3, 1, 33, false],
-      ['Caitlyn', 'BOTTOM', 2, 2, 100, true],
     ])
-    expect(p.best.map((m) => [m.championName, m.role])).toEqual([
-      ['Caitlyn', 'BOTTOM'],
-      ['Draven', 'BOTTOM'],
-      ['Draven', 'MIDDLE'],
-    ])
+    expect(p.best.map((m) => [m.championName, m.role, m.winRate])).toEqual([['Caitlyn', 'BOTTOM', 100]])
+  })
+  it('an even matchup (50 %) is in neither list', () => {
+    const mf = { championId: 21, championName: 'MissFortune' }
+    const p = performanceProfile([win(STRONG, {}, mf), loss(WEAK, {}, mf)], 20)
+    expect(p.toughest).toEqual([])
+    expect(p.best).toEqual([])
   })
   it('limits toughest to 5 and best to 3', () => {
-    const all = Array.from({ length: 7 }, (_, i) => [loss(WEAK, {}, { championId: 10 + i, championName: `E${i}` }), loss(WEAK, {}, { championId: 10 + i, championName: `E${i}` })]).flat()
-    const p = performanceProfile(all, 20)
+    const lost = Array.from({ length: 7 }, (_, i) => [loss(WEAK, {}, { championId: 10 + i, championName: `E${i}` }), loss(WEAK, {}, { championId: 10 + i, championName: `E${i}` })]).flat()
+    const won = Array.from({ length: 4 }, (_, i) => [win(STRONG, {}, { championId: 30 + i, championName: `W${i}` }), win(STRONG, {}, { championId: 30 + i, championName: `W${i}` })]).flat()
+    const p = performanceProfile([...lost, ...won], 20)
     expect(p.toughest.length).toBe(5)
     expect(p.best.length).toBe(3)
   })

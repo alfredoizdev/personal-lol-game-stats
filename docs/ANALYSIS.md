@@ -145,8 +145,9 @@ non-remake games.
 - **Champions:** by games (then win rate, then name), with the most-played role
   for that champion, mean score tier and "few games" under 3; at most 8.
 - **Lane matchups:** grouped by (enemy champion, role) when the enemy has the
-  same role; ≥ 2 games. "You lose to" = 5 lowest win rates (then more games,
-  then name); "You beat" = 3 highest.
+  same role; ≥ 2 games. "You lose to" = the 5 lowest win rates under 50 %
+  (then more games, then name); "You beat" = the 3 highest above 50 %. An even
+  record is in neither list.
 - **Headline** is descriptive only: "52% win rate over 20 games · strongest as
   Mid · Vision is your weakest area".
 

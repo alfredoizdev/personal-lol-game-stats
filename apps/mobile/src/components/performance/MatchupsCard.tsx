@@ -34,18 +34,18 @@ export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
         </View>
       )
     })
-  const none = profile.toughest.length === 0
+  const none = profile.toughest.length === 0 && profile.best.length === 0
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Lane matchups</Text>
       <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents you faced at least twice</Text>
       {none ? (
-        <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent faced twice yet.</Text>
+        <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent with a winning or losing record yet (faced twice, not 50 %).</Text>
       ) : (
         <>
-          <Text style={styles.section} maxFontSizeMultiplier={1.15}>You lose to</Text>
+          {profile.toughest.length ? <Text style={styles.section} maxFontSizeMultiplier={1.15}>You lose to</Text> : null}
           {list(profile.toughest)}
-          <Text style={[styles.section, styles.sectionGap]} maxFontSizeMultiplier={1.15}>You beat</Text>
+          {profile.best.length ? <Text style={[styles.section, profile.toughest.length ? styles.sectionGap : null]} maxFontSizeMultiplier={1.15}>You beat</Text> : null}
           {list(profile.best)}
         </>
       )}
