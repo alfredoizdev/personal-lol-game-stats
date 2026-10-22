@@ -44,7 +44,10 @@
       "resizeMode": "contain"
     },
     "extra": {
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "1db65313-3256-4203-b865-aeb4c4856e5f"
+      }
+    },
+    "owner": "alfredoizjr"
   }
 }
