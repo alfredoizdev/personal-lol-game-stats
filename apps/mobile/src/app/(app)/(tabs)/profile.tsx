@@ -6,6 +6,8 @@ import { AccountCard } from '@/components/AccountCard'
 import { useLinkedAccount, useLinkedAccounts, useInvalidateLinkedAccounts } from '@/hooks/useLinkedAccount'
 import { useAuth } from '@/lib/auth-context'
 import { deleteAccount, setActiveAccount } from '@/lib/account'
+import { revokePushToken } from '@/lib/push-notifications'
+import { GoalPushSettings } from '@/components/GoalPushSettings'
 import { supabase } from '@/lib/supabase'
 import { acceptedVersionLabel } from '@/lib/legal-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
@@ -32,6 +34,7 @@ export default function ProfileScreen() {
   }
 
   async function signOut() {
+    if (user) await revokePushToken(supabase, user.id).catch(() => {})
     await supabase.auth.signOut()
     router.replace('/(auth)/sign-in')
   }
@@ -39,7 +42,7 @@ export default function ProfileScreen() {
   function confirmDelete() {
     Alert.alert(
       'Delete account?',
-      'This permanently deletes your account and all your data on this app. Your Riot account is not affected.',
+      'This permanently deletes your account, your linked Riot accounts, your goals, your notification settings and your push tokens. Your Riot account itself is not affected.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -80,6 +83,11 @@ export default function ProfileScreen() {
       <Pressable style={styles.secondaryButton} onPress={() => router.push('/(app)/link')} accessibilityRole="button">
         <Text style={styles.secondaryText}>Add another Riot account</Text>
       </Pressable>
+
+      <View style={styles.divider} />
+
+      <Text style={styles.sectionTitle}>Notifications</Text>
+      <GoalPushSettings />
 
       <View style={styles.divider} />
 

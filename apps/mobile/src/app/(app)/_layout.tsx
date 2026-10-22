@@ -2,12 +2,14 @@ import { Redirect, Stack, useSegments } from 'expo-router'
 import { useAuth } from '@/lib/auth-context'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { resolveAppGroupRedirect } from '@/lib/route-guard'
+import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { colors } from '@/theme/tokens'
 
 export default function AppLayout() {
   const { user, loading } = useAuth()
   const { data } = useLinkedAccount()
   const segments = useSegments() as string[]
+  usePushRegistration()
   const redirect = resolveAppGroupRedirect({
     loading,
     signedIn: !!user,
