@@ -20,6 +20,13 @@ export const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JUNGLE: 'Jungle', 
 const ROLE_ORDER: Role[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']
 
 export const RECENT_N = 10
+/** Score at which every role target is met (ratio curve: 1.0 → 70); 7.0 on the 10 ladder. */
+export const ON_TARGET_SCORE = 70
+
+/** The 0–100 score on the owner's 1–10 ladder, one decimal (47 → 4.7; the tier "5+" is round(4.7)). */
+export function scoreOn10(score: number): number {
+  return Math.round(score) / 10
+}
 /** Lane needs the timeline of every game; the page never downloads it. */
 const AGGREGATED_AREAS: AreaKey[] = ['farming', 'combat', 'vision']
 const MATCHUP_MIN_GAMES = 2
@@ -42,6 +49,13 @@ export type PerformanceProfile = {
   winRate: number | null
   avgScore: number | null
   tier: PerformanceTier | null
+  /** Mean score of the `period` games before this window (own comparable); null when none are loaded. */
+  previousAvgScore: number | null
+  previousN: number
+  bestScore: number | null
+  worstScore: number | null
+  /** Games in the window whose score reached ON_TARGET_SCORE. */
+  onTargetGames: number
   /** Oldest → newest, at most RECENT_N. */
   recent: RecentGame[]
   /** Current run of the same result from the newest game; n ≥ 2 only. */
@@ -75,6 +89,7 @@ const meanInt = (xs: number[]) => {
 export function performanceProfile(all: MatchSummary[], period: Period): PerformanceProfile {
   const analyzable = all.filter((s) => ANALYZABLE_QUEUES.has(s.queueId) && !s.remake).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
   const games = analyzable.slice(0, period).map(scoreGame)
+  const previous = analyzable.slice(period, period * 2).map(scoreGame).map((g) => g.score).filter((v): v is number => v !== null)
 
   const wins = games.filter((g) => g.s.me.win).length
   const scores = games.map((g) => g.score).filter((v): v is number => v !== null)
@@ -92,6 +107,11 @@ export function performanceProfile(all: MatchSummary[], period: Period): Perform
     winRate: games.length ? pct(wins, games.length) : null,
     avgScore,
     tier: avgScore === null ? null : performanceTier(avgScore),
+    previousAvgScore: meanInt(previous),
+    previousN: previous.length,
+    bestScore: scores.length ? Math.max(...scores) : null,
+    worstScore: scores.length ? Math.min(...scores) : null,
+    onTargetGames: scores.filter((v) => v >= ON_TARGET_SCORE).length,
     recent: games
       .slice(0, RECENT_N)
       .reverse()

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, fewGamesNote, gamesNote, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
+import { barHeight, fewGamesNote, gamesNote, on10, onTargetLabel, previousDelta, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -54,5 +54,23 @@ describe('performance-ui — few games', () => {
     expect(fewGamesNote({ ...EMPTY, games: 2, headline: 'Only 2 games loaded — load more for a clearer picture.' })).toBe('Only 2 games loaded — load more for a clearer picture.')
     expect(fewGamesNote({ ...EMPTY, games: 3, headline: 'anything' })).toBeNull()
     expect(fewGamesNote(EMPTY)).toBeNull()
+  })
+})
+
+describe('performance-ui — score context (on the 10 ladder)', () => {
+  it('formats a 0–100 score as x.y on 10, — when missing', () => {
+    expect(on10(47)).toBe('4.7')
+    expect(on10(100)).toBe('10.0')
+    expect(on10(null)).toBe('—')
+  })
+  it('compares the average with the previous window as a signed decimal', () => {
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 50, previousN: 20 })).toBe('−0.4')
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 40, previousN: 7 })).toBe('+0.6')
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: 46, previousN: 20 })).toBe('±0.0')
+    expect(previousDelta({ ...EMPTY, avgScore: 46, previousAvgScore: null, previousN: 0 })).toBeNull()
+  })
+  it('counts games on target out of the window', () => {
+    expect(onTargetLabel({ ...EMPTY, games: 20, onTargetGames: 3 })).toBe('3 / 20')
+    expect(onTargetLabel(EMPTY)).toBe('—')
   })
 })

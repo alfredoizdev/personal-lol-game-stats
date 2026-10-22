@@ -133,7 +133,10 @@ non-remake games.
 - **Game score** = the Matches-row score: `analyzeMatch` with no timeline and no
   baseline (section 1 rules, Farming "total" only). Overview = mean of those
   scores, named with the tier ladder; last 10 games shown oldest → newest;
-  streak only from 2 games in a row.
+  streak only from 2 games in a row. Its comparables are the player's own:
+  the mean of the previous window of the same size (games 21–40 when the
+  window is 20), the best and worst game in the window, and how many games reached the
+  70 mark (7.0 on 10: every role target met), which is also drawn on the ring.
 - **Roles:** games, win rate and mean score per role; "few games" under 3.
   Strongest / weakest only among roles with ≥ 3 games (mean score, then win rate,
   then games); a single rankable role has no weakest.

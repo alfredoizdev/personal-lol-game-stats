@@ -53,16 +53,29 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
 
   const isCached = useCallback((id: string) => qc.getQueryData<MatchV5>(matchKeys.detail(id)) !== undefined, [qc])
 
-  // Recompute whenever a match detail lands in the cache, whoever fetched it (another tab's run, the Matches list).
+  // Recompute whenever a match detail lands in the cache, whoever fetched it
+  // (another tab's run, the Matches list). Cache events fire synchronously, some
+  // of them while another screen is rendering (query creation), so the state
+  // update is deferred and coalesced instead of set inside the callback.
   const [tick, setTick] = useState(0)
-  useEffect(
-    () =>
-      qc.getQueryCache().subscribe((e) => {
-        if (e.query.queryKey[0] !== 'match-detail') return
-        if (e.type === 'added' || e.type === 'removed' || (e.type === 'updated' && e.action.type === 'success')) setTick((t) => t + 1)
-      }),
-    [qc],
-  )
+  useEffect(() => {
+    let pending = false
+    let alive = true
+    const unsubscribe = qc.getQueryCache().subscribe((e) => {
+      if (e.query.queryKey[0] !== 'match-detail' || pending) return
+      const relevant = e.type === 'removed' || (e.type === 'updated' && e.action.type === 'success') || (e.type === 'added' && e.query.state.data !== undefined)
+      if (!relevant) return
+      pending = true
+      setTimeout(() => {
+        pending = false
+        if (alive) setTick((t) => t + 1)
+      }, 0)
+    })
+    return () => {
+      alive = false
+      unsubscribe()
+    }
+  }, [qc])
 
   useEffect(() => {
     if (!run.running || !puuid) return
