@@ -45,11 +45,34 @@ export async function fetchMatchIds(
   return data.ids.filter((id): id is string => typeof id === 'string')
 }
 
+/** Tiny semaphore: the dev key allows 20 req/s, so never fire the 20 detail calls at once. */
+function createLimiter(max: number) {
+  let active = 0
+  const queue: Array<() => void> = []
+  const next = () => {
+    active--
+    queue.shift()?.()
+  }
+  return async function run<T>(task: () => Promise<T>): Promise<T> {
+    if (active >= max) await new Promise<void>((resolve) => queue.push(resolve))
+    active++
+    try {
+      return await task()
+    } finally {
+      next()
+    }
+  }
+}
+
+const detailLimiter = createLimiter(4)
+
 export async function fetchMatchDetail(
   client: SupabaseClient,
   input: { matchId: string; region: Region },
 ): Promise<MatchV5> {
-  const data = await invoke<MatchV5>(client, 'match-detail', { matchId: input.matchId, region: input.region })
+  const data = await detailLimiter(() =>
+    invoke<MatchV5>(client, 'match-detail', { matchId: input.matchId, region: input.region }),
+  )
   if (!data || typeof data !== 'object' || !('info' in data)) throw new RiotApiError('UNKNOWN', 'match-detail: bad blob')
   return data
 }

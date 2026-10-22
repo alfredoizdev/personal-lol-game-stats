@@ -14,7 +14,7 @@ import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function MatchesScreen() {
   const { data: account } = useLinkedAccount()
-  const { ids, matches, refresh, isRefreshing } = useRecentMatches(account ?? null)
+  const { ids, matches, refresh, isRefreshing, hasMore, loadMore, total } = useRecentMatches(account ?? null)
   const now = Date.now()
 
   const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready'), [matches])
@@ -28,7 +28,7 @@ export default function MatchesScreen() {
       {ready.length > 0 ? <PerformanceHeader agg={agg} /> : null}
       {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
       {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
-      <Text style={styles.section}>Recent Games{ids.data ? ` (${visible.length})` : ''}</Text>
+      <Text style={styles.section}>Recent Games{ids.data ? ` (${total})` : ''}</Text>
     </View>
   )
 
@@ -39,7 +39,14 @@ export default function MatchesScreen() {
         keyExtractor={(m) => m.matchId}
         contentContainerStyle={styles.list}
         ListHeaderComponent={header}
-        ListFooterComponent={<View style={styles.footer}><Disclaimer /></View>}
+        ListFooterComponent={
+          <View style={styles.footer}>
+            {hasMore ? <Text style={styles.muted}>Scroll for more…</Text> : null}
+            <Disclaimer />
+          </View>
+        }
+        onEndReached={() => { if (hasMore) loadMore() }}
+        onEndReachedThreshold={0.4}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void refresh()} tintColor={colors.muted} />}
         renderItem={({ item }) => <Row item={item} now={now} />}
       />
@@ -57,6 +64,15 @@ function Row({ item, now }: { item: MatchRowState; now: number }) {
     return (
       <View style={styles.placeholder}>
         <Text style={styles.muted}>Couldn't load this game.</Text>
+        <Text style={styles.code}>{item.error}</Text>
+      </View>
+    )
+  }
+  if (item.status === 'not-participant') {
+    return (
+      <View style={styles.placeholder}>
+        <Text style={styles.muted}>This account isn't in this match's data.</Text>
+        <Text style={styles.code}>Linked puuid does not match Riot's — re-link the Riot ID in Profile.</Text>
       </View>
     )
   }
@@ -73,5 +89,6 @@ const styles = StyleSheet.create({
   muted: { color: colors.muted, fontSize: font.body },
   placeholder: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, minHeight: 92, justifyContent: 'center' },
   skeleton: { opacity: 0.5 },
-  footer: { paddingVertical: space.lg },
+  code: { color: colors.muted, fontSize: font.caption - 1, marginTop: 4 },
+  footer: { paddingVertical: space.lg, gap: space.md },
 })

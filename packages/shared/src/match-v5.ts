@@ -120,9 +120,28 @@ function findOpponent(me: MatchV5Participant, all: MatchV5Participant[]): MatchV
   return candidates.length === 1 ? candidates[0]! : null
 }
 
-/** Summarize one MATCH-V5 blob from the point of view of `puuid`. Null when they did not play in it. */
-export function summarizeMatch(blob: MatchV5, puuid: string): MatchSummary | null {
-  const me = blob.info.participants.find((p) => p.puuid === puuid)
+/**
+ * Who "me" is. `puuid` is preferred; `gameName`+`tagLine` is the fallback for
+ * accounts stored with the LCU's 36-char uuid (which never equals Riot's
+ * 78-char encrypted puuid carried by MATCH-V5).
+ */
+export type PlayerIdentity = { puuid: string; gameName?: string; tagLine?: string }
+
+const norm = (s: string | undefined) => (s ?? '').trim().toLowerCase()
+
+function findMe(participants: MatchV5Participant[], identity: PlayerIdentity): MatchV5Participant | undefined {
+  const byPuuid = participants.find((p) => p.puuid === identity.puuid)
+  if (byPuuid) return byPuuid
+  if (!identity.gameName || !identity.tagLine) return undefined
+  const g = norm(identity.gameName)
+  const t = norm(identity.tagLine)
+  return participants.find((p) => norm(p.riotIdGameName) === g && norm(p.riotIdTagline) === t)
+}
+
+/** Summarize one MATCH-V5 blob from the point of view of the player. Null when they did not play in it. */
+export function summarizeMatch(blob: MatchV5, identity: string | PlayerIdentity): MatchSummary | null {
+  const id: PlayerIdentity = typeof identity === 'string' ? { puuid: identity } : identity
+  const me = findMe(blob.info.participants, id)
   if (!me) return null
   const durationSec = blob.info.gameDuration
   const opponent = findOpponent(me, blob.info.participants)

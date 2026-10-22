@@ -131,4 +131,21 @@ describe('summarizeMatch', () => {
   it('returns null when the puuid is not a participant', () => {
     expect(summarizeMatch(blob({ me }), 'SOMEONE-ELSE')).toBeNull()
   })
+
+  it('falls back to the Riot ID when the stored puuid is the LCU 36-char form', () => {
+    const b = blob({ me: { ...me, riotIdGameName: 'CyberFluxLOL', riotIdTagline: '9214' } })
+    const s = summarizeMatch(b, { puuid: '5336b049-acb8-5319-a139-32ae5c004afc', gameName: 'CyberFluxLOL', tagLine: '9214' })
+    expect(s).not.toBeNull()
+    expect(s!.me.championName).toBe('Yasuo')
+    expect(s!.me.puuid).toBe(ME) // the encrypted puuid from the blob, not the stored one
+  })
+
+  it('Riot ID fallback is case-insensitive and trims', () => {
+    const b = blob({ me: { ...me, riotIdGameName: 'CyberFluxLOL', riotIdTagline: '9214' } })
+    expect(summarizeMatch(b, { puuid: 'nope', gameName: ' cyberfluxlol ', tagLine: '9214' })).not.toBeNull()
+  })
+
+  it('still returns null when neither puuid nor Riot ID match', () => {
+    expect(summarizeMatch(blob({ me }), { puuid: 'nope', gameName: 'Other', tagLine: 'NA1' })).toBeNull()
+  })
 })

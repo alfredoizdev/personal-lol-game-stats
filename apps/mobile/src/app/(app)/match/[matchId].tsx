@@ -9,7 +9,7 @@ import { LaneMatchupCard } from '@/components/LaneMatchupCard'
 import { MatchHero } from '@/components/MatchHero'
 import { RiotErrorView } from '@/components/RiotErrorView'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
-import { matchDetailQuery } from '@/hooks/useRecentMatches'
+import { identityOf, matchDetailQuery } from '@/hooks/useRecentMatches'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
@@ -19,7 +19,7 @@ export default function MatchReviewScreen() {
   const detail = useQuery({ ...matchDetailQuery(String(matchId), account?.region ?? 'NA'), enabled: !!matchId && !!account })
   const now = Date.now()
   const summary = useMemo(
-    () => (detail.data && account ? summarizeMatch(detail.data, account.puuid) : null),
+    () => (detail.data && account ? summarizeMatch(detail.data, identityOf(account)) : null),
     [detail.data, account],
   )
 
