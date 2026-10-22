@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { summarizeMatch, type MatchSummary, type MatchV5 } from '@lpp/shared'
 import { BACKFILL_COUNT, runBackfill } from '@/lib/backfill'
+import { claimRun, getRun, isRunOwned, releaseRun, setRun, subscribeRuns } from '@/lib/backfill-run'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { matchKeys } from '@/lib/match-keys'
 import { isReviewOpen } from '@/lib/review-focus'
@@ -22,40 +23,54 @@ export type OwnHistory = {
 }
 
 /**
- * The player's last 100 games for the pre-match block. Ids are fetched once
- * (10-minute staleness); details are NEVER fetched automatically — `start()`
- * runs `runBackfill` (each id once per run, stops on a rate limit, waits while
- * a Match Review is open or `paused` is true). Everything already in the query
- * cache (the Matches tab's 20, earlier runs) counts immediately and
+ * The player's last 100 games (pre-match block, Performance tab). Ids are
+ * fetched once (10-minute staleness); details are NEVER fetched automatically —
+ * `start()` runs `runBackfill` (each id once per run, stops on a rate limit,
+ * waits while a Match Review is open or `paused` is true). Everything already
+ * in the query cache (the Matches tab's 20, earlier runs) counts immediately and
  * `match_details_cache` makes later runs free.
+ *
+ * Several screens mount this hook at once: the run state lives in
+ * `backfill-run.ts` (one run per account, one owner) and the summaries follow
+ * the query cache itself, so a run started on one tab shows on the other.
  */
 export function useOwnHistory(account: LinkedAccount | null, paused: boolean): OwnHistory {
   const qc = useQueryClient()
-  const [running, setRunning] = useState(false)
-  const [runError, setRunError] = useState<unknown | null>(null)
-  const [tick, setTick] = useState(0) // bumps when a chunk lands so summaries recompute
+  const puuid = account?.puuid
+  const run = useSyncExternalStore(subscribeRuns, () => getRun(puuid))
   const pausedRef = useRef(paused)
   pausedRef.current = paused
 
   const idsQuery = useQuery({
-    queryKey: matchKeys.ownIds(account?.puuid),
+    queryKey: matchKeys.ownIds(puuid),
     queryFn: () => fetchMatchIds(supabase, { gameName: account!.gameName, tagLine: account!.tagLine, region: account!.region, count: BACKFILL_COUNT }),
     enabled: !!account,
     staleTime: 10 * 60 * 1000,
     retry: (n, err) => n < 2 && isRetryableRiotError(err),
   })
   const ids = useMemo(() => idsQuery.data ?? [], [idsQuery.data])
-  const puuid = account?.puuid
   const region = account?.region ?? 'NA'
 
   const isCached = useCallback((id: string) => qc.getQueryData<MatchV5>(matchKeys.detail(id)) !== undefined, [qc])
 
+  // Recompute whenever a match detail lands in the cache, whoever fetched it (another tab's run, the Matches list).
+  const [tick, setTick] = useState(0)
+  useEffect(
+    () =>
+      qc.getQueryCache().subscribe((e) => {
+        if (e.query.queryKey[0] !== 'match-detail') return
+        if (e.type === 'added' || e.type === 'removed' || (e.type === 'updated' && e.action.type === 'success')) setTick((t) => t + 1)
+      }),
+    [qc],
+  )
+
   useEffect(() => {
-    if (!running || !puuid) return
+    if (!run.running || !puuid) return
     if (ids.length === 0) {
-      if (!idsQuery.isPending) setRunning(false) // nothing to load (no games, or the ids query failed)
+      if (!idsQuery.isPending) setRun(puuid, { running: false }) // nothing to load (no games, or the ids query failed)
       return
     }
+    if (!claimRun(puuid)) return // another instance drives this run
     let cancelled = false
     void runBackfill({
       ids,
@@ -63,29 +78,25 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
       fetchOne: (id) => qc.fetchQuery(matchDetailQuery(id, region)),
       isPaused: () => pausedRef.current || isReviewOpen(),
       isCancelled: () => cancelled,
-      onChunk: () => {
-        if (!cancelled) setTick((t) => t + 1)
-      },
+      onChunk: () => {},
     }).then((r) => {
       if (cancelled) return
-      setRunError(r.stoppedBy ?? (r.failed > 0 ? new Error(`${r.failed} games could not be loaded`) : null))
-      setRunning(false)
+      releaseRun(puuid)
+      setRun(puuid, { running: false, error: r.stoppedBy ?? (r.failed > 0 ? new Error(`${r.failed} games could not be loaded`) : null) })
     })
     return () => {
       cancelled = true
+      releaseRun(puuid)
+      // Deps changed (new ids) → this effect re-runs at once and reclaims; a real unmount leaves no owner → stop the run.
+      queueMicrotask(() => {
+        if (!isRunOwned(puuid)) setRun(puuid, { running: false })
+      })
     }
-  }, [running, ids, puuid, region, qc, isCached, idsQuery.isPending])
-
-  // A different account cancels any run (the effect above re-runs with the new ids).
-  useEffect(() => {
-    setRunning(false)
-    setRunError(null)
-  }, [puuid])
+  }, [run.running, ids, puuid, region, qc, isCached, idsQuery.isPending])
 
   const start = useCallback(() => {
-    setRunError(null)
-    setRunning(true)
-  }, [])
+    if (puuid) setRun(puuid, { running: true, error: null })
+  }, [puuid])
 
   const summaries = useMemo(() => {
     void tick
@@ -109,9 +120,9 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
     ids,
     loaded,
     total: ids.length,
-    running,
+    running: run.running,
     start,
-    error: runError ?? idsQuery.error ?? null,
+    error: run.error ?? idsQuery.error ?? null,
     idsPending: !!account && idsQuery.isPending,
   }
 }

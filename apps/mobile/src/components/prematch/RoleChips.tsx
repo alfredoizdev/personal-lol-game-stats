@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import type { Role } from '@lpp/shared'
+import { ROLE_LABEL, type Role } from '@lpp/shared'
 import { RoleIcon } from '@/components/RoleIcon'
 import { colors, font, radius } from '@/theme/tokens'
 
 export const ROLES: Role[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']
-export const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' }
+export { ROLE_LABEL }
 
 export function RoleChips({ value, onChange }: { value: Role; onChange: (r: Role) => void }) {
   return (

@@ -9,7 +9,8 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 - [x] Phase 3 — Match Analysis v1
 - [x] Phase 4 — Live companion
 - [x] Phase 5 — Pre-match focus — code complete 2026-10-22; owner acceptance (saved goal → live → review) pending
-- [ ] Phase 6 — End-of-game sync, QA, beta readiness
+- [x] Phase 6 — Performance page — code complete 2026-10-22; owner acceptance on device pending
+- [ ] Phase 7 — Riot submission package (status-only goal notifications, terms & privacy, EAS build, private channel, application write-up), then end-of-game sync / QA / installer
 
 ## Phase 1 tasks
 
@@ -103,3 +104,13 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-5-prematch.md`. Spec: `docs/super
 - `pre_match_focus` table applied to the shared project (append-only rows, RLS own).
 - Verified in the simulator with temporary launch hacks (no synthetic taps: other windows covered the simulator): role chips, picker (fixed to a page sheet after the owner found its header under the status bar), summary, goal editor, matchups, backfill bar. Owner acceptance pending: save a goal, play a game with the collector open, see it live, then in the review.
 - `pnpm -r test`: shared 130, desktop 60, mobile 109. Lint and typecheck clean. No secrets in sources.
+
+## Phase 6 verification (2026-10-22)
+
+Plan: `docs/superpowers/plans/2026-10-22-phase-6-performance.md`. Spec: `docs/superpowers/specs/2026-10-22-phase-6-performance-design.md`. Aggregates: `docs/ANALYSIS.md` section 8. Screenshots: `docs/screenshots/phase6-performance-{overview,champions,matchups}.png`, `phase6-matches-header-donuts.png`.
+
+- New Performance tab (Matches · Live · Performance · Profile) computed only from the player's own cached games (the Phase 5 backfill, "n of 100 games loaded" + button), fixed to the last 20 games at the owner's request (no period picker); Overview (average match score as a semi-donut with the tier, W–L record, streak, last-10 bars); Where you are strongest (per-role games, win rate, mean score bar; strongest/weakest only with ≥ 3 games); What holds you back (Farming / Combat / Vision mean scores with sub-row averages vs the mean role target; Lane excluded, needs the timeline); Your champions (most played, record, role, tier); Lane matchups over every loaded game (You lose to < 50 % / You beat > 50 %, ≥ 2 games, grouped by enemy champion and role; a repeat opponent is rare inside 20 games).
+- Also merged here: the Matches header now draws Avg KDA / CS/min / Win rate as semi-donuts with a rating word (`docs/ANALYSIS.md` section 9).
+- No new Riot calls, Edge Functions or desktop changes. Copy is descriptive only.
+- Engine cases covered by tests: empty; ARAM/remakes excluded; period larger than loaded; recent order and cap; streak 1 / 3 / 10; single rankable role; support without Farming; weakest area needs 3 games; champion limit 8 with most-played role; matchups needing 2 games, same role only, limits 5/3; headline.
+- Verified in the simulator with temporary launch hacks (redirect + auto-start + scroll, reverted) on the owner's account: 100 games loaded, overview 47 "5+ · Needs Work", Mid 60 % / Bot 30 %, Farming weakest (5.5 CS/min vs 7.3 target), 8 champions, matchups over 98 games. The owner reviewed the first version on device and asked for the leaner overview and the fixed 20-game window (done). Acceptance of the final layout pending.

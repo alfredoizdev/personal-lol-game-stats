@@ -123,3 +123,41 @@ Timeline CS: 105 at 14 min, 170 at 25 min, 210 at 30 min. Lane diffs: CS +5 @10,
 - A timeline frame that lacks a participant is `null` in the reduced series and
   simply drops out (no lead or deficit is invented); phase CS/min divides by the
   minutes the two frames really cover.
+
+## 8. Performance page aggregates (`performance/profile.ts`)
+
+The Performance tab reads the player's own cached games (up to 100, the Phase 5
+backfill) and never calls Riot. Period = the newest 20 / 50 / 100 analyzable,
+non-remake games.
+
+- **Game score** = the Matches-row score: `analyzeMatch` with no timeline and no
+  baseline (section 1 rules, Farming "total" only). Overview = mean of those
+  scores, named with the tier ladder; last 10 games shown oldest → newest;
+  streak only from 2 games in a row.
+- **Roles:** games, win rate and mean score per role; "few games" under 3.
+  Strongest / weakest only among roles with ≥ 3 games (mean score, then win rate,
+  then games); a single rankable role has no weakest.
+- **Areas:** mean of the Farming, Combat and Vision area scores over the games
+  where the area is scored (supports: no Farming). **Lane is never aggregated**:
+  it needs each game's timeline, which the page does not download. Each scored
+  sub-row shows its mean value and the **mean of the per-game role targets**
+  (a "typical" target when roles are mixed). Weakest area needs ≥ 3 games.
+- **Champions:** by games (then win rate, then name), with the most-played role
+  for that champion, mean score tier and "few games" under 3; at most 8.
+- **Lane matchups:** over **every loaded game** (a repeat opponent is rare inside
+  20), grouped by (enemy champion, role) when the enemy has the same role; ≥ 2 games. "You lose to" = the 5 lowest win rates under 50 %
+  (then more games, then name); "You beat" = the 3 highest above 50 %. An even
+  record is in neither list.
+- **Headline** is descriptive only: "52% win rate over 20 games · strongest as
+  Mid · Vision is your weakest area".
+
+## 9. Matches header donuts
+
+The "Last 10 Games" card on the Matches tab draws its three stats as semi-donuts
+(`apps/mobile/src/lib/header-donuts.ts`), over the same window as `aggregateMatches`.
+**Avg KDA:** the 10-game mean KDA against a fixed target of 3.0 through the ratio
+curve of section 3 (3.0 → 70, Good), rated with the usual Poor/Fair/Good/Great bands.
+**CS/min:** mean of the per-game `scoreRatio(csPerMin, ROLE_TARGETS[role].csPerMin)`;
+support games have no CS target and drop out (null when only supports were played).
+**Win rate:** the arc is the rate itself; the word uses its own bands: < 40 Poor,
+40–49 Fair, 50–59 Good, ≥ 60 Great. Arc colour = rating colour; muted when null.
