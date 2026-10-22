@@ -1,5 +1,5 @@
 import { colors } from '@/theme/tokens'
-import { ROLE_LABEL, type AreaSubrowStat, type PerformanceProfile, type Streak } from '@lpp/shared'
+import { FEW_GAMES, ROLE_LABEL, type AreaSubrowStat, type PerformanceProfile, type Streak } from '@lpp/shared'
 
 /** Copy and geometry for the Performance tab; pure so it is testable. */
 
@@ -25,7 +25,7 @@ export function barHeight(score: number | null, max: number): number {
 
 /** Footer of the Roles card: only what the engine ranked (≥ 3 games per role). */
 export function roleRankNote(p: PerformanceProfile): string {
-  if (!p.strongestRole) return 'Play 3 games in a role to rank it.'
+  if (!p.strongestRole) return 'Roles are ranked from 3 games each.'
   const parts = [`Strongest: ${ROLE_LABEL[p.strongestRole]}`]
   if (p.weakestRole) parts.push(`Weakest: ${ROLE_LABEL[p.weakestRole]}`)
   return parts.join(' · ')
@@ -40,4 +40,9 @@ export function subrowLine(s: AreaSubrowStat): string {
 
 export function winRateColor(winRate: number): string {
   return winRate >= 50 ? colors.win : colors.loss
+}
+
+/** Under 3 games the engine's headline is the "load more" sentence (spec 2.8); otherwise nothing. */
+export function fewGamesNote(p: PerformanceProfile): string | null {
+  return p.games > 0 && p.games < FEW_GAMES ? p.headline : null
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, gamesNote, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
+import { barHeight, fewGamesNote, gamesNote, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -33,7 +33,7 @@ describe('performance-ui — roles and areas copy', () => {
   it('ranks roles only when the engine did', () => {
     expect(roleRankNote({ ...EMPTY, strongestRole: 'MIDDLE', weakestRole: 'TOP' })).toBe('Strongest: Mid · Weakest: Top')
     expect(roleRankNote({ ...EMPTY, strongestRole: 'MIDDLE', weakestRole: null })).toBe('Strongest: Mid')
-    expect(roleRankNote(EMPTY)).toBe('Play 3 games in a role to rank it.')
+    expect(roleRankNote(EMPTY)).toBe('Roles are ranked from 3 games each.')
   })
   it('writes a sub-row with its average and target in the metric format', () => {
     expect(subrowLine({ key: 'total', label: 'CS / min', avg: 6.4, target: 7, decimals: 1, suffix: '', n: 12 })).toBe('CS / min 6.4 · target 7.0')
@@ -46,5 +46,13 @@ describe('performance-ui — win rate colour', () => {
   it('green from 50 %, red below', () => {
     expect(winRateColor(50)).toBe(colors.win)
     expect(winRateColor(49)).toBe(colors.loss)
+  })
+})
+
+describe('performance-ui — few games', () => {
+  it('shows the engine sentence only under 3 games', () => {
+    expect(fewGamesNote({ ...EMPTY, games: 2, headline: 'Only 2 games loaded — load more for a clearer picture.' })).toBe('Only 2 games loaded — load more for a clearer picture.')
+    expect(fewGamesNote({ ...EMPTY, games: 3, headline: 'anything' })).toBeNull()
+    expect(fewGamesNote(EMPTY)).toBeNull()
   })
 })

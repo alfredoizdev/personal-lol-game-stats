@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { TIER_LABELS, tierBucket, type PerformanceProfile } from '@lpp/shared'
 import { SemiDonut } from '@/components/SemiDonut'
-import { recordLabel, streakLabel } from '@/lib/performance-ui'
+import { fewGamesNote, recordLabel, streakLabel } from '@/lib/performance-ui'
 import { tierColor } from '@/lib/row-rating'
 import { colors, font, radius, space } from '@/theme/tokens'
 import { RecentStrip } from './RecentStrip'
@@ -10,6 +10,7 @@ import { RecentStrip } from './RecentStrip'
 export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
   const color = profile.tier ? tierColor(tierBucket(profile.tier)) : colors.muted
   const streak = streakLabel(profile.streak)
+  const few = fewGamesNote(profile)
   return (
     <View style={styles.card}>
       <View style={styles.top}>
@@ -20,6 +21,7 @@ export function OverviewCard({ profile }: { profile: PerformanceProfile }) {
           {streak ? <Text style={[styles.streak, { color: profile.streak?.kind === 'win' ? colors.win : colors.loss }]} maxFontSizeMultiplier={1.15}>{streak}</Text> : null}
         </View>
       </View>
+      {few ? <Text style={styles.few} maxFontSizeMultiplier={1.15}>{few}</Text> : null}
       <RecentStrip recent={profile.recent} />
     </View>
   )
@@ -32,4 +34,5 @@ const styles = StyleSheet.create({
   kicker: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
   record: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   streak: { fontSize: font.caption, fontWeight: '700' },
+  few: { color: colors.warn, fontSize: font.caption + 1 },
 })
