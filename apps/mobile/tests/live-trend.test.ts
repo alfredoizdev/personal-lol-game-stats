@@ -37,13 +37,19 @@ describe('appendTrendPoint', () => {
 })
 
 describe('separatedEndLabels', () => {
-  it('keeps default offsets when the lines end far apart', () => {
-    expect(separatedEndLabels(40, 100)).toEqual({ me: 34, enemy: 104 })
+  it('puts the higher line label above and the lower one below when far apart', () => {
+    expect(separatedEndLabels(40, 100)).toEqual({ me: 34, enemy: 110 })
+    expect(separatedEndLabels(100, 40)).toEqual({ me: 110, enemy: 34 })
   })
   it('pushes the labels apart when the lines end close together', () => {
-    const r = separatedEndLabels(60, 62)
-    expect(r.enemy - r.me).toBeGreaterThanOrEqual(13)
-    expect(r.me).toBeLessThan(r.enemy)
+    for (const [a, b] of [[60, 62], [62, 60], [60, 60]] as const) {
+      const r = separatedEndLabels(a, b)
+      expect(Math.abs(r.enemy - r.me)).toBeGreaterThanOrEqual(13)
+    }
+  })
+  it('never lets the lower label sit above the upper one', () => {
+    const r = separatedEndLabels(70, 66)
+    expect(r.enemy).toBeLessThan(r.me)
   })
   it('handles a missing enemy line', () => {
     expect(separatedEndLabels(60, null)).toEqual({ me: 54, enemy: 0 })

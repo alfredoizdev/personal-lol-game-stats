@@ -24,14 +24,19 @@ export function appendTrendPoint(history: TrendPoint[], snapshot: LiveSnapshotV2
 }
 
 /**
- * Y positions for the two end-of-line labels. "You" sits above its point and "Enemy" below;
- * when the lines end close together the labels are pushed apart so they never overlap.
+ * Y positions for the two end-of-line labels. The label of the higher line sits above its
+ * point, the lower line's label sits below, and they are pushed apart when the lines end
+ * close together so they never overlap. A lone line gets its label above its point.
  */
 export function separatedEndLabels(meY: number | null, enemyY: number | null, minGap = 13): { me: number; enemy: number } {
-  const me = meY === null ? 0 : meY - 6
-  const enemy = enemyY === null ? 0 : enemyY + 4
-  if (meY === null || enemyY === null) return { me, enemy }
-  if (enemy - me >= minGap) return { me, enemy }
-  const mid = (me + enemy) / 2
-  return { me: mid - minGap / 2, enemy: mid + minGap / 2 }
+  if (meY === null || enemyY === null) return { me: meY === null ? 0 : meY - 6, enemy: enemyY === null ? 0 : enemyY - 6 }
+  const meIsUpper = meY <= enemyY
+  let upper = Math.min(meY, enemyY) - 6
+  let lower = Math.max(meY, enemyY) + 10
+  if (lower - upper < minGap) {
+    const mid = (upper + lower) / 2
+    upper = mid - minGap / 2
+    lower = mid + minGap / 2
+  }
+  return meIsUpper ? { me: upper, enemy: lower } : { me: lower, enemy: upper }
 }
