@@ -14,12 +14,10 @@ const TABS: Record<string, { label: string; icon: (color: string) => React.React
 type TabBarProps = {
   state: { index: number; routes: Array<{ key: string; name: string }> }
   navigateToTab: (routeKey: string) => void
-  /** Pops a tab's nested stack back to its first screen (e.g. Match Review → list). */
-  popNestedStackToTop?: (routeKey: string) => void
   insets: { bottom: number }
 }
 
-export function TabBar({ state, navigateToTab, popNestedStackToTop, insets }: TabBarProps) {
+export function TabBar({ state, navigateToTab, insets }: TabBarProps) {
   const focusedName = state.routes[state.index]?.name ?? 'matches'
   if (tabBarHiddenFor(focusedName)) return null
   const active = activeTabFor(focusedName)
@@ -37,8 +35,7 @@ export function TabBar({ state, navigateToTab, popNestedStackToTop, insets }: Ta
             accessibilityState={{ selected: focused }}
             accessibilityLabel={tab.label}
             onPress={() => {
-              if (focused) popNestedStackToTop?.(route.key)
-              else navigateToTab(route.key)
+              if (!focused) navigateToTab(route.key)
             }}
             style={styles.item}
           >

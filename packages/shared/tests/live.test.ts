@@ -60,9 +60,9 @@ describe('buildLiveSnapshot', () => {
     expect(s!.queueId).toBe(420)
     expect(s!.teamKills).toBe(7) // 4 + 2 + 1
     expect(s!.me).toEqual({
-      championName: 'Yasuo', position: 'MIDDLE', level: 11, kills: 4, deaths: 1, assists: 3, cs: 112, csPerMin: 7.7, wardScore: 9, items: [3031, 3006],
+      championName: 'Yasuo', position: 'MIDDLE', level: 11, kills: 4, deaths: 1, assists: 3, cs: 112, csPerMin: 7.7, wardScore: 9, items: [3031, 0, 3006, 0, 0, 0, 0],
     })
-    expect(s!.opponent).toMatchObject({ championName: 'Yone', position: 'MIDDLE', cs: 100, csPerMin: 6.9, items: [6673] })
+    expect(s!.opponent).toMatchObject({ championName: 'Yone', position: 'MIDDLE', cs: 100, csPerMin: 6.9, items: [6673, 0, 0, 0, 0, 0, 0] })
   })
 
   it('csPerMin is null under 60 s of game time', () => {
@@ -90,6 +90,11 @@ describe('buildLiveSnapshot', () => {
     expect(buildLiveSnapshot(raw({}), { gameName: 'hexed', tagLine: '7551' }, extra)).not.toBeNull()
     const legacy = raw({ me: { riotIdGameName: '', riotIdTagLine: '', summonerName: 'Hexed' } })
     expect(buildLiveSnapshot(legacy, ME, extra)).not.toBeNull()
+  })
+
+  it('places items by slot so the trinket stays in slot 6 with a partial inventory', () => {
+    const s = buildLiveSnapshot(raw({ me: { items: [{ itemID: 1055, slot: 0 }, { itemID: 3363, slot: 6 }] } }), ME, extra)!
+    expect(s.me.items).toEqual([1055, 0, 0, 0, 0, 0, 3363])
   })
 
   it('rounds the live vision score to a whole number', () => {
@@ -144,6 +149,11 @@ describe('liveViewState', () => {
   it('an ended snapshot expires back to waiting after 10 minutes', () => {
     expect(liveViewState({ ...base, isFinal: true }, base.ts + 9 * 60_000)).toBe('ended')
     expect(liveViewState({ ...base, isFinal: true }, base.ts + 11 * 60_000)).toBe('waiting')
+  })
+  it('measures age from when the phone received it, not the desktop clock', () => {
+    const ahead = { ...base, ts: base.ts + 60_000 } // desktop clock a minute ahead
+    expect(liveViewState(ahead, base.ts + 3_000, 15_000, base.ts)).toBe('live')
+    expect(liveViewState(ahead, base.ts + 20_000, 15_000, base.ts)).toBe('stale')
   })
   it('a stale non-final snapshot expires back to waiting after 10 minutes too', () => {
     expect(liveViewState(base, base.ts + 11 * 60_000)).toBe('waiting')

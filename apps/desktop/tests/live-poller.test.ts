@@ -20,6 +20,7 @@ function raw(cs: number, gameTime = 600): RawAllGameData {
 function harness(initialPhase: GameflowPhase | null) {
   let phase: GameflowPhase | null = initialPhase
   let data: RawAllGameData | null = null
+  let dataDelay = 0
   const states: LiveState[] = []
   const handle = startLivePoller({
     getLockfile: () => lockfile,
@@ -29,11 +30,20 @@ function harness(initialPhase: GameflowPhase | null) {
     deps: {
       getPhase: vi.fn(async () => phase),
       getQueueId: vi.fn(async () => 420),
-      getAllGameData: vi.fn(async () => data),
+      getAllGameData: vi.fn(async () => {
+        if (dataDelay > 0) await new Promise((r) => setTimeout(r, dataDelay))
+        return data
+      }),
       now: () => Date.now(),
     },
   })
-  return { handle, states, setPhase: (p: GameflowPhase | null) => (phase = p), setData: (d: RawAllGameData | null) => (data = d) }
+  return {
+    handle,
+    states,
+    setPhase: (p: GameflowPhase | null) => (phase = p),
+    setData: (d: RawAllGameData | null) => (data = d),
+    setDataDelay: (ms: number) => (dataDelay = ms),
+  }
 }
 
 async function tick(ms: number) {
@@ -105,5 +115,70 @@ describe('startLivePoller', () => {
     h.setData(raw(200))
     await tick(6000)
     expect(h.states.length).toBe(before)
+  })
+
+  it('a brief unreadable phase mid-game (LCU timeout) does not end it', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.setPhase(null)
+    await tick(2000)
+    await tick(2000)
+    h.setPhase('InProgress')
+    await tick(2000)
+    expect(h.states.some((s) => s.kind === 'ended')).toBe(false)
+    expect(h.handle.current().kind).toBe('live')
+    h.handle.stop()
+  })
+
+  it('three consecutive unreadable phases do end it (League really went away)', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.setPhase(null)
+    await tick(2000)
+    await tick(2000)
+    await tick(2000)
+    expect(h.states.filter((s) => s.kind === 'ended').length).toBe(1)
+    h.handle.stop()
+  })
+
+  it('Reconnect → GameStart → InProgress (client restart) does not end it', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.setPhase('Reconnect')
+    await tick(2000)
+    h.setPhase('GameStart')
+    await tick(2000)
+    h.setPhase('InProgress')
+    await tick(2000)
+    expect(h.states.some((s) => s.kind === 'ended')).toBe(false)
+    h.handle.stop()
+  })
+
+  it('a Live Client response that lands after the end is dropped', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.setDataDelay(3000) // slower than the 2 s tick
+    await tick(2000) // a live tick is now in flight
+    h.setPhase('WaitingForStats')
+    await tick(2000) // phase tick ends the game while the request is pending
+    await tick(4000) // the late response resolves
+    const kinds = h.states.map((s) => s.kind)
+    expect(kinds.filter((k) => k === 'ended').length).toBe(1)
+    expect(kinds.lastIndexOf('live')).toBeLessThan(kinds.lastIndexOf('ended'))
+    h.handle.stop()
+  })
+
+  it('stop() during a game emits one final snapshot so the phone learns it ended', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.handle.stop()
+    const last = h.states[h.states.length - 1]!
+    expect(last.kind).toBe('ended')
+    expect(last.kind === 'ended' && last.snapshot.isFinal).toBe(true)
   })
 })

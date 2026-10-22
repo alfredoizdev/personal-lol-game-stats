@@ -45,7 +45,9 @@ export function LiveTrendChart({ points }: { points: TrendPoint[] }) {
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        // Only claim horizontal drags; a vertical swipe that starts on the chart must scroll the screen.
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > Math.abs(g.dy),
+        onPanResponderTerminationRequest: () => true,
         onPanResponderGrant: (e) => pick(e.nativeEvent.locationX),
         onPanResponderMove: (e) => pick(e.nativeEvent.locationX),
         onPanResponderRelease: () => setHover(null),

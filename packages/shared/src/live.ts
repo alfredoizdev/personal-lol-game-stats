@@ -1,7 +1,6 @@
 import type { Role } from './match-v5'
 
 /** Build flag: show the lane opponent's scoreboard-visible stats on the Live tab. */
-export const LIVE_OPPONENT_COMPARE = true
 
 // ---------------------------------------------------------------------------
 // Raw Live Client Data API shape (subset we read). Everything is optional:
@@ -16,7 +15,7 @@ export type RawLivePlayer = {
   position?: string
   level?: number
   scores?: { kills?: number; deaths?: number; assists?: number; creepScore?: number; wardScore?: number }
-  items?: Array<{ itemID?: number }>
+  items?: Array<{ itemID?: number; slot?: number }>
 }
 
 export type RawAllGameData = {
@@ -63,6 +62,17 @@ const MAX_ITEMS = 7
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 // Live Client Data reports wardScore as a long float (e.g. 13.0152835…); show whole points.
 const roundInt = (n: number | null): number | null => (n === null ? null : Math.round(n))
+
+/** Seven fixed slots (0–5 items, 6 trinket) so the trinket stays the trinket with a partial inventory. */
+function itemsBySlot(items: RawLivePlayer['items']): number[] {
+  const out = new Array<number>(MAX_ITEMS).fill(0)
+  ;(items ?? []).forEach((it, i) => {
+    const id = num(it?.itemID) ?? 0
+    const slot = num(it?.slot) ?? i
+    if (id > 0 && slot >= 0 && slot < MAX_ITEMS) out[slot] = id
+  })
+  return out
+}
 const norm = (s: string | undefined) => (s ?? '').trim().toLowerCase()
 const round1 = (n: number) => Math.round(n * 10) / 10
 
@@ -84,10 +94,7 @@ function toLine(p: RawLivePlayer, gameTime: number | null): LivePlayerV2 {
     cs,
     csPerMin,
     wardScore: roundInt(num(p.scores?.wardScore)),
-    items: (p.items ?? [])
-      .map((it) => num(it?.itemID) ?? 0)
-      .filter((id) => id > 0)
-      .slice(0, MAX_ITEMS),
+    items: itemsBySlot(p.items),
   }
 }
 
@@ -204,9 +211,15 @@ export type LiveViewState = 'waiting' | 'live' | 'stale' | 'ended'
 const EXPIRE_AFTER_MS = 10 * 60_000
 
 /** waiting | live | stale | ended. Anything older than 10 minutes is forgotten (back to waiting). */
-export function liveViewState(snapshot: LiveSnapshotV2 | null, nowMs: number, staleAfterMs = 15_000): LiveViewState {
+export function liveViewState(
+  snapshot: LiveSnapshotV2 | null,
+  nowMs: number,
+  staleAfterMs = 15_000,
+  /** When the phone received the snapshot; defaults to the desktop's `ts` (clocks may differ). */
+  receivedAtMs: number = snapshot?.ts ?? 0,
+): LiveViewState {
   if (!snapshot) return 'waiting'
-  const age = nowMs - snapshot.ts
+  const age = nowMs - receivedAtMs
   if (age > EXPIRE_AFTER_MS) return 'waiting'
   if (snapshot.isFinal) return 'ended'
   return age > staleAfterMs ? 'stale' : 'live'

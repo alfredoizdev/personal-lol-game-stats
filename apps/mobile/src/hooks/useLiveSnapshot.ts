@@ -17,6 +17,7 @@ export function useLiveSnapshot(): { snapshot: LiveSnapshotV2 | null; state: Liv
   const [connected, setConnected] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const latestTs = useRef(0)
+  const receivedAt = useRef(0)
   const [generation, setGeneration] = useState(0)
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function useLiveSnapshot(): { snapshot: LiveSnapshotV2 | null; state: Liv
   }, [])
 
   useEffect(() => {
+    latestTs.current = 0 // a different account (or a desktop clock that moved) must not be suppressed
     if (!user) {
       setSnapshot(null)
       setConnected(false)
@@ -44,6 +46,7 @@ export function useLiveSnapshot(): { snapshot: LiveSnapshotV2 | null; state: Liv
         const parsed = parseLiveSnapshot(msg.payload)
         if (!parsed || parsed.ts < latestTs.current) return
         latestTs.current = parsed.ts
+        receivedAt.current = Date.now()
         setSnapshot(parsed)
       })
       .subscribe((status) => setConnected(status === 'SUBSCRIBED'))
@@ -53,5 +56,5 @@ export function useLiveSnapshot(): { snapshot: LiveSnapshotV2 | null; state: Liv
     }
   }, [user, generation])
 
-  return { snapshot, state: liveViewState(snapshot, now), connected }
+  return { snapshot, state: liveViewState(snapshot, now, 15_000, receivedAt.current), connected }
 }

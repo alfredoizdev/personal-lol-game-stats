@@ -78,4 +78,31 @@ describe('createLivePublisher', () => {
     await pub.publish(snapshot(20_000))
     expect(channels.length).toBe(2)
   })
+
+  it('concurrent publishes during the handshake share one channel', async () => {
+    let subscribed = 0
+    const sent: unknown[] = []
+    const client = {
+      channel: vi.fn(() => {
+        const ch = {
+          subscribe: (cb?: (status: string) => void) => {
+            subscribed++
+            setTimeout(() => cb?.('SUBSCRIBED'), 5)
+            return ch
+          },
+          send: vi.fn(async (msg: unknown) => {
+            sent.push(msg)
+            return 'ok'
+          }),
+          unsubscribe: vi.fn(async () => 'ok'),
+        }
+        return ch
+      }),
+    }
+    const pub = createLivePublisher(client as never, 'u1')
+    await Promise.all([pub.publish(snapshot(1000, 100)), pub.publish(snapshot(1500, 120))])
+    expect(client.channel).toHaveBeenCalledTimes(1)
+    expect(subscribed).toBe(1)
+    expect(sent.length).toBe(2)
+  })
 })

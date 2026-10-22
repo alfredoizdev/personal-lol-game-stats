@@ -13,20 +13,26 @@ export type LivePublisher = {
  */
 export function createLivePublisher(client: SupabaseClient, userId: string): LivePublisher {
   let channel: RealtimeChannel | null = null
+  let pending: Promise<RealtimeChannel> | null = null // concurrent publishes share one handshake
   let prev: LiveSnapshotV2 | null = null
 
-  const ensureChannel = async (): Promise<RealtimeChannel> => {
-    if (channel) return channel
-    const ch = client.channel(`user:${userId}`)
-    await new Promise<void>((resolve) => {
-      ch.subscribe((status) => {
-        if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') resolve()
+  const ensureChannel = (): Promise<RealtimeChannel> => {
+    if (channel) return Promise.resolve(channel)
+    if (pending) return pending
+    pending = (async () => {
+      const ch = client.channel(`user:${userId}`)
+      await new Promise<void>((resolve) => {
+        ch.subscribe((status) => {
+          if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') resolve()
+        })
+        // Never hang the poller on a slow handshake.
+        setTimeout(resolve, 5000)
       })
-      // Never hang the poller on a slow handshake.
-      setTimeout(resolve, 5000)
-    })
-    channel = ch
-    return ch
+      channel = ch
+      pending = null
+      return ch
+    })()
+    return pending
   }
 
   const dropChannel = async () => {

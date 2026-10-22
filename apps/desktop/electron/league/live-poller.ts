@@ -3,7 +3,11 @@
  *  - phase tick (2 s): LCU gameflow phase → idle / waiting / (in game)
  *  - live tick (2 s, only while InProgress): Live Client allgamedata → snapshot
  * Leaving InProgress for an end-of-game phase emits `ended` exactly once with
- * the last snapshot marked `isFinal`. `Reconnect` and `GameStart` never end it.
+ * the last snapshot marked `isFinal`. While a game is running, `Reconnect`,
+ * `GameStart` (client restart) and a few unreadable phases (LCU timeouts) never
+ * end it. Ticks are single-flight and a Live Client response that lands after
+ * the game ended or the poller stopped is dropped. `stop()` mid-game emits the
+ * final snapshot so the phone learns the game is over.
  */
 import { buildLiveSnapshot, type GameflowPhase, type LiveFocus, type LiveSnapshotV2, type RawAllGameData } from '@lpp/shared'
 import type { LockfileData } from './lockfile'
@@ -37,6 +41,8 @@ const PHASE_INTERVAL_MS = 2000
 const LIVE_INTERVAL_MS = 2000
 const END_PHASES: readonly GameflowPhase[] = ['WaitingForStats', 'PreEndOfGame', 'EndOfGame', 'None', 'Lobby']
 const WAITING_PHASES: readonly GameflowPhase[] = ['Matchmaking', 'ReadyCheck', 'ChampSelect', 'GameStart']
+/** Consecutive unreadable phases tolerated while a game is running (LCU is often slow in-game). */
+const NULL_PHASE_GRACE = 3
 
 function sameState(a: LiveState, b: LiveState): boolean {
   if (a.kind !== b.kind) return false
@@ -64,6 +70,10 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
   let lastSnapshot: LiveSnapshotV2 | null = null
   let phaseTimer: NodeJS.Timeout | null = null
   let liveTimer: NodeJS.Timeout | null = null
+  let phaseBusy = false
+  let liveBusy = false
+  let liveGen = 0 // bumped whenever live polling stops; late responses from an older generation are dropped
+  let nullStreak = 0
 
   let emitted = false
   const emit = (next: LiveState) => {
@@ -74,15 +84,22 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
   }
 
   const liveTick = async () => {
-    if (stopped) return
-    const identity = opts.identity()
-    const raw = await deps.getAllGameData()
-    if (raw && identity) {
-      const snapshot = buildLiveSnapshot(raw, identity, { ts: deps.now(), queueId, isFinal: false, focus: opts.focus() })
-      if (snapshot) {
-        lastSnapshot = snapshot
-        emit({ kind: 'live', snapshot })
+    if (stopped || liveBusy) return
+    liveBusy = true
+    const gen = liveGen
+    try {
+      const identity = opts.identity()
+      const raw = await deps.getAllGameData()
+      if (stopped || gen !== liveGen) return
+      if (raw && identity) {
+        const snapshot = buildLiveSnapshot(raw, identity, { ts: deps.now(), queueId, isFinal: false, focus: opts.focus() })
+        if (snapshot) {
+          lastSnapshot = snapshot
+          emit({ kind: 'live', snapshot })
+        }
       }
+    } finally {
+      liveBusy = false
     }
   }
 
@@ -93,6 +110,7 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
   }
 
   const stopLive = () => {
+    liveGen++
     if (liveTimer) clearInterval(liveTimer)
     liveTimer = null
   }
@@ -107,33 +125,41 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
   }
 
   const phaseTick = async () => {
-    if (stopped) return
-    const lockfile = opts.getLockfile()
-    const phase = lockfile ? await deps.getPhase(lockfile) : null
-    if (stopped) return
+    if (stopped || phaseBusy) return
+    phaseBusy = true
+    try {
+      const lockfile = opts.getLockfile()
+      const phase = lockfile ? await deps.getPhase(lockfile) : null
+      if (stopped) return
+      nullStreak = phase === null ? nullStreak + 1 : 0
 
-    if (phase === 'InProgress') {
-      if (lastPhase !== 'InProgress' && lockfile) {
-        queueId = await deps.getQueueId(lockfile).catch(() => null)
+      if (phase === 'InProgress') {
+        if (lastPhase !== 'InProgress' && lockfile) {
+          queueId = await deps.getQueueId(lockfile).catch(() => null)
+        }
+        startLive()
+      } else if (phase === 'Reconnect' || (phase === 'GameStart' && lastSnapshot)) {
+        // Client dropped mid-game (Reconnect → GameStart → InProgress): keep what we had, keep polling.
+        startLive()
+      } else if (phase && WAITING_PHASES.includes(phase)) {
+        if (lastSnapshot) endGame()
+        else emit({ kind: 'waiting', phase })
+      } else if (phase === null && lastSnapshot && nullStreak < NULL_PHASE_GRACE) {
+        // A slow/unreachable LCU for a moment is not the end of the game.
+      } else if (phase === null || END_PHASES.includes(phase)) {
+        if (lastSnapshot) endGame()
+        else if (state.kind !== 'ended') emit({ kind: 'idle' })
       }
-      startLive()
-    } else if (phase === 'Reconnect') {
-      // Client dropped mid-game: keep whatever we had, keep polling the live client.
-      startLive()
-    } else if (phase && WAITING_PHASES.includes(phase)) {
-      if (lastSnapshot) endGame()
-      else emit({ kind: 'waiting', phase })
-    } else if (phase === null || END_PHASES.includes(phase)) {
-      if (lastSnapshot) endGame()
-      else if (state.kind !== 'ended') emit({ kind: 'idle' })
+      lastPhase = phase
+    } finally {
+      phaseBusy = false
     }
-    lastPhase = phase
   }
 
   const stop = () => {
     stopped = true
     if (phaseTimer) clearInterval(phaseTimer)
-    stopLive()
+    endGame() // no-op unless a game was running; then the final snapshot still goes out
   }
 
   void phaseTick()

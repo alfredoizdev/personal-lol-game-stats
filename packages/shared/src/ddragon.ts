@@ -43,7 +43,3 @@ export function championLoadingArtUrl(championName: string): string {
   return `${CDN}/img/champion/loading/${championImageKey(championName)}_0.jpg`
 }
 
-/** Wide splash art (1215×717), versionless on the CDN. */
-export function championSplashUrl(championName: string): string {
-  return `${CDN}/img/champion/splash/${championImageKey(championName)}_0.jpg`
-}
