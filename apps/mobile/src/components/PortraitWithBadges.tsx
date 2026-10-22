@@ -19,12 +19,15 @@ export function PortraitWithBadges({
   ring,
   result,
   role,
+  tier,
 }: {
   championName: string
   size: number
   ring: 'win' | 'loss' | 'none'
   result: MatchResult
   role: Role | null
+  /** Match rating ("8+") shown on the top-right edge, coloured by its tier bucket. */
+  tier?: { text: string; color: string } | null
 }) {
   const badge = Math.round(size * 0.32)
   const chip = Math.round(size * 0.37)
@@ -36,6 +39,13 @@ export function PortraitWithBadges({
           {resultLetter(result)}
         </Text>
       </View>
+      {tier ? (
+        <View style={[styles.tier, { minWidth: badge, height: badge, borderColor: tier.color }]} accessibilityLabel={`rating ${tier.text}`}>
+          <Text style={[styles.tierText, { color: tier.color, fontSize: Math.max(font.caption - 3, Math.round(badge * 0.5)) }]} allowFontScaling={false}>
+            {tier.text}
+          </Text>
+        </View>
+      ) : null}
       {role ? (
         <View style={[styles.chip, { width: chip, height: chip, marginLeft: -chip / 2, bottom: -Math.round(chip * 0.3) }]}>
           <RoleIcon role={role} size={Math.round(chip * 0.6)} />
@@ -57,6 +67,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: { color: colors.text, fontWeight: '800' },
+  tier: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    backgroundColor: colors.bg,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tierText: { fontWeight: '800' },
   chip: {
     position: 'absolute',
     left: '50%',
