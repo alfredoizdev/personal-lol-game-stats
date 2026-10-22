@@ -36,6 +36,12 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   useEffect(() => {
     if (restored && role === null && history.summaries.length) setRole(lastRole(history.summaries))
   }, [restored, role, history.summaries])
+  // No champion picked yet: start from the one you play most in this role (you can change it).
+  useEffect(() => {
+    if (!restored || championId !== null || role === null) return
+    const top = playedChampions(history.summaries, role)[0]
+    if (top) setChampionId(top.championId)
+  }, [restored, championId, role, history.summaries])
   useEffect(() => {
     if (restored && role && championId !== null) void saveSelection({ championId, role })
   }, [restored, role, championId])
