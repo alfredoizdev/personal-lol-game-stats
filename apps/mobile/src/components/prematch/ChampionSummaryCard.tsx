@@ -38,5 +38,5 @@ const styles = StyleSheet.create({
   stat: { alignItems: 'center', gap: 2 },
   value: { fontSize: font.body + 2, fontWeight: '800' },
   label: { color: colors.muted, fontSize: font.caption - 1 },
-  note: { color: colors.muted, fontSize: font.caption, textAlign: 'center' },
+  note: { color: colors.muted, fontSize: font.caption, textAlign: 'center', marginTop: space.sm, marginBottom: space.xs },
 })
