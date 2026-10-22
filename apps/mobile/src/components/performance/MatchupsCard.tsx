@@ -3,7 +3,7 @@ import type { MatchupStat, PerformanceProfile } from '@lpp/shared'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { RoleIcon } from '@/components/RoleIcon'
 import { useChampionList } from '@/hooks/useChampionList'
-import { gamesNote, winRateColor } from '@/lib/performance-ui'
+import { winRateColor } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 /** Lane opponents you lose to most and beat most, across roles, from your own games (spec 2.7). */
@@ -38,7 +38,7 @@ export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Lane matchups</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{gamesNote(profile)} · lane opponents faced at least twice</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents you faced at least twice</Text>
       {none ? (
         <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent faced twice yet.</Text>
       ) : (

@@ -17,10 +17,7 @@ export function RecentStrip({ recent }: { recent: RecentGame[] }) {
           </View>
         ))}
       </View>
-      <View style={styles.legend}>
-        <Text style={styles.caption} maxFontSizeMultiplier={1.15}>Last {recent.length} games · oldest → newest</Text>
-        <Text style={styles.caption} maxFontSizeMultiplier={1.15}>height = match score</Text>
-      </View>
+      <Text style={styles.caption} maxFontSizeMultiplier={1.15}>Last {recent.length} games, oldest → newest · bar height = match score</Text>
     </View>
   )
 }
@@ -30,6 +27,5 @@ const styles = StyleSheet.create({
   bars: { flexDirection: 'row', alignItems: 'flex-end', height: MAX, gap: 4, borderBottomWidth: 1, borderBottomColor: colors.border },
   slot: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   bar: { width: '100%', borderTopLeftRadius: 3, borderTopRightRadius: 3 },
-  legend: { flexDirection: 'row', justifyContent: 'space-between' },
   caption: { color: colors.muted, fontSize: font.caption - 2 },
 })

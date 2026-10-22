@@ -3,7 +3,7 @@ import { TIER_LABELS, tierBucket, type ChampionStat, type PerformanceProfile } f
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { RoleIcon } from '@/components/RoleIcon'
 import { useChampionList } from '@/hooks/useChampionList'
-import { gamesNote, winRateColor } from '@/lib/performance-ui'
+import { winRateColor } from '@/lib/performance-ui'
 import { tierColor } from '@/lib/row-rating'
 import { colors, font, radius, space } from '@/theme/tokens'
 
@@ -14,7 +14,7 @@ export function ChampionsCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Your champions</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{gamesNote(profile)} · most played first</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Most played first · win rate and average tier</Text>
       {profile.champions.map((c) => {
         const color = winRateColor(c.winRate)
         return (

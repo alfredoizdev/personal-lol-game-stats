@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { rating, ROLE_LABEL, type PerformanceProfile } from '@lpp/shared'
 import { RoleIcon } from '@/components/RoleIcon'
 import { ratingColor } from '@/lib/area-ui'
-import { gamesNote, roleRankNote } from '@/lib/performance-ui'
+import { roleRankNote } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 /** One row per role played: games, win rate and the mean match score as a bar (spec 2.4). */
@@ -10,7 +10,7 @@ export function RolesCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Where you are strongest</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{gamesNote(profile)} · bar = average match score</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Bar = average match score · win rate beside it</Text>
       {profile.roles.map((r) => {
         const color = r.avgScore === null ? colors.muted : ratingColor(rating(r.avgScore))
         return (

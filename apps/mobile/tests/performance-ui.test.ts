@@ -1,16 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, gamesNote, periodLabel, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
+import { barHeight, gamesNote, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
 
 describe('performance-ui helpers', () => {
-  it('names the periods', () => {
-    expect(periodLabel(20)).toBe('Last 20')
-    expect(periodLabel(50)).toBe('Last 50')
-    expect(periodLabel(100)).toBe('All loaded')
-  })
   it('record line with the W–L split and win rate; honest with 0 or 1 game', () => {
     expect(recordLabel({ ...EMPTY, games: 20, wins: 12, winRate: 60 })).toBe('12W – 8L · 60% win rate')
     expect(recordLabel({ ...EMPTY, games: 1, wins: 0, winRate: 0 })).toBe('0W – 1L · 0% win rate')
@@ -22,9 +17,9 @@ describe('performance-ui helpers', () => {
     expect(streakLabel(null)).toBeNull()
   })
   it('says how many games the numbers cover', () => {
-    expect(gamesNote({ ...EMPTY, period: 20, games: 20 })).toBe('Over your last 20 games')
-    expect(gamesNote({ ...EMPTY, period: 50, games: 7 })).toBe('Over your 7 loaded games')
-    expect(gamesNote({ ...EMPTY, period: 100, games: 100 })).toBe('Over your last 100 games')
+    expect(gamesNote({ ...EMPTY, period: 20, games: 20 })).toBe('Last 20 games')
+    expect(gamesNote({ ...EMPTY, period: 20, games: 7 })).toBe('Your 7 loaded games')
+    expect(gamesNote({ ...EMPTY, period: 20, games: 1 })).toBe('Your 1 loaded game')
   })
   it('bar height scales with the score, 2 px floor, 0 for null', () => {
     expect(barHeight(null, 40)).toBe(0)

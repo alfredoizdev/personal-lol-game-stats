@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
 import type { PerformanceProfile } from '@lpp/shared'
 import { ratingColor } from '@/lib/area-ui'
-import { gamesNote, subrowLine } from '@/lib/performance-ui'
+import { subrowLine } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 /** Farming / Combat / Vision averaged over the period, each with its sub-rows vs the role target (spec 2.5). */
@@ -9,7 +9,7 @@ export function AreasCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>What holds you back</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{gamesNote(profile)} · average area scores</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Average area scores vs the targets for your roles</Text>
       {profile.areas.map((a) => {
         const color = ratingColor(a.rating)
         const weakest = a.key === profile.weakestArea
