@@ -1,13 +1,20 @@
 import { StyleSheet, Text, View } from 'react-native'
 import type { MatchupStat, PerformanceProfile } from '@lpp/shared'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
+import { BackfillBar } from '@/components/prematch/BackfillBar'
 import { RoleIcon } from '@/components/RoleIcon'
 import { useChampionList } from '@/hooks/useChampionList'
-import { winRateColor } from '@/lib/performance-ui'
+import { winRateColor, WINDOW } from '@/lib/performance-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-/** Lane opponents you lose to most and beat most, across roles, from your own games (spec 2.7). */
-export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
+type LoadProps = { loaded: number; total: number; running: boolean; idsPending: boolean; error: unknown | null; onLoadAll: () => void }
+
+/**
+ * Lane opponents you lose to most and beat most, across roles, from every
+ * loaded game (spec 2.7). The only place on this tab that asks for more than
+ * the 20-game window: a repeat opponent is rare inside 20 games.
+ */
+export function MatchupsCard({ profile, ...load }: { profile: PerformanceProfile } & LoadProps) {
   const { champions } = useChampionList()
   const displayName = (m: MatchupStat) => champions.find((x) => x.id === m.championId)?.name ?? m.championName
   const list = (rows: MatchupStat[]) =>
@@ -38,7 +45,8 @@ export function MatchupsCard({ profile }: { profile: PerformanceProfile }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Lane matchups</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Lane opponents faced at least twice in your {profile.matchupGames} loaded games</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Uses all your loaded games, not just the last {WINDOW}: lane opponents faced at least twice in {profile.matchupGames} games</Text>
+      <BackfillBar loaded={load.loaded} total={load.total} running={load.running} idsPending={load.idsPending} error={load.error} onStart={load.onLoadAll} />
       {none ? (
         <Text style={styles.muted} maxFontSizeMultiplier={1.15}>No lane opponent with a winning or losing record yet (faced twice, not 50 %).</Text>
       ) : (

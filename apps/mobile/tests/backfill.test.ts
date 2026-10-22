@@ -96,3 +96,15 @@ describe('backfill', () => {
     })
   })
 })
+
+describe('cachedWithin', () => {
+  it('counts the cached ids among the first n, in list order', async () => {
+    const { cachedWithin } = await import('../src/lib/backfill')
+    const ids = ['a', 'b', 'c', 'd']
+    const isCached = (id: string) => id === 'a' || id === 'd'
+    expect(cachedWithin(ids, isCached, 2)).toBe(1)
+    expect(cachedWithin(ids, isCached, 4)).toBe(2)
+    expect(cachedWithin(ids, isCached, 10)).toBe(2)
+    expect(cachedWithin([], isCached, 20)).toBe(0)
+  })
+})

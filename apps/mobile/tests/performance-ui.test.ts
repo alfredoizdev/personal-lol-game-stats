@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile } from '@lpp/shared'
-import { barHeight, fewGamesNote, gamesNote, on10, onTargetLabel, previousDelta, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor } from '../src/lib/performance-ui'
+import { barHeight, fewGamesNote, gamesNote, loadState, on10, onTargetLabel, previousDelta, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -72,5 +72,18 @@ describe('performance-ui — score context (on the 10 ladder)', () => {
   it('counts games on target out of the window', () => {
     expect(onTargetLabel({ ...EMPTY, games: 20, onTargetGames: 3 })).toBe('3 / 20')
     expect(onTargetLabel(EMPTY)).toBe('—')
+  })
+})
+
+describe('performance-ui — load state of the window', () => {
+  it('is loading until the window is cached or the auto-load gave up, ready when the window is cached, short when a run ended early', () => {
+    expect(WINDOW).toBe(20)
+    expect(loadState({ idsPending: true, total: 0, loadedInWindow: 0, running: false, attempted: false })).toBe('loading')
+    expect(loadState({ idsPending: false, total: 0, loadedInWindow: 0, running: false, attempted: true })).toBe('empty')
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 5, running: true, attempted: true })).toBe('loading')
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 10, running: false, attempted: false })).toBe('loading') // auto-load not started yet
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 20, running: false, attempted: true })).toBe('ready')
+    expect(loadState({ idsPending: false, total: 12, loadedInWindow: 12, running: false, attempted: true })).toBe('ready')
+    expect(loadState({ idsPending: false, total: 100, loadedInWindow: 12, running: false, attempted: true })).toBe('short')
   })
 })

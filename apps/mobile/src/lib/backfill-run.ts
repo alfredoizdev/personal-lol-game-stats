@@ -3,9 +3,10 @@
  * Prepare block and the Performance tab mount one each). One snapshot per
  * Riot account; `claimRun` makes sure only one instance drives the loop.
  */
-export type RunState = { running: boolean; error: unknown | null }
+/** `limit`: only the first n ids are fetched in this run (the Performance tab's 40); null = every id. */
+export type RunState = { running: boolean; error: unknown | null; limit: number | null }
 
-const IDLE: RunState = { running: false, error: null }
+const IDLE: RunState = { running: false, error: null, limit: null }
 const runs = new Map<string, RunState>()
 const owners = new Set<string>()
 const listeners = new Set<() => void>()

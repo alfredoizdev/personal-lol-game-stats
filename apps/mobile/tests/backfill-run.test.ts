@@ -3,11 +3,11 @@ import { claimRun, getRun, isRunOwned, releaseRun, setRun, subscribeRuns } from 
 
 describe('backfill run store (shared by every useOwnHistory instance)', () => {
   it('is idle per account and notifies subscribers on change', () => {
-    expect(getRun('a')).toEqual({ running: false, error: null })
+    expect(getRun('a')).toEqual({ running: false, error: null, limit: null })
     let calls = 0
     const off = subscribeRuns(() => { calls += 1 })
     setRun('a', { running: true })
-    expect(getRun('a')).toEqual({ running: true, error: null })
+    expect(getRun('a')).toEqual({ running: true, error: null, limit: null })
     expect(getRun('b').running).toBe(false)
     expect(calls).toBe(1)
     off()
@@ -30,5 +30,15 @@ describe('backfill run store (shared by every useOwnHistory instance)', () => {
     expect(isRunOwned('d')).toBe(false)
     expect(claimRun('d')).toBe(true)
     releaseRun('d')
+  })
+})
+
+describe('run limit', () => {
+  it('a run can be limited to the first n ids; the next run resets the limit', () => {
+    setRun('e', { running: true, limit: 40 })
+    expect(getRun('e').limit).toBe(40)
+    setRun('e', { running: false })
+    setRun('e', { running: true, limit: null })
+    expect(getRun('e').limit).toBeNull()
   })
 })
