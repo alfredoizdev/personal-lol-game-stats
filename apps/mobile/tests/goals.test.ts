@@ -16,3 +16,12 @@ describe('goals', () => {
     expect(matchKeys.ownIds('p1')).toEqual(['own-ids', 'p1'])
   })
 })
+
+describe('rowToGoal · standing goals', () => {
+  it('accepts role ANY with champion 0 and a null target (recommended for the role)', () => {
+    expect(rowToGoal({ puuid: 'p', champion_id: 0, role: 'ANY', metric: 'deathsPer10', target: null, set_at: 'x' })).toEqual({
+      puuid: 'p', championId: 0, role: 'ANY', metric: 'deathsPer10', target: null, setAt: 'x',
+    })
+    expect(rowToGoal({ puuid: 'p', champion_id: 0, role: 'ANY', metric: 'csPerMin', target: '6.5', set_at: 'x' })?.target).toBe(6.5)
+  })
+})

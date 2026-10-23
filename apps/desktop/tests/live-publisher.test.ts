@@ -5,18 +5,23 @@ import { createLivePublisher } from '@electron/live/live-publisher'
 function snapshot(ts: number, cs = 100): LiveSnapshotV2 {
   return {
     v: 2, ts, isFinal: false, gameTimeSeconds: 600, gameMode: 'CLASSIC', queueId: 420, teamKills: 3,
-    me: { championName: 'Yasuo', position: 'MIDDLE', level: 9, kills: 2, deaths: 0, assists: 1, cs, csPerMin: 10, wardScore: 3, items: [] },
-    opponent: null, focus: null,
+    me: { championName: 'Yasuo', position: 'MIDDLE', level: 9, kills: 2, deaths: 0, assists: 1, cs, csPerMin: 10, wardScore: 3, items: [], isDead: null, respawnSec: null },
+    opponent: null, focus: null, events: [],
   }
 }
 
 function fakeClient(sendResult: string = 'ok') {
+  const handlers = new Map<string, (msg: { payload?: unknown }) => void>()
   const channels: Array<{ name: string; opts: unknown; sent: unknown[]; subscribed: boolean; unsubscribed: boolean }> = []
   const client = {
     channel: vi.fn((name: string, opts?: unknown) => {
       const rec = { name, opts, sent: [] as unknown[], subscribed: false, unsubscribed: false }
       channels.push(rec)
       const ch = {
+        on: vi.fn((_type: string, filter: { event: string }, handler: (msg: { payload?: unknown }) => void) => {
+          handlers.set(filter.event, handler)
+          return ch
+        }),
         subscribe: (cb?: (status: string) => void) => {
           rec.subscribed = true
           cb?.('SUBSCRIBED')
@@ -34,7 +39,7 @@ function fakeClient(sendResult: string = 'ok') {
       return ch
     }),
   }
-  return { client, channels }
+  return { client, channels, handlers }
 }
 
 describe('createLivePublisher', () => {
@@ -68,6 +73,28 @@ describe('createLivePublisher', () => {
     await pub.publish(snapshot(2000, 101))
     expect(channels.length).toBe(2)
     expect(channels[0]?.unsubscribed).toBe(true)
+  })
+
+  it('publishPhase sends a live-phase broadcast on the same private channel', async () => {
+    const { client, channels } = fakeClient()
+    const pub = createLivePublisher(client as never, 'u1')
+    await pub.publishPhase({ v: 1, ts: 5, phase: 'Matchmaking', since: 12_000 })
+    await pub.publish(snapshot(1000))
+    expect(channels.length).toBe(1)
+    expect(channels[0]?.sent[0]).toEqual({ type: 'broadcast', event: 'live-phase', payload: { v: 1, ts: 5, phase: 'Matchmaking', since: 12_000 } })
+    expect(channels[0]?.sent[1]).toMatchObject({ event: 'live-snapshot' })
+  })
+
+  it('a live-ping from the phone (fresh subscription) triggers onPing and resend() repeats the last snapshot', async () => {
+    const { client, channels, handlers } = fakeClient()
+    const onPing = vi.fn()
+    const pub = createLivePublisher(client as never, 'u1', { onPing })
+    await pub.publish(snapshot(1000))
+    handlers.get('live-ping')!({ payload: { v: 1 } })
+    expect(onPing).toHaveBeenCalledTimes(1)
+    await pub.resend()
+    expect(channels[0]?.sent.length).toBe(2)
+    expect(channels[0]?.sent[1]).toMatchObject({ event: 'live-snapshot', payload: { ts: 1000 } })
   })
 
   it('stop() unsubscribes', async () => {

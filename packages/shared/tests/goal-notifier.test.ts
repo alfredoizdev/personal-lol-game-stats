@@ -5,6 +5,7 @@ import {
   PUSH_MIN_GAME_SEC,
   PUSH_MIN_GAP_SEC,
   PUSH_INTERVAL_SEC,
+  PUSH_CONFIRM_SEC,
   initialNotifierState,
   nextNotification,
   statusBody,
@@ -13,14 +14,14 @@ import {
   type GoalPushMode,
 } from '../src/notify/goal-notifier'
 
-const csGoal: Goal = { puuid: 'p', championId: 157, role: 'MIDDLE', metric: 'csPerMin', target: 7, setAt: '2026-10-20T00:00:00Z' }
+const csGoal: Goal = { puuid: 'p', championId: 157, role: 'MIDDLE', metric: 'csPerMin', target: 7, setAt: '2026-10-20T00:00:00Z', source: 'exact' }
 const kpGoal: Goal = { ...csGoal, metric: 'kpPct', target: 55 }
 
 function snap(gameTimeSeconds: number | null, over: Partial<LiveSnapshotV2['me']> = {}, teamKills: number | null = 5): LiveSnapshotV2 {
   return {
     v: 2, ts: 1, isFinal: false, gameTimeSeconds, gameMode: 'CLASSIC', queueId: 420, teamKills,
-    me: { championName: 'Yasuo', position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin: 7.5, wardScore: 2, items: [], ...over },
-    opponent: null, focus: null,
+    me: { championName: 'Yasuo', position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin: 7.5, wardScore: 2, items: [], isDead: null, respawnSec: null, ...over },
+    opponent: null, focus: null, events: [],
   }
 }
 
@@ -63,23 +64,33 @@ describe('nextNotification · gates', () => {
 })
 
 describe('nextNotification · change mode', () => {
-  it('sends the first known status, stays quiet while it holds and sends again when it flips', () => {
+  it('sends the first known status, stays quiet while it holds and sends again when a flip has held for 30 s', () => {
+    expect(PUSH_CONFIRM_SEC).toBe(30)
     const { out } = run('change', csGoal, [
       { s: snap(90, { csPerMin: 7.5 }) },
       { s: snap(200, { csPerMin: 7.6 }) },
       { s: snap(400, { csPerMin: 7.4 }) },
-      { s: snap(600, { csPerMin: 6.1 }) },
+      { s: snap(600, { csPerMin: 6.1 }) }, // flip starts: held, not sent yet
+      { s: snap(620, { csPerMin: 6.1 }) }, // 20 s: still held
+      { s: snap(631, { csPerMin: 6.0 }) }, // 31 s below: confirmed
       { s: snap(900, { csPerMin: 6.0 }) },
     ])
     expect(out.map((o) => o.due?.body ?? null)).toEqual([
       '01:30 · Goal 7.0 CS/min · On track, now 7.5',
       null,
       null,
-      '10:00 · Goal 7.0 CS/min · Below goal, now 6.1',
+      null,
+      null,
+      '10:31 · Goal 7.0 CS/min · Below goal, now 6.0',
       null,
     ])
     expect(out[0]?.due?.kind).toBe('status')
     expect(out[0]?.due?.title).toBe('LanePulse')
+  })
+  it('a value oscillating around the goal every few seconds sends nothing (no flip holds 30 s)', () => {
+    const steps = Array.from({ length: 12 }, (_, i) => ({ s: snap(300 + i * 10, { csPerMin: i % 2 === 0 ? 6.9 : 7.1 }) }))
+    const { sent } = run('change', csGoal, [{ s: snap(100, { csPerMin: 7.2 }) }, ...steps])
+    expect(sent.length).toBe(1) // only the first known status
   })
   it('does not fire at 5:00 multiples without a change', () => {
     const { sent } = run('change', csGoal, [{ s: snap(90) }, { s: snap(300) }, { s: snap(600) }, { s: snap(900) }])
@@ -94,7 +105,8 @@ describe('nextNotification · interval mode', () => {
       { s: snap(200, { csPerMin: 7.5 }) },
       { s: snap(301, { csPerMin: 7.5 }) },
       { s: snap(420, { csPerMin: 7.5 }) },
-      { s: snap(450, { csPerMin: 6.5 }) },
+      { s: snap(450, { csPerMin: 6.5 }) }, // flip starts (held)
+      { s: snap(481, { csPerMin: 6.5 }) }, // held 31 s: confirmed
       { s: snap(540, { csPerMin: 6.5 }) },
       { s: snap(601, { csPerMin: 6.5 }) },
       { s: snap(700, { csPerMin: 6.5 }) },
@@ -104,7 +116,8 @@ describe('nextNotification · interval mode', () => {
       null,
       '05:01 · Goal 7.0 CS/min · On track, now 7.5',
       null,
-      '07:30 · Goal 7.0 CS/min · Below goal, now 6.5',
+      null,
+      '08:01 · Goal 7.0 CS/min · Below goal, now 6.5',
       null,
       '10:01 · Goal 7.0 CS/min · Below goal, now 6.5',
       null,
@@ -114,9 +127,9 @@ describe('nextNotification · interval mode', () => {
     const { out } = run('interval', csGoal, [
       { s: snap(100, { csPerMin: 7.5 }) },
       { s: snap(300, { csPerMin: 7.5 }) }, // interval tick
-      { s: snap(320, { csPerMin: 6.0 }) }, // flip 20 s later → held
-      { s: snap(340, { csPerMin: 6.0 }) }, // still inside the gap
-      { s: snap(361, { csPerMin: 6.0 }) }, // gap over → the flip goes out
+      { s: snap(320, { csPerMin: 6.0 }) }, // flip starts
+      { s: snap(340, { csPerMin: 6.0 }) }, // held 20 s, inside the gap too
+      { s: snap(361, { csPerMin: 6.0 }) }, // held 41 s and gap over → the flip goes out
     ])
     expect(out.map((o) => (o.due ? o.sec : null))).toEqual([100, 300, null, null, 361])
     const secs = out.filter((o) => o.due).map((o) => o.sec!)

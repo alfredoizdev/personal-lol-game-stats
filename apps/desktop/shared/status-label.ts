@@ -27,7 +27,7 @@ const WAITING_LABEL: Partial<Record<string, string>> = {
 export function liveLabel(state: LiveState): string {
   switch (state.kind) {
     case 'idle':
-      return 'Not in a game'
+      return state.phase === 'Lobby' ? 'In lobby' : state.phase === 'EndOfGame' || state.phase === 'WaitingForStats' || state.phase === 'PreEndOfGame' ? 'Match ended' : 'Not in a game'
     case 'waiting':
       return WAITING_LABEL[state.phase] ?? 'Waiting for a match'
     case 'live':

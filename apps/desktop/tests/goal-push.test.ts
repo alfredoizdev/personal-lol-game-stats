@@ -39,8 +39,8 @@ function fakeClient(tables: Tables) {
 function snap(gameTimeSeconds: number, csPerMin: number, championName = 'Yasuo'): LiveSnapshotV2 {
   return {
     v: 2, ts: 1, isFinal: false, gameTimeSeconds, gameMode: 'CLASSIC', queueId: 420, teamKills: 5,
-    me: { championName, position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin, wardScore: 2, items: [] },
-    opponent: null, focus: null,
+    me: { championName, position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin, wardScore: 2, items: [], isDead: null, respawnSec: null },
+    opponent: null, focus: null, events: [],
   }
 }
 const live = (s: LiveSnapshotV2): LiveState => ({ kind: 'live', snapshot: s })
@@ -92,7 +92,8 @@ describe('createGoalPush', () => {
     const { gp, updates, fetchFn } = make(base, f)
     await gp.onLiveState(live(snap(90, 7.5)))
     expect(updates).toEqual([{ table: 'lanepulse_push_tokens', values: { revoked_at: expect.any(String) }, eq: ['id', 't2'] }])
-    await gp.onLiveState(live(snap(400, 6.0)))
+    await gp.onLiveState(live(snap(400, 6.0))) // flip starts
+    await gp.onLiveState(live(snap(431, 6.0))) // held 30 s → sent
     const body = JSON.parse(String(fetchFn.mock.calls[1]![1].body))
     expect(body.map((m: { to: string }) => m.to)).toEqual(['ExponentPushToken[a]'])
   })
@@ -107,10 +108,19 @@ describe('createGoalPush', () => {
     expect(f).toHaveBeenCalledTimes(2)
   })
 
-  it('sends nothing for a champion and role without a goal', async () => {
-    const { gp, fetchFn } = make({ ...base, pre_match_focus: [{ ...goalRow, role: 'TOP' }] })
+  it('sends nothing when no goal matches the champion or the role', async () => {
+    const { gp, fetchFn } = make({ ...base, pre_match_focus: [{ ...goalRow, champion_id: 51, role: 'TOP' }] })
     await gp.onLiveState(live(snap(90, 7.5)))
     expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it('uses the goal saved for this champion even when the game reports another role or none', async () => {
+    const { gp, fetchFn } = make({ ...base, pre_match_focus: [{ ...goalRow, role: 'TOP' }] })
+    await gp.onLiveState(live(snap(90, 7.5)))
+    const noRole = snap(100, 7.5)
+    noRole.me.position = null
+    await gp.onLiveState(live(noRole))
+    expect(fetchFn).toHaveBeenCalledTimes(1) // first known status went out; the same status again does not
   })
 
   it('sends nothing when the LCU identity is not one of the linked accounts', async () => {

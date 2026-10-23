@@ -21,6 +21,7 @@ function harness(initialPhase: GameflowPhase | null) {
   let phase: GameflowPhase | null = initialPhase
   let data: RawAllGameData | null = null
   let dataDelay = 0
+  let pick: { championId: number | null; position: 'TOP' | 'JUNGLE' | 'MIDDLE' | 'BOTTOM' | 'UTILITY' | null } | null = null
   const states: LiveState[] = []
   const handle = startLivePoller({
     getLockfile: () => lockfile,
@@ -30,6 +31,7 @@ function harness(initialPhase: GameflowPhase | null) {
     deps: {
       getPhase: vi.fn(async () => phase),
       getQueueId: vi.fn(async () => 420),
+      getPick: vi.fn(async () => pick),
       getAllGameData: vi.fn(async () => {
         if (dataDelay > 0) await new Promise((r) => setTimeout(r, dataDelay))
         return data
@@ -43,6 +45,7 @@ function harness(initialPhase: GameflowPhase | null) {
     setPhase: (p: GameflowPhase | null) => (phase = p),
     setData: (d: RawAllGameData | null) => (data = d),
     setDataDelay: (ms: number) => (dataDelay = ms),
+    setPick: (p: typeof pick) => (pick = p),
   }
 }
 
@@ -58,10 +61,52 @@ describe('startLivePoller', () => {
   it('is idle outside a game and waiting during champ select', async () => {
     const h = harness('None')
     await tick(0)
-    expect(h.states.at(-1)).toEqual({ kind: 'idle' })
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'None' })
     h.setPhase('ChampSelect')
     await tick(2000)
-    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect' })
+    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect', pick: null })
+    h.handle.stop()
+  })
+
+  it('after a game ends, the end-of-game and lobby phases still surface (as idle with the phase) so the phone can return to Prepare', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.setPhase('WaitingForStats')
+    await tick(2000)
+    expect(h.states.at(-1)?.kind).toBe('ended')
+    await tick(2000) // same phase: the ENDED state stays
+    expect(h.states.at(-1)?.kind).toBe('ended')
+    h.setPhase('EndOfGame')
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'EndOfGame' })
+    h.setPhase('Lobby')
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'Lobby' })
+    h.handle.stop()
+  })
+
+  it('during champion select the waiting state carries my pick and re-emits when it changes', async () => {
+    const h = harness('ChampSelect')
+    h.setPick({ championId: null, position: 'MIDDLE' })
+    await tick(0)
+    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect', pick: { championId: null, position: 'MIDDLE' } })
+    h.setPick({ championId: 238, position: 'MIDDLE' })
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect', pick: { championId: 238, position: 'MIDDLE' } })
+    h.handle.stop()
+  })
+
+  it('idle carries the client phase (lobby, end of game) so the phone can show it', async () => {
+    const h = harness('Lobby')
+    await tick(0)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'Lobby' })
+    h.setPhase('EndOfGame')
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'EndOfGame' })
+    h.setPhase(null)
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: null })
     h.handle.stop()
   })
 

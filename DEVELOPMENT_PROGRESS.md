@@ -11,7 +11,8 @@ Source of truth for scope: `docs/superpowers/specs/2026-10-21-lol-personal-perfo
 - [x] Phase 5 — Pre-match focus — code complete 2026-10-22; owner acceptance (saved goal → live → review) pending
 - [x] Phase 6 — Performance page — code complete 2026-10-22; owner acceptance on device pending
 - [x] Phase 7 — Riot submission package — code complete 2026-10-22; owner steps pending (EAS build + push acceptance, site deploy, legal entity review)
-- [ ] Phase 8 — end-of-game sync / QA / installer
+- [x] Phase 8 — Live: client phase, in-game events, in-app alerts, back to Prepare — code complete 2026-10-22; owner acceptance on device pending
+- [ ] Phase 9 — end-of-game sync / QA / installer
 
 ## Phase 1 tasks
 
@@ -128,3 +129,14 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-7-riot-submission.md`. Spec: `doc
 - Tests: shared 181, desktop 73, mobile 156, site 1. Lint and typecheck clean. No secrets.
 - Final review fixes: token-ownership trigger (a shared phone never receives another account's pushes), push registration follows the Notifications toggle (no OS prompt unless asked), the desktop processes a state that arrives mid-send (the final at game end), call budget corrected to the code (up to 100 req in a 10 s window once per account).
 - Owner steps (not blocking merge): `eas init` + development build on a device, one real game with the toggle on, `vercel deploy` of `apps/site`, legal entity and regions review before submitting (`docs/riot/application.md` checklist).
+
+## Phase 8 verification (2026-10-22)
+
+Plan: `docs/superpowers/plans/2026-10-22-phase-8-live-events.md`. Spec: `docs/superpowers/specs/2026-10-22-phase-8-live-events-design.md`.
+
+- Live follows the whole session: phase card from the desktop's `live-phase` broadcasts (in lobby, searching with a queue timer, match found, champion select, loading), alert cards at the top (goal flips, kills, deaths with the respawn time, multikills, objectives, structures, match found; max 3, 5 s, tap to dismiss), the hero greys a dead portrait with the respawn countdown, a Game events feed as the client shows it, and after the final snapshot the screen returns to Prepare (client left the game or 60 s) with a compact Last-match card.
+- Snapshot stays v2 with optional `isDead`/`respawnSec`/`events` (defaults when an older desktop omits them); no new Riot calls (events come from the same `allgamedata`), no new native modules (the Phase 7 development build keeps working).
+- Push banners are silenced while the app is in the foreground; background push unchanged.
+- Also in this phase at the owner's request: the goal editor starts at the recommended role target with the player's own average beside it; Prepare loads its 100-game window by itself; Save goal shows a lasting confirmation.
+- Tests: shared 209, desktop 75, mobile 167, site 1. Lint and typecheck clean.
+- Pending: simulator pass with the demo session (League was open on the owner's Mac during the build) and the owner's device acceptance of the alerts and the death countdown in a real game.

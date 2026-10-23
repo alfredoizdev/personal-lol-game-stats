@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen } from 'electron'
 import path from 'node:path'
 import { config as loadEnv } from 'dotenv'
-import type { LeagueStatus } from '@lpp/shared'
+import { buildLivePhase, type ChampSelectPick, type GameflowPhase, type LeagueStatus } from '@lpp/shared'
 import { IPC } from './ipc/channels'
 import { createMainSupabaseClient } from './auth/supabase-main'
 import { createAuthController, type AuthController, type AuthState } from './auth/auth-controller'
@@ -32,6 +32,11 @@ let publisher: LivePublisher | null = null
 let goalPush: GoalPush | null = null
 const champions = createChampionLookup(globalThis.fetch)
 let lastLive: LiveState = { kind: 'idle' }
+let phaseNow: GameflowPhase = 'None'
+let pickNow: ChampSelectPick | null = null
+let phaseSince = Date.now()
+let phaseHeartbeat: NodeJS.Timeout | null = null
+const PHASE_HEARTBEAT_MS = 10_000
 let lockfileCache: LockfileData | null = null
 let quitting = false
 
@@ -115,12 +120,29 @@ function isDemo(): boolean {
   return process.env.LPP_LIVE_DEMO === '1' && !app.isPackaged
 }
 
+/** The client phase the phone shows before and after a game; re-sent every 10 s so a stale phone can tell. */
+function publishPhase(): void {
+  if (!publisher) return
+  publisher.publishPhase(buildLivePhase(phaseNow, Date.now() - phaseSince, Date.now(), phaseNow === 'ChampSelect' ? pickNow : null)).catch((err) => logger.warn(`phase publish failed: ${String(err)}`))
+}
+
 function onLiveState(state: LiveState): void {
   lastLive = state
   logger.info(`live: ${liveLabel(state)}`)
   mainWindow?.webContents.send(IPC.LiveChanged, state)
   if ((state.kind === 'live' || state.kind === 'ended') && publisher) {
     publisher.publish(state.snapshot).catch((err) => logger.warn(`publish failed: ${String(err)}`))
+  }
+  if (state.kind === 'waiting' || state.kind === 'idle') {
+    const next: GameflowPhase = state.kind === 'waiting' ? state.phase : (state.phase ?? 'None')
+    if (next !== phaseNow) {
+      phaseNow = next
+      phaseSince = Date.now()
+    }
+    pickNow = state.kind === 'waiting' ? (state.pick ?? null) : null
+    publishPhase()
+  } else if (state.kind === 'live') {
+    phaseNow = 'InProgress'
   }
   void goalPush?.onLiveState(state) // never throws; the poller does not wait for the network
 }
@@ -133,7 +155,15 @@ function lcuIdentity(): { gameName: string; tagLine: string } | null {
 /** Live poller + publisher run only while signed in AND League is connected. */
 function startLive(): void {
   if (livePoller || !supabaseClient || !userId) return
-  publisher = publisher ?? createLivePublisher(supabaseClient, userId)
+  publisher =
+    publisher ??
+    createLivePublisher(supabaseClient, userId, {
+      // A phone that just connected asks where we are: answer at once instead of making it wait for the heartbeat.
+      onPing: () => {
+        publishPhase()
+        if (lastLive.kind === 'live' || lastLive.kind === 'ended') void publisher?.resend().catch((err) => logger.warn(`resend failed: ${String(err)}`))
+      },
+    })
   goalPush = goalPush ?? createGoalPush(supabaseClient, userId, { log: logger, champions, identity: lcuIdentity })
   const demo = isDemo()
   const identity = () =>
@@ -149,6 +179,9 @@ function startLive(): void {
     onChange: onLiveState,
     deps: demo ? createDemoDeps({ appPath: app.getAppPath(), identity }) : undefined,
   })
+  phaseHeartbeat = phaseHeartbeat ?? setInterval(() => {
+    if (lastLive.kind === 'waiting' || lastLive.kind === 'idle') publishPhase()
+  }, PHASE_HEARTBEAT_MS)
   logger.info(demo ? 'live poller started (DEMO feed)' : 'live poller started')
 }
 
@@ -156,6 +189,8 @@ function stopLive(): void {
   livePoller?.stop()
   livePoller = null
   goalPush?.reset()
+  if (phaseHeartbeat) clearInterval(phaseHeartbeat)
+  phaseHeartbeat = null
   if (lastLive.kind !== 'idle') onLiveState({ kind: 'idle' })
 }
 

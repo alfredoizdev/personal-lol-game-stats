@@ -60,3 +60,11 @@ describe('phase 7 fix: token ownership', () => {
     expect(sql).toContain('when (new.revoked_at is null)')
   })
 })
+
+describe('standing goals (pre_match_focus)', () => {
+  it('target becomes nullable (null = the recommended value for the role) and the role check admits ANY', () => {
+    const sql = read('20261023000005_pre_match_focus_standing.sql')
+    expect(sql).toContain('alter table public.pre_match_focus alter column target drop not null')
+    expect(sql).toContain("check (role in ('top','jungle','middle','bottom','utility','any'))".replace(/'(\w+)'/g, (m) => m.toUpperCase()).toLowerCase())
+  })
+})

@@ -20,9 +20,31 @@ export const GOAL_METRICS: ReadonlyArray<{ key: GoalMetric; label: string; unit:
 
 export const metricInfo = (key: GoalMetric) => GOAL_METRICS.find((m) => m.key === key)!
 
-export type Goal = { puuid: string; championId: number; role: Role; metric: GoalMetric; target: number; setAt: string }
+/**
+ * A goal as stored: per champion+role, or STANDING (championId 0, role 'ANY')
+ * for every game. A null target on a standing goal means "the recommended
+ * value for the role I end up playing", resolved at game time.
+ */
+export type StoredGoal = { puuid: string; championId: number; role: Role | 'ANY'; metric: GoalMetric; target: number | null; setAt: string }
 
-export type DefaultGoal = { metric: GoalMetric; target: number | null; source: 'champion' | 'role' | 'target' | 'none'; n: number }
+export type GoalSource = 'exact' | 'role' | 'champion' | 'standing'
+
+/** A goal resolved for a concrete game: a real role and a numeric target. */
+export type Goal = { puuid: string; championId: number; role: Role; metric: GoalMetric; target: number; setAt: string; source: GoalSource }
+
+/**
+ * What the goal editor starts from (owner, 2026-10-22): the RECOMMENDED value is
+ * the role target the match score is measured against; the player's own average
+ * (champion+role over the newest 20 games, else role) travels beside it as
+ * context. `source` stays 'target' | 'none' for the recommendation itself.
+ */
+export type DefaultGoal = {
+  metric: GoalMetric
+  target: number | null
+  source: 'champion' | 'role' | 'target' | 'none'
+  n: number
+  average: { value: number; source: 'champion' | 'role'; n: number } | null
+}
 
 const WINDOW = 20
 const roundTo = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
@@ -42,27 +64,54 @@ function roleTarget(role: Role, metric: GoalMetric): number | null {
   }
 }
 
-/** Champion+role average over the newest 20 games (≥ 3) → role average (≥ 3) → role target. */
-export function defaultGoal(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric = role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'): DefaultGoal {
+/** Your own average for context: champion+role over the newest 20 games (≥ 3) → role average (≥ 3) → null. */
+export function ownAverage(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric): DefaultGoal['average'] {
   const d = metricInfo(metric).decimals
   const games = championGames(all, championId, role).slice(0, WINDOW)
   const values = games.map((s) => metricsOf(s.me, s.durationSec, s.teamKills)[metric]).filter((v): v is number => v !== null)
-  if (games.length >= FEW_GAMES && values.length >= FEW_GAMES) {
-    return { metric, target: roundTo(mean(values)!, d), source: 'champion', n: games.length }
-  }
+  if (games.length >= FEW_GAMES && values.length >= FEW_GAMES) return { value: roundTo(mean(values)!, d), source: 'champion', n: games.length }
   const base = buildBaseline(all, role, '')
   const fromRole = base[metric]
-  if (base.n >= BASELINE_MIN_GAMES && fromRole !== null) return { metric, target: roundTo(fromRole, d), source: 'role', n: base.n }
-  const t = roleTarget(role, metric)
-  return t === null ? { metric, target: null, source: 'none', n: 0 } : { metric, target: t, source: 'target', n: 0 }
+  if (base.n >= BASELINE_MIN_GAMES && fromRole !== null) return { value: roundTo(fromRole, d), source: 'role', n: base.n }
+  return null
 }
 
-/** The goal in force: newest exact champion row, else newest row for the role; optionally only rows set at or before `beforeMs`. */
-export function goalFor(goals: Goal[], puuid: string, championId: number | null, role: Role, beforeMs?: number): Goal | null {
-  const eligible = goals
-    .filter((g) => g.puuid === puuid && g.role === role && (beforeMs === undefined || Date.parse(g.setAt) <= beforeMs))
+/** Recommended goal = the role target (what the match score measures against), with the player's own average beside it. */
+export function defaultGoal(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric = role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'): DefaultGoal {
+  const average = ownAverage(all, championId, role, metric)
+  const t = roleTarget(role, metric)
+  return t === null ? { metric, target: null, source: 'none', n: 0, average } : { metric, target: t, source: 'target', n: 0, average }
+}
+
+/**
+ * The goal in force: newest exact champion+role row → newest row for the role →
+ * newest row for the champion in any role (autofilled to another lane, or a mode
+ * that reports no position). `role` null = position unknown. Optionally only rows
+ * set at or before `beforeMs`.
+ */
+export function goalFor(goals: StoredGoal[], puuid: string, championId: number | null, role: Role | null, beforeMs?: number): Goal | null {
+  const mine = goals
+    .filter((g) => g.puuid === puuid && (beforeMs === undefined || Date.parse(g.setAt) <= beforeMs))
     .sort((a, b) => Date.parse(b.setAt) - Date.parse(a.setAt))
-  return (championId !== null ? eligible.find((g) => g.championId === championId) : undefined) ?? eligible[0] ?? null
+  const specific = mine.filter((g) => g.role !== 'ANY')
+  const inRole = role === null ? [] : specific.filter((g) => g.role === role)
+  const exact = championId !== null ? inRole.find((g) => g.championId === championId) : undefined
+  const forChampion = championId !== null && championId !== 0 ? specific.find((g) => g.championId === championId) : undefined
+  const standing = mine.find((g) => g.role === 'ANY')
+  const candidates: Array<[StoredGoal | undefined, GoalSource]> = [[exact, 'exact'], [inRole[0], 'role'], [forChampion, 'champion'], [standing, 'standing']]
+  for (const [g, source] of candidates) {
+    if (!g) continue
+    const resolvedRole: Role | null = g.role === 'ANY' ? role : g.role
+    const target = g.target ?? (resolvedRole === null ? null : roleTarget(resolvedRole, g.metric))
+    if (resolvedRole === null || target === null) continue
+    return { puuid: g.puuid, championId: g.championId, role: resolvedRole, metric: g.metric, target, setAt: g.setAt, source }
+  }
+  return null
+}
+
+/** Human line for a stored goal in the editor ("≤ 1.5 deaths per 10 min" or "CS / min · recommended for your role"). */
+export function formatStoredGoal(goal: Pick<StoredGoal, 'metric' | 'target'>): string {
+  return goal.target === null ? `${metricInfo(goal.metric).label} · recommended for your role` : formatGoal({ metric: goal.metric, target: goal.target })
 }
 
 const MIN_SEC = 60

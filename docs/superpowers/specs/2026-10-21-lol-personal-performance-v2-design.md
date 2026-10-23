@@ -107,7 +107,9 @@ Pre-match: móvil → hasta 100 detalles propios cacheados → agrupación local
 
 Se conserva el nombre `user:${user.id}`. Un solo evento, `live-snapshot`, con `isFinal: true` en el último.
 
-> **Fase 7 (2026-10-22):** el canal pasa a ser `lanepulse:${user.id}` y **privado** (`config: { private: true }`, políticas en `realtime.messages`); helper `liveTopic(userId)` en shared. Ver `2026-10-22-phase-7-riot-submission-design.md` §2.3. El móvil v2 ignora cualquier otro evento que un cliente RiftLens pudiera emitir en la misma cuenta.
+> **Fase 7 (2026-10-22):** el canal pasa a ser `lanepulse:${user.id}` y **privado** (`config: { private: true }`, políticas en `realtime.messages`); helper `liveTopic(userId)` en shared. Ver `2026-10-22-phase-7-riot-submission-design.md` §2.3.
+>
+> **Fase 8 (2026-10-22):** segundo evento `live-phase` en el mismo canal (`{ v: 1, ts, phase, since }`, fase del LCU con latido de 10 s) y campos opcionales en el snapshot (`me.isDead`, `me.respawnSec`, `events[]` normalizados, últimos 20). Ver `2026-10-22-phase-8-live-events-design.md`. El móvil v2 ignora cualquier otro evento que un cliente RiftLens pudiera emitir en la misma cuenta.
 
 Payload de `live-snapshot` (campos nullable, nunca cero inventado):
 

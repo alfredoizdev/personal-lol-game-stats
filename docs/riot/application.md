@@ -38,7 +38,10 @@ links their own Riot ID and gets:
    items, game time) to their phone over a private channel. The phone shows
    the player's numbers and whether the goal is on track. The lane opponent's
    scoreboard stats — the ones the game already shows the player — appear
-   beside them; nothing else about other players.
+   beside them; nothing else about other players. The same tab shows what the
+   client is doing before a game (in lobby, searching, champion select) and,
+   during it, the game's own event feed (kills, deaths with the respawn
+   timer, objectives, structures) exactly as the client displays it.
 4. **Performance** — the player's last 100 games summarised: average score,
    recent form against their own average, roles, areas, champions and the
    lane opponents they lose to most. All from their own cached games.

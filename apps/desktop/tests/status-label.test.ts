@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { LeagueStatus } from '@lpp/shared'
-import { statusLabel } from '@shared/status-label'
+import { liveLabel, statusLabel } from '@shared/status-label'
 
 const summoner = {
   displayName: 'Hide on bush',
@@ -24,5 +24,15 @@ describe('statusLabel', () => {
   })
   it('ERROR shows the reason', () => {
     expect(statusLabel({ state: 'ERROR', reason: 'LCU 401' })).toBe('Error: LCU 401')
+  })
+})
+
+describe('liveLabel · idle phases (phase 8)', () => {
+  it('names the end-of-game screen and the lobby instead of a flat "Not in a game"', () => {
+    expect(liveLabel({ kind: 'idle', phase: 'EndOfGame' })).toBe('Match ended')
+    expect(liveLabel({ kind: 'idle', phase: 'WaitingForStats' })).toBe('Match ended')
+    expect(liveLabel({ kind: 'idle', phase: 'Lobby' })).toBe('In lobby')
+    expect(liveLabel({ kind: 'idle', phase: 'None' })).toBe('Not in a game')
+    expect(liveLabel({ kind: 'idle' })).toBe('Not in a game')
   })
 })

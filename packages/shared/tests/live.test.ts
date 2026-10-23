@@ -60,7 +60,7 @@ describe('buildLiveSnapshot', () => {
     expect(s!.queueId).toBe(420)
     expect(s!.teamKills).toBe(7) // 4 + 2 + 1
     expect(s!.me).toEqual({
-      championName: 'Yasuo', position: 'MIDDLE', level: 11, kills: 4, deaths: 1, assists: 3, cs: 112, csPerMin: 7.7, wardScore: 9, items: [3031, 0, 3006, 0, 0, 0, 0],
+      championName: 'Yasuo', position: 'MIDDLE', level: 11, kills: 4, deaths: 1, assists: 3, cs: 112, csPerMin: 7.7, wardScore: 9, items: [3031, 0, 3006, 0, 0, 0, 0], isDead: null, respawnSec: null,
     })
     expect(s!.opponent).toMatchObject({ championName: 'Yone', position: 'MIDDLE', cs: 100, csPerMin: 6.9, items: [6673, 0, 0, 0, 0, 0, 0] })
   })
@@ -118,6 +118,26 @@ describe('buildLiveSnapshot', () => {
   })
 })
 
+describe('buildLiveSnapshot · death and events (phase 8)', () => {
+  it('carries isDead / respawnSec for me and the opponent, and normalized events', () => {
+    const r = raw({})
+    Object.assign(r.allPlayers![0]!, { isDead: true, respawnTimer: 17.4 })
+    r.events = { Events: [{ EventID: 1, EventName: 'ChampionKill', EventTime: 500, KillerName: 'Someone#NA1', VictimName: 'Hexed#7551', Assisters: [] }] }
+    const s = buildLiveSnapshot(r, ME, extra)!
+    expect(s.me.isDead).toBe(true)
+    expect(s.me.respawnSec).toBe(17.4)
+    expect(s.opponent?.isDead).toBeNull() // the fixture opponent has no isDead field
+    expect(s.events.length).toBe(1)
+    expect(s.events[0]?.victimIsMe).toBe(true)
+  })
+  it('leaves death fields null and events empty when the Live Client does not send them', () => {
+    const s = buildLiveSnapshot(raw({}), ME, extra)!
+    expect(s.me.isDead).toBeNull()
+    expect(s.me.respawnSec).toBeNull()
+    expect(s.events).toEqual([])
+  })
+})
+
 describe('parseLiveSnapshot', () => {
   const good = buildLiveSnapshot(raw({}), ME, extra)!
   it('round-trips a built snapshot', () => {
@@ -130,6 +150,22 @@ describe('parseLiveSnapshot', () => {
     expect(parseLiveSnapshot({ ...good, me: { ...good.me, kills: '3' } })).toBeNull()
     expect(parseLiveSnapshot(null)).toBeNull()
     expect(parseLiveSnapshot('x')).toBeNull()
+  })
+  it('defaults the phase 8 fields when an older desktop omits them', () => {
+    const s = buildLiveSnapshot(raw({}), ME, extra)!
+    const wire = JSON.parse(JSON.stringify(s)) as Record<string, unknown>
+    delete wire.events
+    delete (wire.me as Record<string, unknown>).isDead
+    delete (wire.me as Record<string, unknown>).respawnSec
+    const parsed = parseLiveSnapshot(wire)!
+    expect(parsed.events).toEqual([])
+    expect(parsed.me.isDead).toBeNull()
+    expect(parsed.me.respawnSec).toBeNull()
+  })
+  it('rejects a snapshot whose events are malformed', () => {
+    const s = buildLiveSnapshot(raw({}), ME, extra)!
+    expect(parseLiveSnapshot({ ...s, events: [{ id: 'x' }] })).toBeNull()
+    expect(parseLiveSnapshot({ ...s, me: { ...s.me, isDead: 'yes' } })).toBeNull()
   })
   it('accepts a snapshot without opponent', () => {
     expect(parseLiveSnapshot({ ...good, opponent: null })).toEqual({ ...good, opponent: null })

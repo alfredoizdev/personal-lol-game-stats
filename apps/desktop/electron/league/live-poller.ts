@@ -9,20 +9,22 @@
  * the game ended or the poller stopped is dropped. `stop()` mid-game emits the
  * final snapshot so the phone learns the game is over.
  */
-import { buildLiveSnapshot, type GameflowPhase, type LiveFocus, type LiveSnapshotV2, type RawAllGameData } from '@lpp/shared'
+import { buildLiveSnapshot, type ChampSelectPick, type GameflowPhase, type LiveFocus, type LiveSnapshotV2, type RawAllGameData } from '@lpp/shared'
 import type { LockfileData } from './lockfile'
-import { lcuGetCurrentQueueId, lcuGetGameflowPhase } from './lcu-client'
+import { lcuGetChampSelectPick, lcuGetCurrentQueueId, lcuGetGameflowPhase } from './lcu-client'
 import { getLiveAllGameData } from './live-client'
 
 export type LiveState =
-  | { kind: 'idle' }
-  | { kind: 'waiting'; phase: GameflowPhase }
+  | { kind: 'idle'; phase?: GameflowPhase | null }
+  | { kind: 'waiting'; phase: GameflowPhase; pick?: ChampSelectPick | null }
   | { kind: 'live'; snapshot: LiveSnapshotV2 }
   | { kind: 'ended'; snapshot: LiveSnapshotV2 }
 
 export type LivePollerDeps = {
   getPhase: (lockfile: LockfileData) => Promise<GameflowPhase | null>
   getQueueId: (lockfile: LockfileData) => Promise<number | null>
+  /** My own champion-select cell (locked champion, assigned position); only called during ChampSelect. */
+  getPick: (lockfile: LockfileData) => Promise<ChampSelectPick | null>
   getAllGameData: () => Promise<RawAllGameData | null>
   now: () => number
 }
@@ -46,7 +48,8 @@ const NULL_PHASE_GRACE = 3
 
 function sameState(a: LiveState, b: LiveState): boolean {
   if (a.kind !== b.kind) return false
-  if (a.kind === 'waiting' && b.kind === 'waiting') return a.phase === b.phase
+  if (a.kind === 'waiting' && b.kind === 'waiting') return a.phase === b.phase && JSON.stringify(a.pick ?? null) === JSON.stringify(b.pick ?? null)
+  if (a.kind === 'idle' && b.kind === 'idle') return (a.phase ?? null) === (b.phase ?? null)
   if ((a.kind === 'live' || a.kind === 'ended') && (b.kind === 'live' || b.kind === 'ended')) {
     const x = { ...a.snapshot, ts: 0 }
     const y = { ...b.snapshot, ts: 0 }
@@ -59,6 +62,7 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
   const deps: LivePollerDeps = {
     getPhase: opts.deps?.getPhase ?? lcuGetGameflowPhase,
     getQueueId: opts.deps?.getQueueId ?? lcuGetCurrentQueueId,
+    getPick: opts.deps?.getPick ?? lcuGetChampSelectPick,
     getAllGameData: opts.deps?.getAllGameData ?? getLiveAllGameData,
     now: opts.deps?.now ?? (() => Date.now()),
   }
@@ -143,12 +147,15 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
         startLive()
       } else if (phase && WAITING_PHASES.includes(phase)) {
         if (lastSnapshot) endGame()
+        else if (phase === 'ChampSelect' && lockfile) emit({ kind: 'waiting', phase, pick: await deps.getPick(lockfile).catch(() => null) })
         else emit({ kind: 'waiting', phase })
       } else if (phase === null && lastSnapshot && nullStreak < NULL_PHASE_GRACE) {
         // A slow/unreachable LCU for a moment is not the end of the game.
       } else if (phase === null || END_PHASES.includes(phase)) {
         if (lastSnapshot) endGame()
-        else if (state.kind !== 'ended') emit({ kind: 'idle' })
+        // After `ended`, keep that state while the phase that ended the game holds; a new phase
+        // (end-of-game screen → lobby) surfaces as idle with the phase so the phone can move on.
+        else if (state.kind !== 'ended' || phase !== lastPhase) emit({ kind: 'idle', phase })
       }
       lastPhase = phase
     } finally {
