@@ -187,3 +187,9 @@ Design note: `docs/superpowers/specs/2026-10-23-post-game-screen-design.md`. Own
 - Opens by itself when a game ends (new `endedAt` from the final snapshot), closes when the next queue or game starts, not reopened once dismissed. Shows the last snapshot (portrait, K/D/A, CS/min, stat tiles) and whether the goal was met.
 - Finds the review: refreshes the Matches id list every 20 s until the newest match is this game (`isReviewOf`), then Victory / Defeat and "Open the match review"; gives up after 6 min and points to Matches.
 - Tests: mobile 201 (`post-game.test.ts`). Lint and typecheck clean.
+
+## Instant launch: the match cache survives a restart (2026-10-23)
+
+- `PersistQueryClientProvider` + AsyncStorage persister (`@tanstack/react-query-persist-client`, `@tanstack/query-async-storage-persister`, both 5.104.5, pure JS, no native module). Only match details, the two id lists and the champion list are persisted (`shouldPersistQuery`); goals and the linked account come fresh from Supabase. Max age a week; writes throttled to 3 s.
+- Launch: the cache restores before the first query; the restored id list refreshes once and the launch screen waits for that refresh, so only games played since the last launch download. With nothing new, the tabs open at once.
+- Tests: mobile 204 (`query-persist.test.ts`). Lint and typecheck clean.

@@ -18,7 +18,7 @@ export function matchDetailQuery(matchId: string, region: LinkedAccount['region'
     queryKey: matchKeys.detail(matchId),
     queryFn: () => fetchMatchDetail(supabase, { matchId, region }),
     staleTime: Infinity,
-    gcTime: DAY_MS,
+    gcTime: 7 * DAY_MS,
     retry: (n: number, err: unknown) => n < 2 && isRetryableRiotError(err),
     enabled,
   }

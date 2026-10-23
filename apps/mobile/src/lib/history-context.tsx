@@ -30,8 +30,14 @@ export function HistoryProvider({ account, children }: { account: LinkedAccount 
     if (history.loaded < history.total) history.start()
   }, [puuid, started, history])
 
+  // A restored id list refreshes on launch: until that first refresh lands, the list is still "pending" for the launch screen,
+  // so games played since the last launch load behind the screen, not behind the tabs.
+  const [refreshedFor, setRefreshedFor] = useState<string | null>(null)
+  useEffect(() => {
+    if (puuid && !history.idsPending && !history.idsFetching && refreshedFor !== puuid) setRefreshedFor(puuid)
+  }, [puuid, history.idsPending, history.idsFetching, refreshedFor])
   const state = appLoadState({
-    idsPending: history.idsPending,
+    idsPending: history.idsPending || (puuid !== null && refreshedFor !== puuid),
     total: history.total,
     loaded: history.loaded,
     running: history.running,
