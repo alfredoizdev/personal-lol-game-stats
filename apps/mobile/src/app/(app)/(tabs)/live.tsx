@@ -17,6 +17,7 @@ import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useLiveAlerts } from '@/hooks/useLiveAlerts'
 import { useLiveFeed } from '@/lib/live-feed-context'
+import { showEventsFeed } from '@/lib/live-sections'
 import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
 
@@ -78,7 +79,7 @@ export default function LiveScreen() {
           ) : null}
           <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} />
           <LiveStatTiles me={snapshot.me} teamKills={snapshot.teamKills} />
-          <EventsFeed events={snapshot.events} myChampion={snapshot.me.championName} />
+          {showEventsFeed(state) ? <EventsFeed events={snapshot.events} myChampion={snapshot.me.championName} /> : null}
           <LiveTrendChart points={trend} />
         </>
       ) : null}
