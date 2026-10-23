@@ -21,6 +21,7 @@ function harness(initialPhase: GameflowPhase | null) {
   let phase: GameflowPhase | null = initialPhase
   let data: RawAllGameData | null = null
   let dataDelay = 0
+  let pick: { championId: number | null; position: 'TOP' | 'JUNGLE' | 'MIDDLE' | 'BOTTOM' | 'UTILITY' | null } | null = null
   const states: LiveState[] = []
   const handle = startLivePoller({
     getLockfile: () => lockfile,
@@ -30,6 +31,7 @@ function harness(initialPhase: GameflowPhase | null) {
     deps: {
       getPhase: vi.fn(async () => phase),
       getQueueId: vi.fn(async () => 420),
+      getPick: vi.fn(async () => pick),
       getAllGameData: vi.fn(async () => {
         if (dataDelay > 0) await new Promise((r) => setTimeout(r, dataDelay))
         return data
@@ -43,6 +45,7 @@ function harness(initialPhase: GameflowPhase | null) {
     setPhase: (p: GameflowPhase | null) => (phase = p),
     setData: (d: RawAllGameData | null) => (data = d),
     setDataDelay: (ms: number) => (dataDelay = ms),
+    setPick: (p: typeof pick) => (pick = p),
   }
 }
 
@@ -61,7 +64,7 @@ describe('startLivePoller', () => {
     expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'None' })
     h.setPhase('ChampSelect')
     await tick(2000)
-    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect' })
+    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect', pick: null })
     h.handle.stop()
   })
 
@@ -80,6 +83,17 @@ describe('startLivePoller', () => {
     h.setPhase('Lobby')
     await tick(2000)
     expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'Lobby' })
+    h.handle.stop()
+  })
+
+  it('during champion select the waiting state carries my pick and re-emits when it changes', async () => {
+    const h = harness('ChampSelect')
+    h.setPick({ championId: null, position: 'MIDDLE' })
+    await tick(0)
+    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect', pick: { championId: null, position: 'MIDDLE' } })
+    h.setPick({ championId: 238, position: 'MIDDLE' })
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect', pick: { championId: 238, position: 'MIDDLE' } })
     h.handle.stop()
   })
 

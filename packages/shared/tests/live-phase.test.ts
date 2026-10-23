@@ -14,3 +14,17 @@ describe('live-phase payload', () => {
     expect(parseLivePhase(null)).toBeNull()
   })
 })
+
+describe('live-phase · champion select pick (phase 8, piece 2)', () => {
+  it('carries the player\'s own pick during champion select and round-trips it', () => {
+    const p = buildLivePhase('ChampSelect', 5_000, 1, { championId: 238, position: 'MIDDLE' })
+    expect(p.pick).toEqual({ championId: 238, position: 'MIDDLE' })
+    expect(parseLivePhase(JSON.parse(JSON.stringify(p)))).toEqual(p)
+    expect(parseLivePhase({ v: 1, ts: 1, phase: 'ChampSelect', since: 0, pick: { championId: null, position: 'BOTTOM' } })?.pick).toEqual({ championId: null, position: 'BOTTOM' })
+  })
+  it('accepts a payload without a pick (older desktop) and rejects a malformed one', () => {
+    expect(parseLivePhase({ v: 1, ts: 1, phase: 'Lobby', since: 0 })?.pick).toBeUndefined()
+    expect(parseLivePhase({ v: 1, ts: 1, phase: 'ChampSelect', since: 0, pick: { championId: 'x', position: 'MIDDLE' } })).toBeNull()
+    expect(parseLivePhase({ v: 1, ts: 1, phase: 'ChampSelect', since: 0, pick: { championId: 1, position: 'FEEDER' } })).toBeNull()
+  })
+})

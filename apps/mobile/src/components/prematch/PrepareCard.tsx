@@ -6,6 +6,8 @@ import { useGoals } from '@/hooks/useGoals'
 import { useOwnHistory } from '@/hooks/useOwnHistory'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { loadSelection, saveSelection } from '@/lib/prematch-selection'
+import { applyPick } from '@/lib/apply-pick'
+import { useLiveFeed } from '@/lib/live-feed-context'
 import { colors, font, radius, space } from '@/theme/tokens'
 import { BackfillBar } from './BackfillBar'
 import { ChampionPicker } from './ChampionPicker'
@@ -30,6 +32,16 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   const [role, setRole] = useState<Role | null>(null)
   const [championId, setChampionId] = useState<number | null>(null)
   const [restored, setRestored] = useState(false)
+  const { phase } = useLiveFeed()
+  const pick = phase?.phase === 'ChampSelect' ? phase.pick ?? null : null
+  const pickKey = pick ? `${pick.championId}:${pick.position}` : null
+  // Champion select on the client: follow the assigned role and the locked champion.
+  useEffect(() => {
+    if (!pick || !restored) return
+    const next = applyPick({ role: role ?? 'MIDDLE', championId }, pick)
+    if (next.role !== role) setRole(next.role)
+    if (next.championId !== championId) setChampionId(next.championId)
+  }, [pickKey, restored])
 
   // Restore the last pick first; only when there is none, default to the role of the newest game.
   useEffect(() => {
@@ -75,7 +87,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
       <BackfillBar loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onRetry={() => history.start()} />
       <StandingGoalEditor goals={goals} onSave={save} saving={saving} />
       <View style={styles.divider} />
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Or prepare a specific pick: its goal wins when you play it.</Text>
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{pick ? 'From your champion select: the role you were assigned and the champion you lock.' : 'Or prepare a specific pick: its goal wins when you play it.'}</Text>
       <RoleChips value={effectiveRole} onChange={setRole} />
       <ChampionPicker champions={champions} played={played} selected={selected} onSelect={(c) => setChampionId(c.id)} />
       {selected && summary ? (

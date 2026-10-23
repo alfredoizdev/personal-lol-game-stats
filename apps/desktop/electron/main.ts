@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen } from 'electron'
 import path from 'node:path'
 import { config as loadEnv } from 'dotenv'
-import { buildLivePhase, type GameflowPhase, type LeagueStatus } from '@lpp/shared'
+import { buildLivePhase, type ChampSelectPick, type GameflowPhase, type LeagueStatus } from '@lpp/shared'
 import { IPC } from './ipc/channels'
 import { createMainSupabaseClient } from './auth/supabase-main'
 import { createAuthController, type AuthController, type AuthState } from './auth/auth-controller'
@@ -33,6 +33,7 @@ let goalPush: GoalPush | null = null
 const champions = createChampionLookup(globalThis.fetch)
 let lastLive: LiveState = { kind: 'idle' }
 let phaseNow: GameflowPhase = 'None'
+let pickNow: ChampSelectPick | null = null
 let phaseSince = Date.now()
 let phaseHeartbeat: NodeJS.Timeout | null = null
 const PHASE_HEARTBEAT_MS = 10_000
@@ -122,7 +123,7 @@ function isDemo(): boolean {
 /** The client phase the phone shows before and after a game; re-sent every 10 s so a stale phone can tell. */
 function publishPhase(): void {
   if (!publisher) return
-  publisher.publishPhase(buildLivePhase(phaseNow, Date.now() - phaseSince, Date.now())).catch((err) => logger.warn(`phase publish failed: ${String(err)}`))
+  publisher.publishPhase(buildLivePhase(phaseNow, Date.now() - phaseSince, Date.now(), phaseNow === 'ChampSelect' ? pickNow : null)).catch((err) => logger.warn(`phase publish failed: ${String(err)}`))
 }
 
 function onLiveState(state: LiveState): void {
@@ -138,6 +139,7 @@ function onLiveState(state: LiveState): void {
       phaseNow = next
       phaseSince = Date.now()
     }
+    pickNow = state.kind === 'waiting' ? (state.pick ?? null) : null
     publishPhase()
   } else if (state.kind === 'live') {
     phaseNow = 'InProgress'

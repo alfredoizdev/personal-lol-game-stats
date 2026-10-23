@@ -45,6 +45,8 @@ export function createDemoDeps(opts: { appPath: string; identity: () => { gameNa
       return gameSec() < GAME_SECONDS + 5 ? 'EndOfGame' : 'Lobby'
     },
     getQueueId: async () => 420,
+    // Champion select in the demo: assigned mid, Yasuo locked after 2 s.
+    getPick: async () => (elapsed() < 13 ? { championId: null, position: 'MIDDLE' } : { championId: 157, position: 'MIDDLE' }),
     getAllGameData: async () => {
       const t = gameSec()
       if (t < 0 || t >= GAME_SECONDS) return null

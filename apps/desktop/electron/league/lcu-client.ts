@@ -3,11 +3,13 @@
  *   GET /lol-summoner/v1/current-summoner
  *   GET /lol-gameflow/v1/gameflow-phase
  *   GET /lol-lobby/v2/lobby
+ *   GET /lol-champ-select/v1/session (own cell only, during champion select)
  * Loopback HTTPS with the self-signed cert Riot ships (not validated).
  */
 import https from 'node:https'
-import type { GameflowPhase, Summoner } from '@lpp/shared'
+import type { ChampSelectPick, GameflowPhase, Summoner } from '@lpp/shared'
 import type { LockfileData } from './lockfile'
+import { champSelectPick } from './champ-select'
 
 const KNOWN_PHASES: GameflowPhase[] = [
   'None',
@@ -134,4 +136,10 @@ export async function lcuGetCurrentQueueId(lockfile: LockfileData): Promise<numb
   if (!queue || typeof queue !== 'object') return null
   const id = pickNumber((queue as Record<string, unknown>).id)
   return Number.isFinite(id) && id > 0 ? id : null
+}
+
+/** My locked champion and assigned position during champion select; null outside it or when unreadable. */
+export async function lcuGetChampSelectPick(lockfile: LockfileData): Promise<ChampSelectPick | null> {
+  const raw = await lcuGet<unknown>(lockfile, '/lol-champ-select/v1/session').catch(() => null)
+  return champSelectPick(raw)
 }
