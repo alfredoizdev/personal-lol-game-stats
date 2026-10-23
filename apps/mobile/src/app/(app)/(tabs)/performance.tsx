@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { formatRiotId, performanceProfile } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
@@ -8,35 +8,25 @@ import { MatchupsCard } from '@/components/performance/MatchupsCard'
 import { OverviewCard } from '@/components/performance/OverviewCard'
 import { RolesCard } from '@/components/performance/RolesCard'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
-import { useOwnHistory } from '@/hooks/useOwnHistory'
+import { useHistory } from '@/lib/history-context'
 import { BACKFILL_COUNT } from '@/lib/backfill'
 import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-/** The tab fetches the last 100 games by itself on open (owner's call), behind one progress bar. Once per account; cached. */
+/** Retry reloads the whole window the launch load fetches (the history is loaded once for every tab). */
 const AUTO_LOAD = BACKFILL_COUNT
 
 /** Your performance from your last 100 Summoner's Rift games (Phase 6 spec; owner's window). */
 export default function PerformanceScreen() {
   const { data: account } = useLinkedAccount()
-  const history = useOwnHistory(account ?? null, false)
+  const history = useHistory()
   const puuid = account?.puuid
-  const [attemptedFor, setAttemptedFor] = useState<string | null>(null)
-  const startedFor = useRef<string | null>(null)
 
   const loadedInWindow = history.loadedWithin(WINDOW)
   const windowSize = Math.min(WINDOW, history.total)
 
-  // Auto-load the window once per account; "Retry" below starts it again by hand.
-  useEffect(() => {
-    if (!puuid || history.total === 0 || startedFor.current === puuid) return
-    startedFor.current = puuid
-    if (history.loadedWithin(AUTO_LOAD) < Math.min(AUTO_LOAD, history.total)) history.start(AUTO_LOAD)
-    setAttemptedFor(puuid)
-  }, [puuid, history])
-
-  const state = loadState({ idsPending: history.idsPending, total: history.total, loadedInWindow, running: history.running, attempted: attemptedFor === puuid })
+  const state = loadState({ idsPending: history.idsPending, total: history.total, loadedInWindow, running: history.running, attempted: !!puuid && history.started })
   const profile = useMemo(() => performanceProfile(history.summaries, WINDOW), [history.summaries])
   const subtitle = account ? `${formatRiotId(account.gameName, account.tagLine)} · ${gamesNote(profile).toLowerCase()}` : 'Your own games only'
   const rateLimited = riotErrorCode(history.error) === 'RATE_LIMITED'
