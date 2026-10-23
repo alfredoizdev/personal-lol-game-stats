@@ -19,8 +19,8 @@ const kpGoal: Goal = { ...csGoal, metric: 'kpPct', target: 55 }
 function snap(gameTimeSeconds: number | null, over: Partial<LiveSnapshotV2['me']> = {}, teamKills: number | null = 5): LiveSnapshotV2 {
   return {
     v: 2, ts: 1, isFinal: false, gameTimeSeconds, gameMode: 'CLASSIC', queueId: 420, teamKills,
-    me: { championName: 'Yasuo', position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin: 7.5, wardScore: 2, items: [], ...over },
-    opponent: null, focus: null,
+    me: { championName: 'Yasuo', position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin: 7.5, wardScore: 2, items: [], isDead: null, respawnSec: null, ...over },
+    opponent: null, focus: null, events: [],
   }
 }
 

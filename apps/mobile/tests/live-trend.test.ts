@@ -3,8 +3,8 @@ import type { LiveSnapshotV2 } from '@lpp/shared'
 import { appendTrendPoint, separatedEndLabels, type TrendPoint } from '../src/lib/live-trend'
 
 function snap(gameTime: number, meCs: number | null, enemyCs: number | null = 0, ts = 1): LiveSnapshotV2 {
-  const line = (cs: number | null) => ({ championName: 'X', position: 'MIDDLE' as const, level: 1, kills: 0, deaths: 0, assists: 0, cs, csPerMin: cs === null || gameTime < 60 ? null : Math.round((cs / (gameTime / 60)) * 10) / 10, wardScore: 0, items: [] })
-  return { v: 2, ts, isFinal: false, gameTimeSeconds: gameTime, gameMode: 'CLASSIC', queueId: 420, teamKills: 0, me: line(meCs), opponent: enemyCs === null ? null : line(enemyCs), focus: null }
+  const line = (cs: number | null) => ({ championName: 'X', position: 'MIDDLE' as const, level: 1, kills: 0, deaths: 0, assists: 0, cs, csPerMin: cs === null || gameTime < 60 ? null : Math.round((cs / (gameTime / 60)) * 10) / 10, wardScore: 0, items: [], isDead: null, respawnSec: null })
+  return { v: 2, ts, isFinal: false, gameTimeSeconds: gameTime, gameMode: 'CLASSIC', queueId: 420, teamKills: 0, me: line(meCs), opponent: enemyCs === null ? null : line(enemyCs), focus: null, events: [] }
 }
 
 describe('appendTrendPoint', () => {

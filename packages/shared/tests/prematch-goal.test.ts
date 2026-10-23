@@ -64,8 +64,8 @@ describe('goalFor', () => {
 function snap(p: Partial<LiveSnapshotV2['me']>, extra: Partial<LiveSnapshotV2> = {}): LiveSnapshotV2 {
   return {
     v: 2, ts: 0, isFinal: false, gameTimeSeconds: 1200, gameMode: 'CLASSIC', queueId: 420, teamKills: 10,
-    me: { championName: 'Jinx', position: 'BOTTOM', level: 10, kills: 3, deaths: 2, assists: 4, cs: 140, csPerMin: 7, wardScore: 12, items: [], ...p },
-    opponent: null, focus: null, ...extra,
+    me: { championName: 'Jinx', position: 'BOTTOM', level: 10, kills: 3, deaths: 2, assists: 4, cs: 140, csPerMin: 7, wardScore: 12, items: [], isDead: null, respawnSec: null, ...p },
+    opponent: null, focus: null, events: [], ...extra,
   }
 }
 

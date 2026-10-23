@@ -1,4 +1,5 @@
 import type { Role } from './match-v5'
+import { normalizeEvents, parseLiveEvent, type LiveEvent, type RawLiveEvent } from './live-events'
 
 /** Build flag: show the lane opponent's scoreboard-visible stats on the Live tab. */
 
@@ -16,12 +17,15 @@ export type RawLivePlayer = {
   level?: number
   scores?: { kills?: number; deaths?: number; assists?: number; creepScore?: number; wardScore?: number }
   items?: Array<{ itemID?: number; slot?: number }>
+  isDead?: boolean
+  respawnTimer?: number
 }
 
 export type RawAllGameData = {
   activePlayer?: { riotIdGameName?: string; riotIdTagLine?: string; summonerName?: string; level?: number }
   allPlayers?: RawLivePlayer[]
   gameData?: { gameTime?: number; gameMode?: string }
+  events?: { Events?: RawLiveEvent[] }
 }
 
 // ---------------------------------------------------------------------------
@@ -38,6 +42,9 @@ export type LivePlayerV2 = {
   csPerMin: number | null
   wardScore: number | null
   items: number[]
+  /** Phase 8: death state as the game shows it; null when the Live Client did not say. */
+  isDead: boolean | null
+  respawnSec: number | null
 }
 
 export type LiveFocus = { metric: 'csPerMin'; target: number } | null
@@ -53,6 +60,8 @@ export type LiveSnapshotV2 = {
   me: LivePlayerV2
   opponent: LivePlayerV2 | null
   focus: LiveFocus
+  /** Phase 8: the last MAX_EVENTS game events (kill feed, objectives, structures). */
+  events: LiveEvent[]
 }
 
 const ROLES: readonly string[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']
@@ -95,6 +104,8 @@ function toLine(p: RawLivePlayer, gameTime: number | null): LivePlayerV2 {
     csPerMin,
     wardScore: roundInt(num(p.scores?.wardScore)),
     items: itemsBySlot(p.items),
+    isDead: typeof p.isDead === 'boolean' ? p.isDead : null,
+    respawnSec: typeof p.isDead === 'boolean' ? (p.isDead ? num(p.respawnTimer) : 0) : null,
   }
 }
 
@@ -138,6 +149,7 @@ export function buildLiveSnapshot(
     me: toLine(me, gameTime),
     opponent: opponent ? toLine(opponent, gameTime) : null,
     focus: extra.focus,
+    events: normalizeEvents(raw, me),
   }
 }
 
@@ -155,6 +167,8 @@ function parsePlayer(v: unknown): LivePlayerV2 | null {
     if (!isNumOrNull(p[k])) return null
   }
   if (!Array.isArray(p.items) || !p.items.every((i) => typeof i === 'number')) return null
+  if (p.isDead !== undefined && p.isDead !== null && typeof p.isDead !== 'boolean') return null
+  if (p.respawnSec !== undefined && !isNumOrNull(p.respawnSec)) return null
   return {
     championName: p.championName,
     position: p.position as Role | null,
@@ -166,6 +180,8 @@ function parsePlayer(v: unknown): LivePlayerV2 | null {
     csPerMin: p.csPerMin as number | null,
     wardScore: p.wardScore as number | null,
     items: p.items as number[],
+    isDead: typeof p.isDead === 'boolean' ? p.isDead : null,
+    respawnSec: typeof p.respawnSec === 'number' ? p.respawnSec : null,
   }
 }
 
@@ -189,6 +205,13 @@ export function parseLiveSnapshot(payload: unknown): LiveSnapshotV2 | null {
     if (!f || f.metric !== 'csPerMin' || typeof f.target !== 'number') return null
     focus = { metric: 'csPerMin', target: f.target }
   }
+  let events: LiveEvent[] = []
+  if (s.events !== undefined) {
+    if (!Array.isArray(s.events)) return null
+    const parsed = s.events.map(parseLiveEvent)
+    if (parsed.some((e) => e === null)) return null
+    events = parsed as LiveEvent[]
+  }
   return {
     v: 2,
     ts: s.ts,
@@ -200,6 +223,7 @@ export function parseLiveSnapshot(payload: unknown): LiveSnapshotV2 | null {
     me,
     opponent,
     focus,
+    events,
   }
 }
 

@@ -39,8 +39,8 @@ function fakeClient(tables: Tables) {
 function snap(gameTimeSeconds: number, csPerMin: number, championName = 'Yasuo'): LiveSnapshotV2 {
   return {
     v: 2, ts: 1, isFinal: false, gameTimeSeconds, gameMode: 'CLASSIC', queueId: 420, teamKills: 5,
-    me: { championName, position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin, wardScore: 2, items: [] },
-    opponent: null, focus: null,
+    me: { championName, position: 'MIDDLE', level: 5, kills: 1, deaths: 0, assists: 1, cs: 50, csPerMin, wardScore: 2, items: [], isDead: null, respawnSec: null },
+    opponent: null, focus: null, events: [],
   }
 }
 const live = (s: LiveSnapshotV2): LiveState => ({ kind: 'live', snapshot: s })

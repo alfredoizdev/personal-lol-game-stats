@@ -5,8 +5,8 @@ import { createLivePublisher } from '@electron/live/live-publisher'
 function snapshot(ts: number, cs = 100): LiveSnapshotV2 {
   return {
     v: 2, ts, isFinal: false, gameTimeSeconds: 600, gameMode: 'CLASSIC', queueId: 420, teamKills: 3,
-    me: { championName: 'Yasuo', position: 'MIDDLE', level: 9, kills: 2, deaths: 0, assists: 1, cs, csPerMin: 10, wardScore: 3, items: [] },
-    opponent: null, focus: null,
+    me: { championName: 'Yasuo', position: 'MIDDLE', level: 9, kills: 2, deaths: 0, assists: 1, cs, csPerMin: 10, wardScore: 3, items: [], isDead: null, respawnSec: null },
+    opponent: null, focus: null, events: [],
   }
 }
 
