@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Disclaimer } from './Disclaimer'
 import { colors, font, space } from '@/theme/tokens'
 
@@ -18,10 +18,12 @@ export function Screen({
   overlay?: ReactNode
   children: ReactNode
 }) {
+  // The overlay is absolutely positioned, so the safe-area padding does not reach it: offset it by the top inset by hand (Dynamic Island / status bar).
+  const insets = useSafeAreaInsets()
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {overlay ? (
-        <View style={styles.overlay} pointerEvents="box-none">
+        <View style={[styles.overlay, { top: insets.top + space.sm }]} pointerEvents="box-none">
           {overlay}
         </View>
       ) : null}
@@ -50,5 +52,5 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontSize: font.body, marginTop: 2 },
   body: { flexGrow: 1, gap: space.md },
   footer: { paddingVertical: space.md },
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: space.md, paddingTop: space.sm, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  overlay: { position: 'absolute', left: 0, right: 0, zIndex: 10, paddingHorizontal: space.md, maxWidth: 720, width: '100%', alignSelf: 'center' },
 })

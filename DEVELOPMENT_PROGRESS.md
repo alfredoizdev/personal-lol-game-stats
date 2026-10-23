@@ -166,3 +166,7 @@ Owner report: the tabs still opened while the 100 games loaded, and Prepare show
 - Cause 2: a "recommended for the role you play" goal on CS/min resolved to nothing for support, where farming is not scored. `goalFor` now falls back to the role's own first metric (`defaultMetricFor`: vision for support, CS elsewhere), so a support game gets the recommended vision goal; a fixed number set by the player still applies as set. The editor shows that fallback as a plain value (no stepper) with an explanation, and Save keeps "recommended".
 - The role tapped in Prepare is remembered on the device (champion select still overrides).
 - Tests: shared 223, desktop 82, mobile 190. Lint and typecheck clean.
+
+## Live alert cards made noticeable (2026-10-23)
+
+Owner: the event cards on Live were tiny and sat under the iPhone's status bar / Dynamic Island. The overlay is absolutely positioned so the safe-area padding never reached it: it is now offset by the top inset. Cards are larger (icon badge, 2 px tone border, bigger type, shadow) and stay 7 s. Mobile 190 tests, lint and typecheck clean.

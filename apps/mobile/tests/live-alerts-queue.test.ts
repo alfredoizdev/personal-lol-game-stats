@@ -16,10 +16,11 @@ describe('live alerts queue', () => {
     expect(MAX_VISIBLE).toBe(3)
     expect(q.map((q) => q.alert.id)).toEqual(['2', '3', '4'])
   })
-  it('expires alerts after ALERT_TTL_MS and lets a tap dismiss one early', () => {
+  it('keeps a card 7 s (owner: the cards must be noticed) and lets a tap dismiss one early', () => {
     const q: QueuedAlert[] = pushAlerts([], [a('old')], 0).concat(pushAlerts([], [a('new')], 4000))
-    expect(ALERT_TTL_MS).toBe(5000)
-    expect(expireAlerts(q, 5001).map((q) => q.alert.id)).toEqual(['new'])
+    expect(ALERT_TTL_MS).toBe(7000)
+    expect(expireAlerts(q, 7001).map((q) => q.alert.id)).toEqual(['new'])
+    expect(expireAlerts(q, 6999).map((q) => q.alert.id)).toEqual(['old', 'new'])
     expect(dismissAlert(q, 'new').map((q) => q.alert.id)).toEqual(['old'])
   })
 })
