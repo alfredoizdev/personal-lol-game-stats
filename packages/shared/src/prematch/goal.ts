@@ -22,7 +22,19 @@ export const metricInfo = (key: GoalMetric) => GOAL_METRICS.find((m) => m.key ==
 
 export type Goal = { puuid: string; championId: number; role: Role; metric: GoalMetric; target: number; setAt: string }
 
-export type DefaultGoal = { metric: GoalMetric; target: number | null; source: 'champion' | 'role' | 'target' | 'none'; n: number }
+/**
+ * What the goal editor starts from (owner, 2026-10-22): the RECOMMENDED value is
+ * the role target the match score is measured against; the player's own average
+ * (champion+role over the newest 20 games, else role) travels beside it as
+ * context. `source` stays 'target' | 'none' for the recommendation itself.
+ */
+export type DefaultGoal = {
+  metric: GoalMetric
+  target: number | null
+  source: 'champion' | 'role' | 'target' | 'none'
+  n: number
+  average: { value: number; source: 'champion' | 'role'; n: number } | null
+}
 
 const WINDOW = 20
 const roundTo = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
@@ -42,19 +54,23 @@ function roleTarget(role: Role, metric: GoalMetric): number | null {
   }
 }
 
-/** Champion+role average over the newest 20 games (≥ 3) → role average (≥ 3) → role target. */
-export function defaultGoal(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric = role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'): DefaultGoal {
+/** Your own average for context: champion+role over the newest 20 games (≥ 3) → role average (≥ 3) → null. */
+export function ownAverage(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric): DefaultGoal['average'] {
   const d = metricInfo(metric).decimals
   const games = championGames(all, championId, role).slice(0, WINDOW)
   const values = games.map((s) => metricsOf(s.me, s.durationSec, s.teamKills)[metric]).filter((v): v is number => v !== null)
-  if (games.length >= FEW_GAMES && values.length >= FEW_GAMES) {
-    return { metric, target: roundTo(mean(values)!, d), source: 'champion', n: games.length }
-  }
+  if (games.length >= FEW_GAMES && values.length >= FEW_GAMES) return { value: roundTo(mean(values)!, d), source: 'champion', n: games.length }
   const base = buildBaseline(all, role, '')
   const fromRole = base[metric]
-  if (base.n >= BASELINE_MIN_GAMES && fromRole !== null) return { metric, target: roundTo(fromRole, d), source: 'role', n: base.n }
+  if (base.n >= BASELINE_MIN_GAMES && fromRole !== null) return { value: roundTo(fromRole, d), source: 'role', n: base.n }
+  return null
+}
+
+/** Recommended goal = the role target (what the match score measures against), with the player's own average beside it. */
+export function defaultGoal(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric = role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'): DefaultGoal {
+  const average = ownAverage(all, championId, role, metric)
   const t = roleTarget(role, metric)
-  return t === null ? { metric, target: null, source: 'none', n: 0 } : { metric, target: t, source: 'target', n: 0 }
+  return t === null ? { metric, target: null, source: 'none', n: 0, average } : { metric, target: t, source: 'target', n: 0, average }
 }
 
 /** The goal in force: newest exact champion row, else newest row for the role; optionally only rows set at or before `beforeMs`. */

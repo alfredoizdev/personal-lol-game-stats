@@ -56,14 +56,18 @@ export function GoalEditor({
   }, [suggested.target, touched, exact, metric])
 
   const info = metricInfo(metric)
+  const roleWord = role === 'UTILITY' ? 'support' : role.toLowerCase()
+  const fmt = (v: number) => `${v.toFixed(info.decimals)}${metric === 'kpPct' ? '%' : ''}`
+  const average = suggested.average
   const source =
-    suggested.source === 'champion'
-      ? `Default: your average with ${championName} (${suggested.n} games)`
-      : suggested.source === 'role'
-        ? `Default: your ${role === 'UTILITY' ? 'support' : role.toLowerCase()} average (${suggested.n} games)`
-        : suggested.source === 'target'
-          ? 'Default: the target for your role'
-          : 'No default for this metric in this role — set it by hand'
+    suggested.source === 'none'
+      ? 'No recommended value for this metric in this role — set it by hand'
+      : `Recommended: the ${roleWord} target the match score uses` +
+        (average
+          ? average.source === 'champion'
+            ? ` · your average with ${championName}: ${fmt(average.value)} (${average.n} games)`
+            : ` · your ${roleWord} average: ${fmt(average.value)} (${average.n} games)`
+          : ` · no games of yours with ${championName} as ${roleWord} yet`)
   const saveState = goalSaveState(savedGoal, { metric, target })
   const step = (dir: 1 | -1) => {
     setTouched(true)

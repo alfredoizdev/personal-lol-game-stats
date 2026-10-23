@@ -19,24 +19,24 @@ describe('GOAL_METRICS', () => {
   })
 })
 
-describe('defaultGoal', () => {
-  it('uses the champion+role average with at least 3 games', () => {
+describe('defaultGoal (owner 2026-10-22: the editor starts at the recommended role target; your average is shown beside it)', () => {
+  it('recommends the role target and reports the champion+role average with at least 3 games', () => {
     const all = [g({ csPerMin: 7 }), g({ csPerMin: 8 }), g({ csPerMin: 6 }), g({ csPerMin: 9, championId: 51 })]
-    expect(defaultGoal(all, 222, 'BOTTOM')).toEqual({ metric: 'csPerMin', target: 7, source: 'champion', n: 3 })
+    expect(defaultGoal(all, 222, 'BOTTOM')).toEqual({ metric: 'csPerMin', target: 7.5, source: 'target', n: 0, average: { value: 7, source: 'champion', n: 3 } })
   })
-  it('falls back to the role average, then to the role target', () => {
+  it('average falls back to the role average, then to none', () => {
     const all = [g({ csPerMin: 7 }), g({ csPerMin: 8, championId: 51 }), g({ csPerMin: 6, championId: 81 })]
-    expect(defaultGoal(all, 222, 'BOTTOM')).toEqual({ metric: 'csPerMin', target: 7, source: 'role', n: 3 })
-    expect(defaultGoal([], 222, 'BOTTOM')).toEqual({ metric: 'csPerMin', target: 7.5, source: 'target', n: 0 })
+    expect(defaultGoal(all, 222, 'BOTTOM').average).toEqual({ value: 7, source: 'role', n: 3 })
+    expect(defaultGoal([], 222, 'BOTTOM')).toEqual({ metric: 'csPerMin', target: 7.5, source: 'target', n: 0, average: null })
   })
   it('defaults to vision for support and has no CS/min target for a support', () => {
-    expect(defaultGoal([], 412, 'UTILITY')).toEqual({ metric: 'visionPerMin', target: 2, source: 'target', n: 0 })
-    expect(defaultGoal([], 412, 'UTILITY', 'csPerMin')).toEqual({ metric: 'csPerMin', target: null, source: 'none', n: 0 })
+    expect(defaultGoal([], 412, 'UTILITY')).toEqual({ metric: 'visionPerMin', target: 2, source: 'target', n: 0, average: null })
+    expect(defaultGoal([], 412, 'UTILITY', 'csPerMin')).toEqual({ metric: 'csPerMin', target: null, source: 'none', n: 0, average: null })
   })
-  it('only the newest 20 games with that champion count', () => {
+  it('only the newest 20 games with that champion count towards the average', () => {
     const all = [...Array.from({ length: 20 }, () => g({ csPerMin: 8 })), ...Array.from({ length: 5 }, () => g({ csPerMin: 2 }))].reverse() // newest first = csPerMin 2 ×5 then 8 ×20
-    // newest 20 = five 2s and fifteen 8s
-    expect(defaultGoal(all, 222, 'BOTTOM').target).toBe(6.5)
+    // (2×5 + 8×15) / 20 = 6.5
+    expect(defaultGoal(all, 222, 'BOTTOM').average?.value).toBe(6.5)
   })
 })
 
