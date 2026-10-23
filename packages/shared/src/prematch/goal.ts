@@ -76,8 +76,13 @@ export function ownAverage(all: MatchSummary[], championId: number, role: Role, 
   return null
 }
 
+/** The metric a role is measured on first: vision for support (farming is not scored there), CS for every lane. */
+export function defaultMetricFor(role: Role): GoalMetric {
+  return role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'
+}
+
 /** Recommended goal = the role target (what the match score measures against), with the player's own average beside it. */
-export function defaultGoal(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric = role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'): DefaultGoal {
+export function defaultGoal(all: MatchSummary[], championId: number, role: Role, metric: GoalMetric = defaultMetricFor(role)): DefaultGoal {
   const average = ownAverage(all, championId, role, metric)
   const t = roleTarget(role, metric)
   return t === null ? { metric, target: null, source: 'none', n: 0, average } : { metric, target: t, source: 'target', n: 0, average }
@@ -102,9 +107,17 @@ export function goalFor(goals: StoredGoal[], puuid: string, championId: number |
   for (const [g, source] of candidates) {
     if (!g) continue
     const resolvedRole: Role | null = g.role === 'ANY' ? role : g.role
-    const target = g.target ?? (resolvedRole === null ? null : roleTarget(resolvedRole, g.metric))
-    if (resolvedRole === null || target === null) continue
-    return { puuid: g.puuid, championId: g.championId, role: resolvedRole, metric: g.metric, target, setAt: g.setAt, source }
+    if (resolvedRole === null) continue
+    // "Recommended for the role you play": where the metric is not scored for that role (CS for support),
+    // the role's own first metric applies, so a support game still has a goal (owner, 2026-10-23).
+    let metric = g.metric
+    let target = g.target ?? roleTarget(resolvedRole, metric)
+    if (target === null && g.target === null) {
+      metric = defaultMetricFor(resolvedRole)
+      target = roleTarget(resolvedRole, metric)
+    }
+    if (target === null) continue
+    return { puuid: g.puuid, championId: g.championId, role: resolvedRole, metric, target, setAt: g.setAt, source }
   }
   return null
 }

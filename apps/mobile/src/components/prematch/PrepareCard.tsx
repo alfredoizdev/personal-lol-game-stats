@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { banSuggestion, championSummary, roleSummary, toughestMatchups, ROLE_LABEL, type Role } from '@lpp/shared'
 import { useChampionList } from '@/hooks/useChampionList'
@@ -7,6 +7,7 @@ import { useHistory } from '@/lib/history-context'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { useLiveFeed } from '@/lib/live-feed-context'
 import { activeRole, homeRole, prepareHeadline } from '@/lib/prepare-view'
+import { loadViewRole, saveViewRole } from '@/lib/view-role'
 import { colors, font, radius, space } from '@/theme/tokens'
 import { BackfillBar } from './BackfillBar'
 import { ChampionSummaryCard } from './ChampionSummaryCard'
@@ -33,6 +34,15 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   const pick = phase?.phase === 'ChampSelect' ? phase.pick ?? null : null
   // The role shown: champion select's, else the one you tapped to look at, else your most played. Nothing to set up.
   const [viewing, setViewing] = useState<Role | null>(null)
+  useEffect(() => {
+    void loadViewRole().then((r) => {
+      if (r) setViewing(r)
+    })
+  }, [])
+  const lookAt = (r: Role) => {
+    setViewing(r)
+    void saveViewRole(r)
+  }
   const role = activeRole({ pick, viewing, primary: homeRole(history.summaries) })
   const pickedChampion = pick?.championId ? champions.find((c) => c.id === pick.championId) ?? null : null
   const headline = prepareHeadline(pick, pickedChampion?.name ?? null)
@@ -60,7 +70,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
       ) : (
         <View style={styles.showing}>
           <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Showing {ROLE_LABEL[role]}{viewing ? '' : ' · your most played role'}. Tap another to look at it; champion select sets it for you.</Text>
-          <RoleChips value={role} onChange={setViewing} />
+          <RoleChips value={role} onChange={lookAt} />
         </View>
       )}
       <View style={styles.divider} />

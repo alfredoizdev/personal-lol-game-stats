@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine } from '../src/match-v5'
 import type { LiveSnapshotV2 } from '../src/live'
-import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, type StoredGoal } from '../src/prematch/goal'
+import { GOAL_METRICS, defaultGoal, defaultMetricFor, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, type StoredGoal } from '../src/prematch/goal'
 import { game } from './analysis-fixtures'
 
 const at = (i: number) => new Date(Date.UTC(2026, 9, 1 + i)).toISOString()
@@ -63,7 +63,7 @@ describe('goalFor', () => {
     expect(goalFor([standing], 'me', 238, 'MIDDLE')).toMatchObject({ role: 'MIDDLE', target: 7, source: 'standing' })
     expect(goalFor([recommended], 'me', 238, 'MIDDLE')).toMatchObject({ role: 'MIDDLE', target: 7.0, source: 'standing' }) // mid CS target
     expect(goalFor([recommended], 'me', 238, 'BOTTOM')!.target).toBe(7.5)
-    expect(goalFor([recommended], 'me', 238, 'UTILITY')).toBeNull() // no CS target for support
+    expect(goalFor([recommended], 'me', 238, 'UTILITY')).toMatchObject({ metric: 'visionPerMin', target: 2.0 }) // CS is not scored for support: the role's own metric
     expect(goalFor([recommended], 'me', 238, null)).toBeNull() // no role known: cannot resolve "recommended"
     expect(goalFor([{ ...recommended, metric: 'deathsPer10' }], 'me', 238, null)).toBeNull()
   })
@@ -123,5 +123,22 @@ describe('formatGoal', () => {
     expect(formatGoal({ metric: 'visionPerMin', target: 0.6 })).toBe('0.60 vision score/min')
     expect(formatGoal({ metric: 'deathsPer10', target: 1.5 })).toBe('≤ 1.5 deaths per 10 min')
     expect(formatGoal({ metric: 'kpPct', target: 55 })).toBe('55% kill participation')
+  })
+})
+
+describe('standing goal where the metric is not scored for the role (owner, 2026-10-23: support showed no goal)', () => {
+  it('defaultMetricFor is vision for support and CS for every lane', () => {
+    expect(defaultMetricFor('UTILITY')).toBe('visionPerMin')
+    expect(defaultMetricFor('MIDDLE')).toBe('csPerMin')
+    expect(defaultMetricFor('JUNGLE')).toBe('csPerMin')
+  })
+  it('a recommended CS goal resolves, for a support game, to the recommended vision goal instead of nothing', () => {
+    const standing = goal({ championId: 0, role: 'ANY', metric: 'csPerMin', target: null })
+    expect(goalFor([standing], 'me', 0, 'UTILITY')).toMatchObject({ metric: 'visionPerMin', target: 2.0, role: 'UTILITY', source: 'standing' })
+    expect(goalFor([standing], 'me', 0, 'MIDDLE')).toMatchObject({ metric: 'csPerMin', target: 7.0, role: 'MIDDLE', source: 'standing' })
+  })
+  it('a fixed CS number set by the player still applies as set, whatever the role', () => {
+    const fixed = goal({ championId: 0, role: 'ANY', metric: 'csPerMin', target: 6.5 })
+    expect(goalFor([fixed], 'me', 0, 'UTILITY')).toMatchObject({ metric: 'csPerMin', target: 6.5 })
   })
 })

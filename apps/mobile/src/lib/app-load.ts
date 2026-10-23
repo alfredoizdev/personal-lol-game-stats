@@ -7,10 +7,12 @@ export type AppLoadState = 'loading' | 'ready'
  * which explain and offer Retry. Sticky per account so a later refetch never
  * flashes the screen again.
  */
-export function appLoadState(s: { idsPending: boolean; total: number; loaded: number; running: boolean; wasReady: boolean }): AppLoadState {
+export function appLoadState(s: { idsPending: boolean; total: number; loaded: number; running: boolean; started: boolean; wasReady: boolean }): AppLoadState {
   if (s.wasReady) return 'ready'
   if (s.idsPending) return 'loading'
   if (s.total === 0) return 'ready'
   if (s.loaded >= s.total) return 'ready'
+  // Between the id list arriving and the run starting nothing is running yet: that is still loading, not "stopped short".
+  if (!s.started) return 'loading'
   return s.running ? 'loading' : 'ready'
 }

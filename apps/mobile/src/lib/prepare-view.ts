@@ -26,3 +26,12 @@ export function prepareHeadline(pick: ChampSelectPick | null, championName: stri
 export function standingTarget(editor: number, recommended: number | null): number | null {
   return editor === recommended ? null : editor
 }
+
+/**
+ * The editor when the metric is not scored for the role shown (CS for support) and
+ * the player fixed no number: the role's own recommended goal is shown instead of a
+ * dash, without a stepper; Save keeps "recommended for the role you play".
+ */
+export function goalEditorMode({ recommended, fixed }: { recommended: number | null; fixed: number | null }): 'edit' | 'fallback' {
+  return recommended === null && fixed === null ? 'fallback' : 'edit'
+}
