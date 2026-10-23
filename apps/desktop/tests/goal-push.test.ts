@@ -92,7 +92,8 @@ describe('createGoalPush', () => {
     const { gp, updates, fetchFn } = make(base, f)
     await gp.onLiveState(live(snap(90, 7.5)))
     expect(updates).toEqual([{ table: 'lanepulse_push_tokens', values: { revoked_at: expect.any(String) }, eq: ['id', 't2'] }])
-    await gp.onLiveState(live(snap(400, 6.0)))
+    await gp.onLiveState(live(snap(400, 6.0))) // flip starts
+    await gp.onLiveState(live(snap(431, 6.0))) // held 30 s → sent
     const body = JSON.parse(String(fetchFn.mock.calls[1]![1].body))
     expect(body.map((m: { to: string }) => m.to)).toEqual(['ExponentPushToken[a]'])
   })

@@ -16,15 +16,20 @@ export const PUSH_MIN_GAME_SEC = 60
 export const PUSH_MIN_GAP_SEC = 60
 /** `interval` mode: a message at every multiple of this game time. */
 export const PUSH_INTERVAL_SEC = 300
+/** A status flip is reported only once it has held this long (a value oscillating around the goal sends nothing). */
+export const PUSH_CONFIRM_SEC = 30
 
 export type NotifierState = {
   lastStatus: GoalStatus | null
   lastSentGameSec: number | null
   lastIntervalMark: number | null
   finalSent: boolean
+  /** A flip waiting to hold PUSH_CONFIRM_SEC before it counts as a change. */
+  pendingStatus?: GoalStatus | null
+  pendingSinceSec?: number | null
 }
 
-export const initialNotifierState: NotifierState = { lastStatus: null, lastSentGameSec: null, lastIntervalMark: null, finalSent: false }
+export const initialNotifierState: NotifierState = { lastStatus: null, lastSentGameSec: null, lastIntervalMark: null, finalSent: false, pendingStatus: null, pendingSinceSec: null }
 
 export type Due = { title: 'LanePulse'; body: string; kind: 'status' | 'final' } | null
 
@@ -74,16 +79,33 @@ export function nextNotification(
   const status = goalStatus(goal, value)
   if (status === 'unknown') return { state, due: null }
 
-  const changed = state.lastStatus === null || status !== state.lastStatus
+  // A flip counts as a change only once it has held PUSH_CONFIRM_SEC; the first known status counts at once.
+  let pendingStatus = state.pendingStatus ?? null
+  let pendingSinceSec = state.pendingSinceSec ?? null
+  let changed = state.lastStatus === null
+  if (state.lastStatus !== null && status !== state.lastStatus) {
+    if (pendingStatus !== status) {
+      pendingStatus = status
+      pendingSinceSec = sec
+    } else if (pendingSinceSec !== null && sec - pendingSinceSec >= PUSH_CONFIRM_SEC) {
+      changed = true
+    }
+  } else {
+    pendingStatus = null
+    pendingSinceSec = null
+  }
   const mark = Math.floor(sec / PUSH_INTERVAL_SEC)
   const intervalDue = mode === 'interval' && mark > 0 && mark !== (state.lastIntervalMark ?? 0)
-  if (!changed && !intervalDue) return { state, due: null }
+  const pendingState = { ...state, pendingStatus, pendingSinceSec }
+  if (!changed && !intervalDue) return { state: pendingState, due: null }
 
-  // Hold (not drop) a due message inside the gap: state is left as is, so it fires once the gap passes.
-  if (state.lastSentGameSec !== null && sec - state.lastSentGameSec < PUSH_MIN_GAP_SEC) return { state, due: null }
+  // Hold (not drop) a due message inside the gap: the pending flip is kept, so it fires once the gap passes.
+  if (state.lastSentGameSec !== null && sec - state.lastSentGameSec < PUSH_MIN_GAP_SEC) return { state: pendingState, due: null }
 
+  // An interval tick reports the confirmed status, not a flip still being confirmed.
+  const reported: Exclude<GoalStatus, 'unknown'> = changed || state.lastStatus === null || state.lastStatus === 'unknown' ? status : state.lastStatus
   return {
-    state: { ...state, lastStatus: status, lastSentGameSec: sec, lastIntervalMark: mark },
-    due: { title: 'LanePulse', body: statusBody(sec, goal, status, value), kind: 'status' },
+    state: { ...pendingState, lastStatus: reported, lastSentGameSec: sec, lastIntervalMark: mark, pendingStatus: changed ? null : pendingStatus, pendingSinceSec: changed ? null : pendingSinceSec },
+    due: { title: 'LanePulse', body: statusBody(sec, goal, reported, value), kind: 'status' },
   }
 }
