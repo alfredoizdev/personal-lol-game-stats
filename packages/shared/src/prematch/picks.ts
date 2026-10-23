@@ -47,3 +47,14 @@ export function recommendedPicks(all: MatchSummary[], role: Role): { best: PickR
     .slice(0, LIMIT)
   return { best, mostPlayed }
 }
+
+export const CHAMP_SELECT_PICKS = 3
+
+export type PickCard = PickRow & { reason: 'best' | 'mostPlayed' }
+
+/** The champion select carousel: best win rate (3+ games) first, filled with the most played, three in all. */
+export function champSelectPicks(all: MatchSummary[], role: Role, limit = CHAMP_SELECT_PICKS): PickCard[] {
+  const { best, mostPlayed } = recommendedPicks(all, role)
+  const rows: PickCard[] = [...best.map((r) => ({ ...r, reason: 'best' as const })), ...mostPlayed.map((r) => ({ ...r, reason: 'mostPlayed' as const }))]
+  return rows.slice(0, limit)
+}

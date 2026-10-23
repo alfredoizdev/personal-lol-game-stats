@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { formatDuration, formatGoal, goalFor, goalMet, liveMetrics, metricInfo, summarizeMatch, type MatchV5 } from '@lpp/shared'
+import { formatDuration, formatGoal, goalFor, goalMet, liveMetrics, metricInfo, ROLE_LABEL, summarizeMatch, type MatchV5 } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
-import { LiveStatTiles } from '@/components/LiveStatTiles'
+import { PostGameStats } from '@/components/postgame/PostGameStats'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
@@ -22,8 +22,8 @@ const LIST = 20
 
 /**
  * Post-game (owner, 2026-10-23): what you did this game, whether the goal was
- * met, your lane against the opponent's final scoreboard numbers (owner,
- * 2026-10-23: the same table Live shows), and the match review as soon as
+ * met, your final numbers (owner, 2026-10-23: more stats here, the deep read in
+ * the review), your lane against the opponent, and the match review as soon as
  * Riot's history lists the game. Opens by itself when the game ends; Close
  * returns to the tabs.
  */
@@ -86,7 +86,7 @@ export default function PostGameScreen() {
             <ChampionPortrait championName={snapshot.me.championName} size={64} ring={review ? (review.me.win ? 'win' : 'loss') : 'none'} />
             <View style={styles.heroText}>
               <Text style={styles.result} maxFontSizeMultiplier={1.15}>{review ? (review.me.win ? 'Victory' : 'Defeat') : 'Game over'}</Text>
-              <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{snapshot.me.kills ?? 0} / {snapshot.me.deaths ?? 0} / {snapshot.me.assists ?? 0} · {snapshot.me.csPerMin === null ? '—' : snapshot.me.csPerMin.toFixed(1)} CS/min</Text>
+              <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{snapshot.me.championName}{snapshot.me.position ? ` · ${ROLE_LABEL[snapshot.me.position]}` : ''}{review ? ` · ${review.queueLabel}` : ''}</Text>
             </View>
           </View>
           {goal ? (
@@ -95,9 +95,9 @@ export default function PostGameScreen() {
               <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{goal.text}{goal.now ? ` · you: ${goal.now}` : ''}</Text>
             </View>
           ) : null}
-          <LiveStatTiles me={snapshot.me} teamKills={snapshot.teamKills} />
         </View>
       ) : null}
+      {snapshot ? <PostGameStats me={snapshot.me} teamKills={snapshot.teamKills} summary={review} /> : null}
       {snapshot ? <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} /> : null}
       <View style={styles.card}>
         <Text style={styles.cardTitle} maxFontSizeMultiplier={1.15}>Match review</Text>

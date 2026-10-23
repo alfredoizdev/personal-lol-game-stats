@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
-import { banSuggestion, championSummary, formatGoal, goalFor, META_BANS, metaBansFor, recommendedPicks, ROLE_LABEL, toughestMatchups, type Role } from '@lpp/shared'
+import { champSelectBans, champSelectPicks, championSummary, formatGoal, goalFor, META_BANS, metaBansFor, ROLE_LABEL, toughestMatchups, type Role } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
-import { BanList } from '@/components/champselect/BanList'
-import { MetaBanChips } from '@/components/champselect/MetaBanChips'
-import { PickList } from '@/components/champselect/PickList'
+import { BanGrid } from '@/components/champselect/BanGrid'
+import { PickCarousel } from '@/components/champselect/PickCarousel'
 import { ChampionSummaryCard } from '@/components/prematch/ChampionSummaryCard'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
@@ -19,9 +18,10 @@ import { colors, font, radius, space } from '@/theme/tokens'
 const roleWord = (r: Role) => (r === 'UTILITY' ? 'support' : r.toLowerCase())
 
 /**
- * Champion select (owner, 2026-10-23): bans from your games, the meta ban list,
- * your picks for the assigned role, and once locked, your record on the champion
- * and the goal that will apply. Own cell only; sentences, never orders.
+ * Champion select (owner, 2026-10-23): three picks for the assigned role as a big
+ * carousel on top, six bans to consider (three from your games, three from the
+ * meta list), and once locked, your record on the champion and the goal that will
+ * apply in place of the picks. Own cell only; statements, never orders.
  */
 export default function ChampSelectScreen() {
   const { phase } = useLiveFeed()
@@ -43,11 +43,8 @@ export default function ChampSelectScreen() {
   const displayName = (id: number, fallback: string) => champions.find((c) => c.id === id)?.name ?? fallback
 
   const matchups = useMemo(() => toughestMatchups(history.summaries, role, Infinity).map((r) => ({ ...r, championName: displayName(r.championId, r.championName) })), [history.summaries, role, champions])
-  const picks = useMemo(() => {
-    const p = recommendedPicks(history.summaries, role)
-    const name = (r: (typeof p.best)[number]) => ({ ...r, championName: displayName(r.championId, r.championName) })
-    return { best: p.best.map(name), mostPlayed: p.mostPlayed.map(name) }
-  }, [history.summaries, role, champions])
+  const bans = useMemo(() => champSelectBans(matchups, metaBansFor(role)), [matchups, role])
+  const picks = useMemo(() => champSelectPicks(history.summaries, role).map((r) => ({ ...r, championName: displayName(r.championId, r.championName) })), [history.summaries, role, champions])
   const record = champion ? championSummary(history.summaries, champion.id, role) : null
   const goal = account ? goalFor(goals, account.puuid, champion?.id ?? null, role) : null
 
@@ -67,10 +64,10 @@ export default function ChampSelectScreen() {
           <ChampionSummaryCard subject={`with ${champion.name} as ${roleWord(role)}`} summary={record} />
           {goal ? <Text style={styles.goal} maxFontSizeMultiplier={1.15}>Goal for this game: {formatGoal(goal)}</Text> : null}
         </View>
-      ) : null}
-      <BanList rows={matchups.slice(0, 5)} sentence={banSuggestion(matchups, ROLE_LABEL[role])} />
-      <MetaBanChips rows={metaBansFor(role)} updatedOn={META_BANS.updatedOn} />
-      <PickList best={picks.best} mostPlayed={picks.mostPlayed} />
+      ) : (
+        <PickCarousel picks={picks} roleLabel={ROLE_LABEL[role]} />
+      )}
+      <BanGrid bans={bans} roleLabel={ROLE_LABEL[role]} updatedOn={META_BANS.updatedOn} />
       <Text style={styles.footnote} maxFontSizeMultiplier={1.15}>From your own last {history.total} games. This screen closes by itself when the game loads.</Text>
     </Screen>
   )
