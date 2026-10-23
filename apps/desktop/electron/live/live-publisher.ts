@@ -5,7 +5,14 @@ export type LivePublisher = {
   publish: (snapshot: LiveSnapshotV2) => Promise<void>
   /** Client phase (lobby, queue, ready check…) as a `live-phase` broadcast on the same channel. */
   publishPhase: (payload: LivePhasePayload) => Promise<void>
+  /** Re-sends the last snapshot regardless of the change gate (a phone that just (re)subscribed asked for it). */
+  resend: () => Promise<void>
   stop: () => Promise<void>
+}
+
+export type LivePublisherOptions = {
+  /** A phone (re)subscribed and sent `live-ping`: answer with the current phase and snapshot. */
+  onPing?: () => void
 }
 
 /**
@@ -14,7 +21,7 @@ export type LivePublisher = {
  * lazily, only sends when `shouldPublish` says so, and drops the channel
  * after a failed send so the next publish handshakes fresh.
  */
-export function createLivePublisher(client: SupabaseClient, userId: string): LivePublisher {
+export function createLivePublisher(client: SupabaseClient, userId: string, opts: LivePublisherOptions = {}): LivePublisher {
   let channel: RealtimeChannel | null = null
   let pending: Promise<RealtimeChannel> | null = null // concurrent publishes share one handshake
   let prev: LiveSnapshotV2 | null = null
@@ -24,6 +31,7 @@ export function createLivePublisher(client: SupabaseClient, userId: string): Liv
     if (pending) return pending
     pending = (async () => {
       const ch = client.channel(liveTopic(userId), { config: { private: true } })
+      if (opts.onPing) ch.on('broadcast', { event: 'live-ping' }, () => opts.onPing?.())
       await new Promise<void>((resolve) => {
         ch.subscribe((status) => {
           if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') resolve()
@@ -54,6 +62,12 @@ export function createLivePublisher(client: SupabaseClient, userId: string): Liv
         return
       }
       prev = snapshot
+    },
+    async resend() {
+      if (!prev) return
+      const ch = await ensureChannel()
+      const result = await ch.send({ type: 'broadcast', event: 'live-snapshot', payload: prev }).catch(() => 'error')
+      if (result === 'error' || result === 'timed out') await dropChannel()
     },
     async publishPhase(payload) {
       const ch = await ensureChannel()

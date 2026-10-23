@@ -153,7 +153,15 @@ function lcuIdentity(): { gameName: string; tagLine: string } | null {
 /** Live poller + publisher run only while signed in AND League is connected. */
 function startLive(): void {
   if (livePoller || !supabaseClient || !userId) return
-  publisher = publisher ?? createLivePublisher(supabaseClient, userId)
+  publisher =
+    publisher ??
+    createLivePublisher(supabaseClient, userId, {
+      // A phone that just connected asks where we are: answer at once instead of making it wait for the heartbeat.
+      onPing: () => {
+        publishPhase()
+        if (lastLive.kind === 'live' || lastLive.kind === 'ended') void publisher?.resend().catch((err) => logger.warn(`resend failed: ${String(err)}`))
+      },
+    })
   goalPush = goalPush ?? createGoalPush(supabaseClient, userId, { log: logger, champions, identity: lcuIdentity })
   const demo = isDemo()
   const identity = () =>

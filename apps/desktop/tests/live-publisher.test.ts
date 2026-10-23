@@ -11,12 +11,17 @@ function snapshot(ts: number, cs = 100): LiveSnapshotV2 {
 }
 
 function fakeClient(sendResult: string = 'ok') {
+  const handlers = new Map<string, (msg: { payload?: unknown }) => void>()
   const channels: Array<{ name: string; opts: unknown; sent: unknown[]; subscribed: boolean; unsubscribed: boolean }> = []
   const client = {
     channel: vi.fn((name: string, opts?: unknown) => {
       const rec = { name, opts, sent: [] as unknown[], subscribed: false, unsubscribed: false }
       channels.push(rec)
       const ch = {
+        on: vi.fn((_type: string, filter: { event: string }, handler: (msg: { payload?: unknown }) => void) => {
+          handlers.set(filter.event, handler)
+          return ch
+        }),
         subscribe: (cb?: (status: string) => void) => {
           rec.subscribed = true
           cb?.('SUBSCRIBED')
@@ -34,7 +39,7 @@ function fakeClient(sendResult: string = 'ok') {
       return ch
     }),
   }
-  return { client, channels }
+  return { client, channels, handlers }
 }
 
 describe('createLivePublisher', () => {
@@ -78,6 +83,18 @@ describe('createLivePublisher', () => {
     expect(channels.length).toBe(1)
     expect(channels[0]?.sent[0]).toEqual({ type: 'broadcast', event: 'live-phase', payload: { v: 1, ts: 5, phase: 'Matchmaking', since: 12_000 } })
     expect(channels[0]?.sent[1]).toMatchObject({ event: 'live-snapshot' })
+  })
+
+  it('a live-ping from the phone (fresh subscription) triggers onPing and resend() repeats the last snapshot', async () => {
+    const { client, channels, handlers } = fakeClient()
+    const onPing = vi.fn()
+    const pub = createLivePublisher(client as never, 'u1', { onPing })
+    await pub.publish(snapshot(1000))
+    handlers.get('live-ping')!({ payload: { v: 1 } })
+    expect(onPing).toHaveBeenCalledTimes(1)
+    await pub.resend()
+    expect(channels[0]?.sent.length).toBe(2)
+    expect(channels[0]?.sent[1]).toMatchObject({ event: 'live-snapshot', payload: { ts: 1000 } })
   })
 
   it('stop() unsubscribes', async () => {

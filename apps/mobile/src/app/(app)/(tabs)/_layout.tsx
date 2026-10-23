@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router'
 import { TabBar } from '@/components/TabBar'
+import { useAutoOpenLive } from '@/hooks/useAutoOpenLive'
 import { colors } from '@/theme/tokens'
 
 /** The four main tabs. Match Review lives inside the Matches tab's own stack. */
 export default function TabsLayout() {
+  useAutoOpenLive()
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}

@@ -16,12 +16,12 @@ import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useLiveAlerts } from '@/hooks/useLiveAlerts'
-import { useLiveSnapshot } from '@/hooks/useLiveSnapshot'
+import { useLiveFeed } from '@/lib/live-feed-context'
 import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function LiveScreen() {
-  const { snapshot, state, connected, phase, phaseReceivedAt, receivedAt, endedAt, now } = useLiveSnapshot()
+  const { snapshot, state, connected, phase, phaseReceivedAt, receivedAt, endedAt, now } = useLiveFeed()
   const { data: account } = useLinkedAccount()
   const { goals } = useGoals(account ?? null)
   const { byName } = useChampionList()

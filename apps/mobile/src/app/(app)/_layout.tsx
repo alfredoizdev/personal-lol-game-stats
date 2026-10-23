@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { resolveAppGroupRedirect } from '@/lib/route-guard'
 import { usePushRegistration } from '@/hooks/usePushRegistration'
+import { LiveFeedProvider } from '@/lib/live-feed-context'
 import { colors } from '@/theme/tokens'
 
 export default function AppLayout() {
@@ -20,9 +21,11 @@ export default function AppLayout() {
   if (redirect) return <Redirect href={redirect} />
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="link" />
-    </Stack>
+    <LiveFeedProvider>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="link" />
+      </Stack>
+    </LiveFeedProvider>
   )
 }

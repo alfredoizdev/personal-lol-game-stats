@@ -77,7 +77,11 @@ export function useLiveSnapshot(): LiveFeed {
         latestPhaseTs.current = parsed.ts
         setPhase({ payload: parsed, receivedAt: Date.now() })
       })
-      .subscribe((status) => setConnected(status === 'SUBSCRIBED'))
+      .subscribe((status) => {
+        setConnected(status === 'SUBSCRIBED')
+        // Ask the desktop for the current phase and snapshot right away (a reconnect after background would otherwise wait for the heartbeat).
+        if (status === 'SUBSCRIBED') void channel.send({ type: 'broadcast', event: 'live-ping', payload: { v: 1 } }).catch(() => {})
+      })
     return () => {
       void supabase.removeChannel(channel)
       setConnected(false)
