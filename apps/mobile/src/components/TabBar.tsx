@@ -13,14 +13,15 @@ const TABS: Record<string, { label: string; icon: (color: string) => React.React
 /** Icons + labels centered, active tab in accent with a short underline (mockups 06–08). Bottom inset handles the Android nav bar. */
 /** Shape expo-router 58 passes to the `tabBar` prop of <Tabs>. */
 type TabBarProps = {
-  state: { index: number; routes: Array<{ key: string; name: string }> }
+  state: { index: number; routes: Array<{ key: string; name: string; state?: { index: number } }> }
   navigateToTab: (routeKey: string) => void
   insets: { bottom: number }
 }
 
 export function TabBar({ state, navigateToTab, insets }: TabBarProps) {
-  const focusedName = state.routes[state.index]?.name ?? 'matches'
-  if (tabBarHiddenFor(focusedName)) return null
+  const focusedRoute = state.routes[state.index] ?? { key: 'matches', name: 'matches' }
+  const focusedName = focusedRoute.name
+  if (tabBarHiddenFor(focusedRoute)) return null
   const active = activeTabFor(focusedName)
   const visible = state.routes.filter((r) => TABS[r.name])
   return (
