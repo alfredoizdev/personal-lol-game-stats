@@ -6,6 +6,7 @@ import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { LiveFeedProvider } from '@/lib/live-feed-context'
 import { HistoryProvider, useHistory } from '@/lib/history-context'
 import { LoadingScreen } from '@/components/LoadingScreen'
+import { useChampSelectScreen } from '@/hooks/useChampSelectScreen'
 import { colors } from '@/theme/tokens'
 
 export default function AppLayout() {
@@ -34,11 +35,13 @@ export default function AppLayout() {
 /** The tabs wait behind one loading screen until every game is loaded, once for every tab, so nothing moves on screen afterwards. */
 function AppStack() {
   const history = useHistory()
+  useChampSelectScreen()
   if (history.state === 'loading') return <LoadingScreen loaded={history.loaded} total={history.total} idsPending={history.idsPending} />
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="link" />
+      <Stack.Screen name="champ-select" options={{ presentation: 'modal' }} />
     </Stack>
   )
 }

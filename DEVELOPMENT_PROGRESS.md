@@ -170,3 +170,12 @@ Owner report: the tabs still opened while the 100 games loaded, and Prepare show
 ## Live alert cards made noticeable (2026-10-23)
 
 Owner: the event cards on Live were tiny and sat under the iPhone's status bar / Dynamic Island. The overlay is absolutely positioned so the safe-area padding never reached it: it is now offset by the top inset. Cards are larger (icon badge, 2 px tone border, bigger type, shadow) and stay 7 s. Mobile 190 tests, lint and typecheck clean.
+
+## Champion select screen (2026-10-23)
+
+Design note: `docs/superpowers/specs/2026-10-23-champ-select-screen-design.md`. Owner request; meta bans via option 1 (curated list in the repo).
+
+- The phone opens a modal screen on the transition into champion select, closes it when the phase leaves (the game loads → Live as before), and does not reopen a champion select the player dismissed.
+- For the assigned role (own cell): bans from your games (lane opponents you lost to most, W–L, win rate, sentence form), the curated meta ban list with its `updatedOn` date (`packages/shared/src/prematch/meta-bans.ts`, update by hand each patch), your picks (best win rate with 3+ games, then most played, with KDA and CS/min). Once a champion is locked: your record on it in that role and the goal that will apply.
+- Pure helpers tested: `recommendedPicks`, `metaBansFor` (shared), `champSelectNavigation` (mobile). Riot application text updated (own cell only, statements not orders).
+- Tests: shared 226, desktop 82, mobile 196. Lint and typecheck clean.
