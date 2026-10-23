@@ -1,8 +1,10 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js'
-import { liveTopic, shouldPublish, type LiveSnapshotV2 } from '@lpp/shared'
+import { liveTopic, shouldPublish, type LivePhasePayload, type LiveSnapshotV2 } from '@lpp/shared'
 
 export type LivePublisher = {
   publish: (snapshot: LiveSnapshotV2) => Promise<void>
+  /** Client phase (lobby, queue, ready check…) as a `live-phase` broadcast on the same channel. */
+  publishPhase: (payload: LivePhasePayload) => Promise<void>
   stop: () => Promise<void>
 }
 
@@ -52,6 +54,11 @@ export function createLivePublisher(client: SupabaseClient, userId: string): Liv
         return
       }
       prev = snapshot
+    },
+    async publishPhase(payload) {
+      const ch = await ensureChannel()
+      const result = await ch.send({ type: 'broadcast', event: 'live-phase', payload }).catch(() => 'error')
+      if (result === 'error' || result === 'timed out') await dropChannel()
     },
     async stop() {
       prev = null

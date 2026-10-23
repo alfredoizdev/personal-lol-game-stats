@@ -58,10 +58,23 @@ describe('startLivePoller', () => {
   it('is idle outside a game and waiting during champ select', async () => {
     const h = harness('None')
     await tick(0)
-    expect(h.states.at(-1)).toEqual({ kind: 'idle' })
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'None' })
     h.setPhase('ChampSelect')
     await tick(2000)
     expect(h.states.at(-1)).toEqual({ kind: 'waiting', phase: 'ChampSelect' })
+    h.handle.stop()
+  })
+
+  it('idle carries the client phase (lobby, end of game) so the phone can show it', async () => {
+    const h = harness('Lobby')
+    await tick(0)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'Lobby' })
+    h.setPhase('EndOfGame')
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'EndOfGame' })
+    h.setPhase(null)
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: null })
     h.handle.stop()
   })
 

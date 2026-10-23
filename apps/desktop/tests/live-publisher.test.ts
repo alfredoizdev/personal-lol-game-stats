@@ -70,6 +70,16 @@ describe('createLivePublisher', () => {
     expect(channels[0]?.unsubscribed).toBe(true)
   })
 
+  it('publishPhase sends a live-phase broadcast on the same private channel', async () => {
+    const { client, channels } = fakeClient()
+    const pub = createLivePublisher(client as never, 'u1')
+    await pub.publishPhase({ v: 1, ts: 5, phase: 'Matchmaking', since: 12_000 })
+    await pub.publish(snapshot(1000))
+    expect(channels.length).toBe(1)
+    expect(channels[0]?.sent[0]).toEqual({ type: 'broadcast', event: 'live-phase', payload: { v: 1, ts: 5, phase: 'Matchmaking', since: 12_000 } })
+    expect(channels[0]?.sent[1]).toMatchObject({ event: 'live-snapshot' })
+  })
+
   it('stop() unsubscribes', async () => {
     const { client, channels } = fakeClient()
     const pub = createLivePublisher(client as never, 'u1')

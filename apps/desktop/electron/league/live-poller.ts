@@ -15,7 +15,7 @@ import { lcuGetCurrentQueueId, lcuGetGameflowPhase } from './lcu-client'
 import { getLiveAllGameData } from './live-client'
 
 export type LiveState =
-  | { kind: 'idle' }
+  | { kind: 'idle'; phase?: GameflowPhase | null }
   | { kind: 'waiting'; phase: GameflowPhase }
   | { kind: 'live'; snapshot: LiveSnapshotV2 }
   | { kind: 'ended'; snapshot: LiveSnapshotV2 }
@@ -47,6 +47,7 @@ const NULL_PHASE_GRACE = 3
 function sameState(a: LiveState, b: LiveState): boolean {
   if (a.kind !== b.kind) return false
   if (a.kind === 'waiting' && b.kind === 'waiting') return a.phase === b.phase
+  if (a.kind === 'idle' && b.kind === 'idle') return (a.phase ?? null) === (b.phase ?? null)
   if ((a.kind === 'live' || a.kind === 'ended') && (b.kind === 'live' || b.kind === 'ended')) {
     const x = { ...a.snapshot, ts: 0 }
     const y = { ...b.snapshot, ts: 0 }
@@ -148,7 +149,7 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
         // A slow/unreachable LCU for a moment is not the end of the game.
       } else if (phase === null || END_PHASES.includes(phase)) {
         if (lastSnapshot) endGame()
-        else if (state.kind !== 'ended') emit({ kind: 'idle' })
+        else if (state.kind !== 'ended') emit({ kind: 'idle', phase })
       }
       lastPhase = phase
     } finally {
