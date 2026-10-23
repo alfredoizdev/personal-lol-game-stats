@@ -38,8 +38,12 @@ describe('eventLine', () => {
     expect(eventLine(ev({ type: 'GameStart', actor: null, victim: null, actorIsMe: false, actorIsAlly: null }))).toBeNull()
     expect(eventLine(ev({ type: 'MinionsSpawning', actor: null, victim: null, actorIsMe: false, actorIsAlly: null }))).toBeNull()
   })
-  it('never uses an instruction word', () => {
-    const forbidden = /\b(should|try|need|needs|more|less|must|go|push|ward|farm|back|group|focus)\b/i
+  it('never uses an instruction word (event lines and alert cards)', () => {
+    const forbidden = /\b(should|try|need|needs|more|less|must|go|push|ward|farm|group|focus|recall)\b/i
+    const s = snap({ events: [ev({ id: 1, actor: 'Yone', victim: 'Yasuo', actorIsMe: false, victimIsMe: true, actorIsAlly: false })] }, { isDead: true, respawnSec: 24 })
+    for (const a of alertsForSnapshot({ seen: new Set(), snapshot: s, goalPrev: 'on_track', goalNext: 'below', goalText: '7.0 CS/min', goalNow: '6.2' })) {
+      expect(`${a.title} ${a.body ?? ''}`).not.toMatch(forbidden)
+    }
     const types: LiveEvent['type'][] = ['FirstBlood', 'ChampionKill', 'Multikill', 'Ace', 'DragonKill', 'HeraldKill', 'BaronKill', 'TurretKilled', 'InhibKilled', 'GameEnd']
     for (const type of types) {
       for (const [actorIsMe, actorIsAlly] of [[true, true], [false, true], [false, false]] as const) {
@@ -61,6 +65,14 @@ describe('newEvents / alertsForSnapshot', () => {
     expect(alerts.map((a) => a.kind)).toEqual(['goal', 'kill'])
     expect(alerts[0]).toEqual({ id: 'goal:below', kind: 'goal', title: 'Below goal', body: 'Goal 7.0 CS/min · now 6.2', tone: 'bad' })
     expect(alerts[1]?.id).toBe('event:7')
+  })
+  it('a kill between other players is a feed row, not an alert card; assists and team events are', () => {
+    const others = ev({ id: 11, actor: 'Lee Sin', victim: 'Zed', actorIsMe: false, assisters: [] })
+    const assist = ev({ id: 12, actor: 'Lee Sin', victim: 'Zed', actorIsMe: false, assisters: ['Yasuo'] })
+    const dragon = ev({ id: 13, type: 'DragonKill', actor: 'Lee Sin', actorIsMe: false, victim: null, meta: { dragonType: 'Fire' } })
+    const alerts = alertsForSnapshot({ seen: new Set(), snapshot: snap({ events: [others, assist, dragon] }), goalPrev: null, goalNext: null, goalText: null, goalNow: null })
+    expect(alerts.map((a) => [a.id, a.kind])).toEqual([['event:12', 'assist'], ['event:13', 'objective']])
+    expect(eventLine(others, 'Yasuo')?.title).toBe('Lee Sin killed Zed') // still in the feed
   })
   it('no goal alert on the first known status or when unchanged; a death alert carries the respawn time', () => {
     const s = snap({ events: [ev({ id: 1, actor: 'Yone', victim: 'Yasuo', actorIsMe: false, victimIsMe: true, actorIsAlly: false })] }, { isDead: true, respawnSec: 24 })
@@ -103,18 +115,25 @@ describe('phaseView', () => {
 })
 
 describe('liveScreenMode', () => {
-  it('pre before a game, live during, ended right after, after when the client leaves the game or 60 s pass', () => {
-    expect(liveScreenMode({ view: 'waiting', endedAtMs: null, nowMs: 0, phase: 'Lobby', dismissed: false })).toBe('pre')
-    expect(liveScreenMode({ view: 'live', endedAtMs: null, nowMs: 0, phase: 'InProgress', dismissed: false })).toBe('live')
-    expect(liveScreenMode({ view: 'stale', endedAtMs: null, nowMs: 0, phase: 'InProgress', dismissed: false })).toBe('live')
-    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: 'InProgress', dismissed: false })).toBe('ended')
-    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: 'EndOfGame', dismissed: false })).toBe('after')
-    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 61_001, phase: null, dismissed: false })).toBe('after')
-    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: null, dismissed: false })).toBe('ended')
+  const fresh = 0 // phase received just now
+  it('pre before a game, live during, ended through the end-of-game screen, after once back in the lobby or 60 s pass', () => {
+    expect(liveScreenMode({ view: 'waiting', endedAtMs: null, nowMs: 0, phase: 'Lobby', phaseAgeMs: fresh, dismissed: false })).toBe('pre')
+    expect(liveScreenMode({ view: 'live', endedAtMs: null, nowMs: 0, phase: 'InProgress', phaseAgeMs: fresh, dismissed: false })).toBe('live')
+    expect(liveScreenMode({ view: 'stale', endedAtMs: null, nowMs: 0, phase: 'InProgress', phaseAgeMs: fresh, dismissed: false })).toBe('live')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: 'InProgress', phaseAgeMs: fresh, dismissed: false })).toBe('ended')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: 'EndOfGame', phaseAgeMs: fresh, dismissed: false })).toBe('ended') // the end-of-game screen is still the game
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: 'Lobby', phaseAgeMs: fresh, dismissed: false })).toBe('after')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 61_001, phase: null, phaseAgeMs: fresh, dismissed: false })).toBe('after')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: null, phaseAgeMs: fresh, dismissed: false })).toBe('ended')
   })
-  it('a dismissed after-card goes back to pre; an expired ended snapshot is pre', () => {
-    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'Lobby', dismissed: true })).toBe('pre')
-    expect(liveScreenMode({ view: 'waiting', endedAtMs: 1_000, nowMs: 700_000, phase: 'Lobby', dismissed: false })).toBe('pre')
+  it('a stale phase (no heartbeat for 30 s) counts as unknown, so an old Lobby cannot skip the ENDED hero', () => {
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 5_000, phase: 'Lobby', phaseAgeMs: 31_000, dismissed: false })).toBe('ended')
+  })
+  it('the next queue clears the after-card; a dismissed after-card goes back to pre; an expired ended snapshot is pre', () => {
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'Matchmaking', phaseAgeMs: fresh, dismissed: false })).toBe('pre')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'ChampSelect', phaseAgeMs: fresh, dismissed: false })).toBe('pre')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'Lobby', phaseAgeMs: fresh, dismissed: true })).toBe('pre')
+    expect(liveScreenMode({ view: 'waiting', endedAtMs: 1_000, nowMs: 700_000, phase: 'Lobby', phaseAgeMs: fresh, dismissed: false })).toBe('pre')
   })
 })
 

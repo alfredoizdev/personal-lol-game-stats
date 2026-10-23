@@ -149,7 +149,9 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
         // A slow/unreachable LCU for a moment is not the end of the game.
       } else if (phase === null || END_PHASES.includes(phase)) {
         if (lastSnapshot) endGame()
-        else if (state.kind !== 'ended') emit({ kind: 'idle', phase })
+        // After `ended`, keep that state while the phase that ended the game holds; a new phase
+        // (end-of-game screen → lobby) surfaces as idle with the phase so the phone can move on.
+        else if (state.kind !== 'ended' || phase !== lastPhase) emit({ kind: 'idle', phase })
       }
       lastPhase = phase
     } finally {

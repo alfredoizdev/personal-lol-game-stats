@@ -44,14 +44,13 @@ export default function LiveScreen() {
     if (snapshot) setTrend((h) => appendTrendPoint(h, snapshot))
   }, [snapshot])
 
-  const mode = liveScreenMode({ view: state, endedAtMs: endedAt, nowMs: now, phase: phase?.phase ?? null, dismissed })
+  const mode = liveScreenMode({ view: state, endedAtMs: endedAt, nowMs: now, phase: phase?.phase ?? null, phaseAgeMs: phase ? now - phaseReceivedAt : Infinity, dismissed })
   useEffect(() => {
     if (mode === 'live') setDismissed(false) // the next game clears the last-match card
   }, [mode])
 
   return (
-    <Screen title="Live Match" subtitle="In-game performance">
-      <AlertStack alerts={alerts} onDismiss={dismiss} />
+    <Screen title="Live Match" subtitle="In-game performance" overlay={<AlertStack alerts={alerts} onDismiss={dismiss} />}>
       {mode === 'pre' || mode === 'after' ? (
         <>
           {mode === 'after' && snapshot ? <LastMatchCard snapshot={snapshot} goal={liveGoal ? { text: liveGoal.text, met: liveGoal.met } : null} onDismiss={() => setDismissed(true)} /> : null}

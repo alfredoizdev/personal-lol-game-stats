@@ -8,15 +8,23 @@ export function Screen({
   title,
   subtitle,
   right,
+  overlay,
   children,
 }: {
   title: string
   subtitle?: string
   right?: ReactNode
+  /** Rendered above the scrolling content, pinned to the top of the screen (alert cards). */
+  overlay?: ReactNode
   children: ReactNode
 }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      {overlay ? (
+        <View style={styles.overlay} pointerEvents="box-none">
+          {overlay}
+        </View>
+      ) : null}
       <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <View>
@@ -42,4 +50,5 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontSize: font.body, marginTop: 2 },
   body: { flexGrow: 1, gap: space.md },
   footer: { paddingVertical: space.md },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: space.md, paddingTop: space.sm, maxWidth: 720, width: '100%', alignSelf: 'center' },
 })

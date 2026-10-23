@@ -65,6 +65,24 @@ describe('startLivePoller', () => {
     h.handle.stop()
   })
 
+  it('after a game ends, the end-of-game and lobby phases still surface (as idle with the phase) so the phone can return to Prepare', async () => {
+    const h = harness('InProgress')
+    h.setData(raw(100))
+    await tick(0)
+    h.setPhase('WaitingForStats')
+    await tick(2000)
+    expect(h.states.at(-1)?.kind).toBe('ended')
+    await tick(2000) // same phase: the ENDED state stays
+    expect(h.states.at(-1)?.kind).toBe('ended')
+    h.setPhase('EndOfGame')
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'EndOfGame' })
+    h.setPhase('Lobby')
+    await tick(2000)
+    expect(h.states.at(-1)).toEqual({ kind: 'idle', phase: 'Lobby' })
+    h.handle.stop()
+  })
+
   it('idle carries the client phase (lobby, end of game) so the phone can show it', async () => {
     const h = harness('Lobby')
     await tick(0)

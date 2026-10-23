@@ -98,6 +98,8 @@ export function alertsForSnapshot(input: {
     let kind: LiveAlertKind = KIND[e.type] ?? 'kill'
     let body = line.body
     if (e.type === 'ChampionKill') {
+      const assisted = e.assisters.includes(me.championName)
+      if (!e.actorIsMe && !e.victimIsMe && !assisted) continue // a kill between other players stays in the feed only
       kind = e.actorIsMe ? 'kill' : e.victimIsMe ? 'death' : 'assist'
       if (e.victimIsMe && me.isDead && me.respawnSec !== null && me.respawnSec > 0) body = `Back in ${Math.ceil(me.respawnSec)} s`
     }
@@ -139,14 +141,27 @@ export function phaseView(phase: LivePhasePayload | null, receivedAtMs: number, 
 }
 
 export type LiveScreenMode = 'pre' | 'live' | 'ended' | 'after'
-/** After the final snapshot, the ENDED hero gives way to Prepare once the client leaves the game or after this long. */
+/** After the final snapshot, the ENDED hero gives way to Prepare once the client is back in the lobby or after this long. */
 export const ENDED_HOLD_MS = 60_000
-const IN_GAME: readonly GameflowPhase[] = ['InProgress', 'Reconnect', 'GameStart']
+/** Phases that still belong to the game that just ended (the end-of-game screen included). */
+const GAME_AND_TAIL: readonly GameflowPhase[] = ['InProgress', 'Reconnect', 'GameStart', 'WaitingForStats', 'PreEndOfGame', 'EndOfGame']
+/** Phases that mean the next game is on its way: the Last-match card makes room. */
+const NEXT_QUEUE: readonly GameflowPhase[] = ['Matchmaking', 'ReadyCheck', 'ChampSelect']
 
-export function liveScreenMode(input: { view: LiveViewState; endedAtMs: number | null; nowMs: number; phase: GameflowPhase | null; dismissed: boolean }): LiveScreenMode {
+export function liveScreenMode(input: {
+  view: LiveViewState
+  endedAtMs: number | null
+  nowMs: number
+  phase: GameflowPhase | null
+  /** ms since the phone received that phase; older than PHASE_STALE_MS counts as unknown (same rule as phaseView). */
+  phaseAgeMs: number
+  dismissed: boolean
+}): LiveScreenMode {
   if (input.view === 'live' || input.view === 'stale') return 'live'
   if (input.view === 'ended') {
-    const left = input.phase !== null && !IN_GAME.includes(input.phase)
+    const phase = input.phaseAgeMs > PHASE_STALE_MS ? null : input.phase
+    if (phase !== null && NEXT_QUEUE.includes(phase)) return 'pre'
+    const left = phase !== null && !GAME_AND_TAIL.includes(phase)
     const held = input.endedAtMs !== null && input.nowMs - input.endedAtMs > ENDED_HOLD_MS
     if (!left && !held) return 'ended'
     return input.dismissed ? 'pre' : 'after'
