@@ -4,9 +4,9 @@ import {
   initialNotifierState,
   nextNotification,
   rowToGoal,
-  type Goal,
   type GoalPushMode,
   type GoalRow,
+  type StoredGoal,
   type NotifierState,
 } from '@lpp/shared'
 import type { LiveState } from '../league/live-poller'
@@ -37,7 +37,7 @@ type Context = {
   mode: GoalPushMode
   tokens: Array<{ id: string; expoToken: string }>
   linked: Array<{ puuid: string; gameName: string; tagLine: string }>
-  goals: Goal[]
+  goals: StoredGoal[]
 }
 
 /**
@@ -74,7 +74,7 @@ export function createGoalPush(client: SupabaseClient, userId: string, opts: Goa
         gameName: a.riot_id_game_name,
         tagLine: a.riot_id_tag_line,
       })),
-      goals: ((goals.data ?? []) as GoalRow[]).map(rowToGoal).filter((g): g is Goal => g !== null),
+      goals: ((goals.data ?? []) as GoalRow[]).map(rowToGoal).filter((g): g is StoredGoal => g !== null),
     }
   }
 

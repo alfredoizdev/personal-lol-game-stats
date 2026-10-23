@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine } from '../src/match-v5'
 import type { LiveSnapshotV2 } from '../src/live'
-import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, type Goal } from '../src/prematch/goal'
+import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, type StoredGoal } from '../src/prematch/goal'
 import { game } from './analysis-fixtures'
 
 const at = (i: number) => new Date(Date.UTC(2026, 9, 1 + i)).toISOString()
@@ -40,7 +40,7 @@ describe('defaultGoal (owner 2026-10-22: the editor starts at the recommended ro
   })
 })
 
-const goal = (p: Partial<Goal>): Goal => ({ puuid: 'me', championId: 222, role: 'BOTTOM', metric: 'csPerMin', target: 7, setAt: '2026-10-20T10:00:00.000Z', ...p })
+const goal = (p: Partial<StoredGoal>): StoredGoal => ({ puuid: 'me', championId: 222, role: 'BOTTOM', metric: 'csPerMin', target: 7, setAt: '2026-10-20T10:00:00.000Z', ...p })
 
 describe('goalFor', () => {
   it('prefers the newest exact champion goal, then any champion in that role; filters by puuid', () => {
@@ -56,6 +56,24 @@ describe('goalFor', () => {
     expect(goalFor(goals, 'me', 222, null)!.target).toBe(7.5) // position unknown (ARAM/Swiftplay)
     expect(goalFor(goals, 'me', 81, null)).toBeNull() // no goal for this champion and no role to fall back on
     expect(goalFor(goals, 'me', null, null)).toBeNull()
+  })
+  it('a standing goal (any champion, any role) applies to every game; "recommended" resolves to the target of the role you end up playing', () => {
+    const standing = { ...goal({ championId: 0, target: 7, setAt: '2026-10-19T10:00:00.000Z' }), role: 'ANY' as const }
+    const recommended = { ...standing, target: null, metric: 'csPerMin' as const, setAt: '2026-10-19T11:00:00.000Z' }
+    expect(goalFor([standing], 'me', 238, 'MIDDLE')).toMatchObject({ role: 'MIDDLE', target: 7, source: 'standing' })
+    expect(goalFor([recommended], 'me', 238, 'MIDDLE')).toMatchObject({ role: 'MIDDLE', target: 7.0, source: 'standing' }) // mid CS target
+    expect(goalFor([recommended], 'me', 238, 'BOTTOM')!.target).toBe(7.5)
+    expect(goalFor([recommended], 'me', 238, 'UTILITY')).toBeNull() // no CS target for support
+    expect(goalFor([recommended], 'me', 238, null)).toBeNull() // no role known: cannot resolve "recommended"
+    expect(goalFor([{ ...recommended, metric: 'deathsPer10' }], 'me', 238, null)).toBeNull()
+  })
+  it('a champion or role goal beats the standing goal; the standing goal fills the gaps', () => {
+    const standing = { ...goal({ championId: 0, target: 9, setAt: '2026-10-23T10:00:00.000Z' }), role: 'ANY' as const } // newest, but least specific
+    const forRole = goal({ championId: 51, target: 6, setAt: '2026-10-22T10:00:00.000Z' })
+    expect(goalFor([standing, forRole], 'me', 222, 'BOTTOM')).toMatchObject({ target: 6, source: 'role' })
+    expect(goalFor([standing, forRole], 'me', 222, 'MIDDLE')).toMatchObject({ target: 9, source: 'standing' })
+    expect(goalFor([goal({ target: 7.5 })], 'me', 222, 'BOTTOM')!.source).toBe('exact')
+    expect(goalFor([goal({ target: 7.5 })], 'me', 222, 'TOP')!.source).toBe('champion')
   })
   it('honours a cutoff: a goal saved during champ select still counts for that game', () => {
     const goals = [goal({ target: 7, setAt: '2026-10-20T10:00:00.000Z' }), goal({ target: 8, setAt: '2026-10-20T10:31:00.000Z' })]

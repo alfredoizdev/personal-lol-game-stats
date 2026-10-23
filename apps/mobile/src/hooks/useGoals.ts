@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Goal } from '@lpp/shared'
+import type { StoredGoal } from '@lpp/shared'
 import { useAuth } from '@/lib/auth-context'
 import { fetchGoals, saveGoal } from '@/lib/goals'
 import type { LinkedAccount } from '@/lib/linked-account'
@@ -8,7 +8,7 @@ import { matchKeys } from '@/lib/match-keys'
 import { supabase } from '@/lib/supabase'
 
 /** The signed-in user's goals for the active Riot account, newest first, plus a save that appends a row. */
-export function useGoals(account: LinkedAccount | null): { goals: Goal[]; loading: boolean; save: (g: Omit<Goal, 'setAt' | 'puuid'>) => Promise<void>; saving: boolean } {
+export function useGoals(account: LinkedAccount | null): { goals: StoredGoal[]; loading: boolean; save: (g: Omit<StoredGoal, 'setAt' | 'puuid'>) => Promise<void>; saving: boolean } {
   const { user } = useAuth()
   const qc = useQueryClient()
   const [saving, setSaving] = useState(false)
@@ -18,7 +18,7 @@ export function useGoals(account: LinkedAccount | null): { goals: Goal[]; loadin
     enabled: !!user && !!account,
     staleTime: 5 * 60 * 1000,
   })
-  const save = async (g: Omit<Goal, 'setAt' | 'puuid'>) => {
+  const save = async (g: Omit<StoredGoal, 'setAt' | 'puuid'>) => {
     if (!user || !account) return
     setSaving(true)
     try {

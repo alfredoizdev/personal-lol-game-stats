@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalReference, metricInfo, type Goal, type GoalMetric, type MatchSummary, type Role } from '@lpp/shared'
+import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalReference, metricInfo, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
 import { GoalReference } from './GoalReference'
 import { stepTarget } from '@/lib/goal-steps'
 import { goalSaveState } from '@/lib/prematch-ui'
@@ -23,16 +23,16 @@ export function GoalEditor({
   saving,
 }: {
   summaries: MatchSummary[]
-  goals: Goal[]
+  goals: StoredGoal[]
   puuid: string
   championId: number
   championName: string
   role: Role
-  onSave: (g: Omit<Goal, 'setAt' | 'puuid'>) => Promise<void>
+  onSave: (g: Omit<StoredGoal, 'setAt' | 'puuid'>) => Promise<void>
   saving: boolean
 }) {
   const current = goalFor(goals, puuid, championId, role)
-  const exact = current && current.championId === championId ? current : null
+  const exact = current && current.source === 'exact' ? current : null
   const [metric, setMetric] = useState<GoalMetric>(() => exact?.metric ?? defaultGoal(summaries, championId, role).metric)
   const suggested = defaultGoal(summaries, championId, role, metric)
   const [target, setTarget] = useState<number | null>(() => (exact?.metric === metric ? exact.target : suggested.target))
@@ -101,7 +101,7 @@ export function GoalEditor({
       <GoalReference metric={metric} role={role} reference={goalReference(summaries, championId, role, metric)} target={target} />
       {current ? (
         <Text style={styles.source} maxFontSizeMultiplier={1.15}>
-          Current goal{current.championId === championId ? '' : ' (any champion in this role)'}: {formatGoal(current)}
+          Current goal{current.source === 'exact' ? '' : current.source === 'role' ? ' (any champion in this role)' : current.source === 'champion' ? ` (${championName} in any role)` : ' (your goal for every game)'}: {formatGoal(current)}
         </Text>
       ) : null}
       <Pressable

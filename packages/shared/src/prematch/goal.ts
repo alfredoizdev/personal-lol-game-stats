@@ -20,7 +20,17 @@ export const GOAL_METRICS: ReadonlyArray<{ key: GoalMetric; label: string; unit:
 
 export const metricInfo = (key: GoalMetric) => GOAL_METRICS.find((m) => m.key === key)!
 
-export type Goal = { puuid: string; championId: number; role: Role; metric: GoalMetric; target: number; setAt: string }
+/**
+ * A goal as stored: per champion+role, or STANDING (championId 0, role 'ANY')
+ * for every game. A null target on a standing goal means "the recommended
+ * value for the role I end up playing", resolved at game time.
+ */
+export type StoredGoal = { puuid: string; championId: number; role: Role | 'ANY'; metric: GoalMetric; target: number | null; setAt: string }
+
+export type GoalSource = 'exact' | 'role' | 'champion' | 'standing'
+
+/** A goal resolved for a concrete game: a real role and a numeric target. */
+export type Goal = { puuid: string; championId: number; role: Role; metric: GoalMetric; target: number; setAt: string; source: GoalSource }
 
 /**
  * What the goal editor starts from (owner, 2026-10-22): the RECOMMENDED value is
@@ -79,14 +89,29 @@ export function defaultGoal(all: MatchSummary[], championId: number, role: Role,
  * that reports no position). `role` null = position unknown. Optionally only rows
  * set at or before `beforeMs`.
  */
-export function goalFor(goals: Goal[], puuid: string, championId: number | null, role: Role | null, beforeMs?: number): Goal | null {
+export function goalFor(goals: StoredGoal[], puuid: string, championId: number | null, role: Role | null, beforeMs?: number): Goal | null {
   const mine = goals
     .filter((g) => g.puuid === puuid && (beforeMs === undefined || Date.parse(g.setAt) <= beforeMs))
     .sort((a, b) => Date.parse(b.setAt) - Date.parse(a.setAt))
-  const inRole = role === null ? [] : mine.filter((g) => g.role === role)
+  const specific = mine.filter((g) => g.role !== 'ANY')
+  const inRole = role === null ? [] : specific.filter((g) => g.role === role)
   const exact = championId !== null ? inRole.find((g) => g.championId === championId) : undefined
-  const forChampion = championId !== null ? mine.find((g) => g.championId === championId) : undefined
-  return exact ?? inRole[0] ?? forChampion ?? null
+  const forChampion = championId !== null && championId !== 0 ? specific.find((g) => g.championId === championId) : undefined
+  const standing = mine.find((g) => g.role === 'ANY')
+  const candidates: Array<[StoredGoal | undefined, GoalSource]> = [[exact, 'exact'], [inRole[0], 'role'], [forChampion, 'champion'], [standing, 'standing']]
+  for (const [g, source] of candidates) {
+    if (!g) continue
+    const resolvedRole: Role | null = g.role === 'ANY' ? role : g.role
+    const target = g.target ?? (resolvedRole === null ? null : roleTarget(resolvedRole, g.metric))
+    if (resolvedRole === null || target === null) continue
+    return { puuid: g.puuid, championId: g.championId, role: resolvedRole, metric: g.metric, target, setAt: g.setAt, source }
+  }
+  return null
+}
+
+/** Human line for a stored goal in the editor ("≤ 1.5 deaths per 10 min" or "CS / min · recommended for your role"). */
+export function formatStoredGoal(goal: Pick<StoredGoal, 'metric' | 'target'>): string {
+  return goal.target === null ? `${metricInfo(goal.metric).label} · recommended for your role` : formatGoal({ metric: goal.metric, target: goal.target })
 }
 
 const MIN_SEC = 60

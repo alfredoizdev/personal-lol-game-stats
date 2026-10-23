@@ -13,6 +13,7 @@ import { ChampionSummaryCard } from './ChampionSummaryCard'
 import { GoalEditor } from './GoalEditor'
 import { MatchupsTable } from './MatchupsTable'
 import { ROLE_LABEL, RoleChips } from './RoleChips'
+import { StandingGoalEditor } from './StandingGoalEditor'
 
 /** "Prepare your next game": champion + role → your own history → a goal (spec 2.1–2.4). */
 export function PrepareCard({ account }: { account: LinkedAccount }) {
@@ -72,6 +73,9 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Prepare your next game</Text>
       <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Your own games only. Pick what you are about to play.</Text>
       <BackfillBar loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onRetry={() => history.start()} />
+      <StandingGoalEditor goals={goals} onSave={save} saving={saving} />
+      <View style={styles.divider} />
+      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Or prepare a specific pick: its goal wins when you play it.</Text>
       <RoleChips value={effectiveRole} onChange={setRole} />
       <ChampionPicker champions={champions} played={played} selected={selected} onSelect={(c) => setChampionId(c.id)} />
       {selected && summary ? (

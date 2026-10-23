@@ -14,7 +14,7 @@ import {
   type GoalPushMode,
 } from '../src/notify/goal-notifier'
 
-const csGoal: Goal = { puuid: 'p', championId: 157, role: 'MIDDLE', metric: 'csPerMin', target: 7, setAt: '2026-10-20T00:00:00Z' }
+const csGoal: Goal = { puuid: 'p', championId: 157, role: 'MIDDLE', metric: 'csPerMin', target: 7, setAt: '2026-10-20T00:00:00Z', source: 'exact' }
 const kpGoal: Goal = { ...csGoal, metric: 'kpPct', target: 55 }
 
 function snap(gameTimeSeconds: number | null, over: Partial<LiveSnapshotV2['me']> = {}, teamKills: number | null = 5): LiveSnapshotV2 {
