@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { banSuggestion, championSummary, roleSummary, toughestMatchups, ROLE_LABEL, type Role } from '@lpp/shared'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
-import { useOwnHistory } from '@/hooks/useOwnHistory'
+import { useHistory } from '@/lib/history-context'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { useLiveFeed } from '@/lib/live-feed-context'
 import { activeRole, homeRole, prepareHeadline } from '@/lib/prepare-view'
@@ -25,14 +25,7 @@ const roleWord = (r: Role) => (r === 'UTILITY' ? 'support' : r.toLowerCase())
  * the locked champion by itself.
  */
 export function PrepareCard({ account }: { account: LinkedAccount }) {
-  const history = useOwnHistory(account, false)
-  // One rule for every stats page: it loads its window (the last 100 games) by itself, once per account.
-  const startedFor = useRef<string | null>(null)
-  useEffect(() => {
-    if (history.total === 0 || startedFor.current === account.puuid) return
-    startedFor.current = account.puuid
-    if (history.loaded < history.total) history.start()
-  }, [account.puuid, history])
+  const history = useHistory() // loaded once at launch, shared by every tab
   const { champions } = useChampionList()
   const { goals, save, saving } = useGoals(account)
 

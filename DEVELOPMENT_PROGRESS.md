@@ -149,3 +149,11 @@ Design note: `docs/superpowers/specs/2026-10-23-prepare-by-role-design.md`. Owne
 - In champion select the card follows the assigned role and the locked champion from the player's own cell (headline "Playing Zed · Mid").
 - Also: the Game events feed is hidden once the match has ended (PR #3).
 - Tests: shared 220, desktop 82, mobile 183, site 1. Lint and typecheck clean.
+
+## History loaded once, launch loading screen (2026-10-23)
+
+Owner feedback: "a loading screen while the games load, and load them once at start for every page, not each time I enter a screen".
+
+- `HistoryProvider` in the app layout mounts the own-history hook once per account and starts the 100-game window as soon as the id list is known; `useHistory()` replaces per-screen `useOwnHistory` calls in Performance and Prepare (no screen starts a load on entry any more; Retry remains).
+- `LoadingScreen` holds the tabs until the first 20 games are ready (what Matches and Performance show first); the remaining 80 keep loading behind the tabs. Never blocks on nothing (no games or a run that stopped short shows the tabs, which explain and offer Retry); sticky per account so a later refetch never flashes it.
+- Tests: mobile 187 (`app-load.test.ts`). Lint and typecheck clean.

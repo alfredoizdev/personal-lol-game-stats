@@ -4,6 +4,8 @@ import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { resolveAppGroupRedirect } from '@/lib/route-guard'
 import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { LiveFeedProvider } from '@/lib/live-feed-context'
+import { HistoryProvider, useHistory } from '@/lib/history-context'
+import { LoadingScreen } from '@/components/LoadingScreen'
 import { colors } from '@/theme/tokens'
 
 export default function AppLayout() {
@@ -22,10 +24,21 @@ export default function AppLayout() {
 
   return (
     <LiveFeedProvider>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="link" />
-      </Stack>
+      <HistoryProvider account={data ?? null}>
+        <AppStack />
+      </HistoryProvider>
     </LiveFeedProvider>
+  )
+}
+
+/** The tabs wait behind one loading screen until the first games are ready; the rest loads behind them, once for every tab. */
+function AppStack() {
+  const history = useHistory()
+  if (history.state === 'loading') return <LoadingScreen loaded={history.loadedWithin(20)} total={history.total} idsPending={history.idsPending} />
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="link" />
+    </Stack>
   )
 }
