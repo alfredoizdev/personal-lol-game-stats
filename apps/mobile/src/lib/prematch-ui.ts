@@ -1,4 +1,4 @@
-import { formatGoal, type GoalMetric } from '@lpp/shared'
+import { formatGoal, metricInfo, type GoalMetric } from '@lpp/shared'
 import { BACKFILL_COUNT } from './backfill'
 
 /**
@@ -17,10 +17,11 @@ export function backfillLine(s: { idsPending: boolean; total: number; loaded: nu
 export type GoalSaveState = { kind: 'saved' | 'dirty'; line: string } | null
 
 /** After "Save goal": a confirmation that stays visible, and a reminder once the editor moves away from what was saved. */
-export function goalSaveState(saved: { metric: GoalMetric; target: number } | null, editor: { metric: GoalMetric; target: number | null }): GoalSaveState {
+export function goalSaveState(saved: { metric: GoalMetric; target: number | null } | null, editor: { metric: GoalMetric; target: number | null }): GoalSaveState {
   if (!saved) return null
   const same = editor.metric === saved.metric && editor.target === saved.target
+  const words = saved.target === null ? `${metricInfo(saved.metric).label}, recommended for the role you play` : formatGoal({ metric: saved.metric, target: saved.target })
   return same
-    ? { kind: 'saved', line: `Goal saved · ${formatGoal(saved)} · shows on Live and in your match review` }
-    : { kind: 'dirty', line: `Saved goal: ${formatGoal(saved)} · save again to replace it` }
+    ? { kind: 'saved', line: `Goal saved · ${words} · shows on Live and in your match review` }
+    : { kind: 'dirty', line: `Saved goal: ${words} · save again to replace it` }
 }

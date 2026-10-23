@@ -33,3 +33,13 @@ describe('goalSaveState (visible confirmation after Save goal)', () => {
     expect(goalSaveState(saved, { metric: 'kpPct', target: 7 })?.kind).toBe('dirty')
   })
 })
+
+describe('goalSaveState with a standing goal (one editor for every game)', () => {
+  it('confirms a recommended-for-your-role goal in words, no bare number', () => {
+    expect(goalSaveState({ metric: 'csPerMin', target: null }, { metric: 'csPerMin', target: null })).toEqual({ kind: 'saved', line: 'Goal saved · CS / min, recommended for the role you play · shows on Live and in your match review' })
+  })
+  it('a fixed number stays a fixed number; moving off it is dirty', () => {
+    expect(goalSaveState({ metric: 'deathsPer10', target: 2 }, { metric: 'deathsPer10', target: 2 })?.kind).toBe('saved')
+    expect(goalSaveState({ metric: 'csPerMin', target: null }, { metric: 'csPerMin', target: 7.5 })).toEqual({ kind: 'dirty', line: 'Saved goal: CS / min, recommended for the role you play · save again to replace it' })
+  })
+})

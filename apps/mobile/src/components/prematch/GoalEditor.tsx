@@ -4,20 +4,23 @@ import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalReference, metricIn
 import { GoalReference } from './GoalReference'
 import { stepTarget } from '@/lib/goal-steps'
 import { goalSaveState } from '@/lib/prematch-ui'
+import { standingTarget } from '@/lib/prepare-view'
 import { colors, font, radius, space } from '@/theme/tokens'
 
+const roleWordOf = (role: Role) => (role === 'UTILITY' ? 'support' : role.toLowerCase())
+
 /**
- * One measurable goal for the next game: metric, target (stepper) and Save.
- * The default and where it came from are always stated (spec 2.4).
- * Mounted with `key={champion:role}` by the parent, so a new champion or role
- * starts from the saved goal for it (else the default) and never keeps stale state.
+ * The one goal editor (owner, 2026-10-23: one place to set the goal, easy to use).
+ * Metric, target (stepper) and Save. The goal is for EVERY game: left at the
+ * recommended value it is stored as "recommended for the role you play" and
+ * resolved at game time; moved, it is a fixed number. `role` is the role Prepare
+ * is showing (champion select's, else yours), so the recommended value and your
+ * average match what you are about to play.
  */
 export function GoalEditor({
   summaries,
   goals,
   puuid,
-  championId,
-  championName,
   role,
   onSave,
   saving,
@@ -25,50 +28,45 @@ export function GoalEditor({
   summaries: MatchSummary[]
   goals: StoredGoal[]
   puuid: string
-  championId: number
-  championName: string
   role: Role
   onSave: (g: Omit<StoredGoal, 'setAt' | 'puuid'>) => Promise<void>
   saving: boolean
 }) {
-  const current = goalFor(goals, puuid, championId, role)
-  const exact = current && current.source === 'exact' ? current : null
-  const [metric, setMetric] = useState<GoalMetric>(() => exact?.metric ?? defaultGoal(summaries, championId, role).metric)
-  const suggested = defaultGoal(summaries, championId, role, metric)
-  const [target, setTarget] = useState<number | null>(() => (exact?.metric === metric ? exact.target : suggested.target))
+  const standing = goals.filter((g) => g.puuid === puuid && g.role === 'ANY').sort((a, b) => Date.parse(b.setAt) - Date.parse(a.setAt))[0] ?? null
+  const current = goalFor(goals, puuid, null, role)
+  const [metric, setMetric] = useState<GoalMetric>(() => standing?.metric ?? defaultGoal(summaries, 0, role).metric)
+  const suggested = defaultGoal(summaries, 0, role, metric)
+  const fixed = standing && standing.metric === metric && standing.target !== null ? standing.target : null
+  const [target, setTarget] = useState<number | null>(() => fixed ?? suggested.target)
   const [touched, setTouched] = useState(false)
-  const [savedGoal, setSavedGoal] = useState<{ metric: GoalMetric; target: number } | null>(null)
+  const [savedGoal, setSavedGoal] = useState<{ metric: GoalMetric; target: number | null } | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const lastSuggested = useRef(suggested.target)
 
-  // Changing the metric starts from the saved goal for it, else the default.
+  // Changing the metric starts from the saved fixed number for it, else the recommended value.
   useEffect(() => {
-    setTarget(exact && exact.metric === metric ? exact.target : defaultGoal(summaries, championId, role, metric).target)
+    setTarget(fixed ?? defaultGoal(summaries, 0, role, metric).target)
     setTouched(false)
   }, [metric])
 
-  // While the history is still loading, follow the moving default until the player touches the stepper.
+  // The recommended value moves with the role champion select assigns (and while the history loads): follow it until the player touches the stepper.
   useEffect(() => {
     if (suggested.target !== lastSuggested.current) {
       lastSuggested.current = suggested.target
-      if (!touched && !(exact && exact.metric === metric)) setTarget(suggested.target)
+      if (!touched && fixed === null) setTarget(suggested.target)
     }
-  }, [suggested.target, touched, exact, metric])
+  }, [suggested.target, touched, fixed])
 
   const info = metricInfo(metric)
-  const roleWord = role === 'UTILITY' ? 'support' : role.toLowerCase()
+  const roleWord = roleWordOf(role)
   const fmt = (v: number) => `${v.toFixed(info.decimals)}${metric === 'kpPct' ? '%' : ''}`
   const average = suggested.average
   const source =
     suggested.source === 'none'
-      ? 'No recommended value for this metric in this role — set it by hand'
-      : `Recommended: the ${roleWord} target the match score uses` +
-        (average
-          ? average.source === 'champion'
-            ? ` · your average with ${championName}: ${fmt(average.value)} (${average.n} games)`
-            : ` · your ${roleWord} average: ${fmt(average.value)} (${average.n} games)`
-          : ` · no games of yours with ${championName} as ${roleWord} yet`)
-  const saveState = goalSaveState(savedGoal, { metric, target })
+      ? `No recommended ${info.label} for ${roleWord} — set it by hand or pick another metric`
+      : `Recommended: the ${roleWord} target the match score uses` + (average ? ` · your ${roleWord} average: ${fmt(average.value)} (${average.n} games)` : ` · no ${roleWord} games of yours loaded yet`)
+  const stored = target === null ? null : standingTarget(target, suggested.target)
+  const saveState = goalSaveState(savedGoal, { metric, target: stored })
   const step = (dir: 1 | -1) => {
     setTouched(true)
     setSaveError(null)
@@ -98,10 +96,10 @@ export function GoalEditor({
         </Pressable>
       </View>
       <Text style={styles.source} maxFontSizeMultiplier={1.15}>{source}</Text>
-      <GoalReference metric={metric} role={role} reference={goalReference(summaries, championId, role, metric)} target={target} />
+      <GoalReference metric={metric} role={role} reference={goalReference(summaries, 0, role, metric)} target={target} />
       {current ? (
         <Text style={styles.source} maxFontSizeMultiplier={1.15}>
-          Current goal{current.source === 'exact' ? '' : current.source === 'role' ? ' (any champion in this role)' : current.source === 'champion' ? ` (${championName} in any role)` : ' (your goal for every game)'}: {formatGoal(current)}
+          Current goal as {roleWord}: {formatGoal(current)}{current.source === 'standing' && standing?.target === null ? ' (recommended for the role you play)' : ''}
         </Text>
       ) : null}
       <Pressable
@@ -109,8 +107,9 @@ export function GoalEditor({
         onPress={() => {
           if (target === null) return
           setSaveError(null)
-          onSave({ championId, role, metric, target })
-            .then(() => setSavedGoal({ metric, target }))
+          const g = { championId: 0, role: 'ANY' as const, metric, target: stored }
+          onSave(g)
+            .then(() => setSavedGoal({ metric, target: stored }))
             .catch((e: unknown) => setSaveError(e instanceof Error ? e.message : 'Could not save the goal'))
         }}
         accessibilityRole="button"
@@ -125,7 +124,7 @@ export function GoalEditor({
         </Text>
       ) : null}
       <Text style={styles.hint} maxFontSizeMultiplier={1.15}>
-        Shows on the Live tab when you play {championName} as {role === 'UTILITY' ? 'support' : role.toLowerCase()}, and is checked in the match review. Step {info.step}{info.unit.trim()}.
+        Shows on the Live tab whatever role you get, and is checked in the match review. Leave the recommended value and it adapts to the role; move it and that number applies. Step {info.step}{info.unit.trim()}.
       </Text>
     </View>
   )
