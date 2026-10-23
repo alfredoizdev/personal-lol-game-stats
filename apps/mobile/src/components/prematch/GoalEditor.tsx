@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalReference, metricInfo, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
+import { GOAL_METRICS, defaultGoal, defaultMetricFor, formatGoal, goalFor, goalReference, metricInfo, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
 import { GoalReference } from './GoalReference'
 import { stepTarget } from '@/lib/goal-steps'
 import { goalSaveState } from '@/lib/prematch-ui'
-import { standingTarget } from '@/lib/prepare-view'
+import { goalEditorMode, standingTarget } from '@/lib/prepare-view'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 const roleWordOf = (role: Role) => (role === 'UTILITY' ? 'support' : role.toLowerCase())
@@ -61,11 +61,18 @@ export function GoalEditor({
   const roleWord = roleWordOf(role)
   const fmt = (v: number) => `${v.toFixed(info.decimals)}${metric === 'kpPct' ? '%' : ''}`
   const average = suggested.average
+  // CS is not scored for support: with nothing fixed, the support goal is the role's own recommended metric (vision).
+  const mode = goalEditorMode({ recommended: suggested.target, fixed })
+  const fallback = mode === 'fallback' ? defaultGoal(summaries, 0, role, defaultMetricFor(role)) : null
   const source =
-    suggested.source === 'none'
-      ? `No recommended ${info.label} for ${roleWord} — set it by hand or pick another metric`
-      : `Recommended: the ${roleWord} target the match score uses` + (average ? ` · your ${roleWord} average: ${fmt(average.value)} (${average.n} games)` : ` · no ${roleWord} games of yours loaded yet`)
-  const stored = target === null ? null : standingTarget(target, suggested.target)
+    fallback && fallback.target !== null
+      ? `${info.label} is not scored for ${roleWord}, so as ${roleWord} your goal is the recommended ${metricInfo(fallback.metric).label.toLowerCase()}` +
+        (fallback.average ? ` · your ${roleWord} average: ${fallback.average.value.toFixed(metricInfo(fallback.metric).decimals)} (${fallback.average.n} games)` : '')
+      : suggested.source === 'none'
+        ? `No recommended ${info.label} for ${roleWord} — set it by hand or pick another metric`
+        : `Recommended: the ${roleWord} target the match score uses` + (average ? ` · your ${roleWord} average: ${fmt(average.value)} (${average.n} games)` : ` · no ${roleWord} games of yours loaded yet`)
+  const stored = fallback ? null : target === null ? null : standingTarget(target, suggested.target)
+  const canSave = !saving && (fallback !== null || target !== null)
   const saveState = goalSaveState(savedGoal, { metric, target: stored })
   const step = (dir: 1 | -1) => {
     setTouched(true)
@@ -86,26 +93,30 @@ export function GoalEditor({
           )
         })}
       </View>
-      <View style={styles.stepper}>
-        <Pressable onPress={() => step(-1)} accessibilityRole="button" accessibilityLabel="Decrease" style={styles.stepBtn}>
-          <Text style={styles.stepText}>−</Text>
-        </Pressable>
-        <Text style={styles.value} maxFontSizeMultiplier={1.15}>{target === null ? '—' : formatGoal({ metric, target })}</Text>
-        <Pressable onPress={() => step(1)} accessibilityRole="button" accessibilityLabel="Increase" style={styles.stepBtn}>
-          <Text style={styles.stepText}>+</Text>
-        </Pressable>
-      </View>
+      {fallback ? (
+        <Text style={styles.value} maxFontSizeMultiplier={1.15}>{fallback.target === null ? '—' : formatGoal({ metric: fallback.metric, target: fallback.target })}</Text>
+      ) : (
+        <View style={styles.stepper}>
+          <Pressable onPress={() => step(-1)} accessibilityRole="button" accessibilityLabel="Decrease" style={styles.stepBtn}>
+            <Text style={styles.stepText}>−</Text>
+          </Pressable>
+          <Text style={styles.value} maxFontSizeMultiplier={1.15}>{target === null ? '—' : formatGoal({ metric, target })}</Text>
+          <Pressable onPress={() => step(1)} accessibilityRole="button" accessibilityLabel="Increase" style={styles.stepBtn}>
+            <Text style={styles.stepText}>+</Text>
+          </Pressable>
+        </View>
+      )}
       <Text style={styles.source} maxFontSizeMultiplier={1.15}>{source}</Text>
-      <GoalReference metric={metric} role={role} reference={goalReference(summaries, 0, role, metric)} target={target} />
+      {fallback ? null : <GoalReference metric={metric} role={role} reference={goalReference(summaries, 0, role, metric)} target={target} />}
       {current ? (
         <Text style={styles.source} maxFontSizeMultiplier={1.15}>
           Current goal as {roleWord}: {formatGoal(current)}{current.source === 'standing' && standing?.target === null ? ' (recommended for the role you play)' : ''}
         </Text>
       ) : null}
       <Pressable
-        disabled={target === null || saving}
+        disabled={!canSave}
         onPress={() => {
-          if (target === null) return
+          if (!canSave) return
           setSaveError(null)
           const g = { championId: 0, role: 'ANY' as const, metric, target: stored }
           onSave(g)
@@ -113,7 +124,7 @@ export function GoalEditor({
             .catch((e: unknown) => setSaveError(e instanceof Error ? e.message : 'Could not save the goal'))
         }}
         accessibilityRole="button"
-        style={[styles.save, (target === null || saving) && styles.saveOff]}
+        style={[styles.save, !canSave && styles.saveOff]}
       >
         <Text style={styles.saveText} maxFontSizeMultiplier={1.15}>{saving ? 'Saving…' : saveState?.kind === 'saved' ? 'Saved ✓' : 'Save goal'}</Text>
       </Pressable>

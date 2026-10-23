@@ -9,7 +9,7 @@ export function LoadingScreen({ loaded, total, idsPending }: { loaded: number; t
       <Text style={styles.brand} maxFontSizeMultiplier={1.15}>LanePulse</Text>
       <ActivityIndicator color={colors.muted} />
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Loading your games</Text>
-      <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{idsPending || !total ? 'Finding your recent games…' : `${loaded} of your last ${total} games ready · once per account, then instant`}</Text>
+      <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{idsPending || !total ? 'Finding your recent games…' : `${loaded} of your last ${total} games ready · cached after the first time`}</Text>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${pct}%` }]} />
       </View>

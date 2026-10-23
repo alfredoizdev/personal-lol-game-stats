@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeRole, homeRole, prepareHeadline, standingTarget } from '@/lib/prepare-view'
+import { activeRole, goalEditorMode, homeRole, prepareHeadline, standingTarget } from '@/lib/prepare-view'
 
 describe('activeRole (which role Prepare shows)', () => {
   it('is the role champion select assigned when there is one', () => {
@@ -40,5 +40,15 @@ describe('homeRole (the role Prepare shows by itself, nothing to choose)', () =>
   })
   it('is mid before any game is loaded', () => {
     expect(homeRole([])).toBe('MIDDLE')
+  })
+})
+
+describe('goalEditorMode (the editor when the metric is not scored for the role shown)', () => {
+  it('edits normally when the role has a recommended value for the metric, or the player fixed a number', () => {
+    expect(goalEditorMode({ recommended: 7, fixed: null })).toBe('edit')
+    expect(goalEditorMode({ recommended: null, fixed: 6.5 })).toBe('edit')
+  })
+  it('shows the role fallback (no stepper) when the metric has no recommended value for the role and nothing is fixed', () => {
+    expect(goalEditorMode({ recommended: null, fixed: null })).toBe('fallback')
   })
 })

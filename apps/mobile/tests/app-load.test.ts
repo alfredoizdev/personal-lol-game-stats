@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { appLoadState } from '@/lib/app-load'
 
-const base = { idsPending: false, total: 100, loaded: 0, running: true, wasReady: false }
+const base = { idsPending: false, total: 100, loaded: 0, running: true, started: true, wasReady: false }
 
 describe('appLoadState (one loading screen at launch; every game loads before any tab shows)', () => {
   it('loads while the id list is pending', () => {
@@ -12,6 +12,10 @@ describe('appLoadState (one loading screen at launch; every game loads before an
     expect(appLoadState({ ...base, loaded: 99 })).toBe('loading')
     expect(appLoadState({ ...base, loaded: 100 })).toBe('ready')
     expect(appLoadState({ ...base, total: 7, loaded: 7, running: false })).toBe('ready')
+  })
+  it('keeps loading in the instant between the id list arriving and the run starting (the bug the owner saw: tabs opened at once and loaded behind)', () => {
+    expect(appLoadState({ ...base, loaded: 0, running: false, started: false })).toBe('loading')
+    expect(appLoadState({ ...base, loaded: 37, running: false, started: false })).toBe('loading')
   })
   it('never blocks on nothing: no games, or a run that stopped short, shows the tabs (they explain and offer Retry)', () => {
     expect(appLoadState({ ...base, total: 0, running: false })).toBe('ready')

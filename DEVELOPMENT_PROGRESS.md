@@ -157,3 +157,12 @@ Owner feedback: "a loading screen while the games load, and load them once at st
 - `HistoryProvider` in the app layout mounts the own-history hook once per account and starts the 100-game window as soon as the id list is known; `useHistory()` replaces per-screen `useOwnHistory` calls in Performance and Prepare (no screen starts a load on entry any more; Retry remains).
 - `LoadingScreen` holds the tabs until EVERY game in the window is loaded (owner: no numbers moving on screen once inside; a first cut opened the tabs after 20 and Live kept shifting). Never blocks on nothing (no games or a run that stopped short shows the tabs, which explain and offer Retry); sticky per account so a later refetch never flashes it.
 - Tests: mobile 187 (`app-load.test.ts`). Lint and typecheck clean.
+
+## Fix: launch load really holds the tabs; support always has a goal (2026-10-23)
+
+Owner report: the tabs still opened while the 100 games loaded, and Prepare showed no goal as support.
+
+- Cause 1: in the render between the id list arriving and the run starting nothing was running yet, so the load state read "stopped short → ready" and stuck (sticky). `appLoadState` now takes `started`; until the launch run has started it stays 'loading'. Regression test added.
+- Cause 2: a "recommended for the role you play" goal on CS/min resolved to nothing for support, where farming is not scored. `goalFor` now falls back to the role's own first metric (`defaultMetricFor`: vision for support, CS elsewhere), so a support game gets the recommended vision goal; a fixed number set by the player still applies as set. The editor shows that fallback as a plain value (no stepper) with an explanation, and Save keeps "recommended".
+- The role tapped in Prepare is remembered on the device (champion select still overrides).
+- Tests: shared 223, desktop 82, mobile 190. Lint and typecheck clean.
