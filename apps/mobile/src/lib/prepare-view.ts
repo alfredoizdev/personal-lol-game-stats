@@ -1,4 +1,9 @@
-import { ROLE_LABEL, type ChampSelectPick, type Role } from '@lpp/shared'
+import { playedRoles, ROLE_LABEL, type ChampSelectPick, type MatchSummary, type Role } from '@lpp/shared'
+
+/** The role Prepare shows by itself: your most played; mid before any game is loaded. Nothing to choose. */
+export function homeRole(summaries: MatchSummary[]): Role {
+  return playedRoles(summaries)[0]?.role ?? 'MIDDLE'
+}
 
 /** The role Prepare shows: the one champion select assigned, else the one you are viewing, else your primary. */
 export function activeRole({ pick, viewing, primary }: { pick: ChampSelectPick | null; viewing: Role | null; primary: Role }): Role {

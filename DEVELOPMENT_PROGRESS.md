@@ -145,7 +145,7 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-8-live-events.md`. Spec: `docs/su
 
 Design note: `docs/superpowers/specs/2026-10-23-prepare-by-role-design.md`. Owner feedback after Phase 8 device testing.
 
-- Prepare no longer asks for a champion: you keep your two queue roles (device preference, defaulted from your games), see your record, toughest matchups and ban note for the role shown, and set ONE goal with the existing editor. The goal is stored as a standing goal, "recommended for the role you play" unless moved to a fixed number. The separate "Save for every game" block is gone.
+- Prepare no longer asks for a champion or a role: it shows your most played role by itself (the role icons only let you look at another), with your record, toughest matchups and ban note for it, and ONE goal set with the existing editor. The goal is stored as a standing goal, "recommended for the role you play" unless moved to a fixed number. The separate "Save for every game" block is gone.
 - In champion select the card follows the assigned role and the locked champion from the player's own cell (headline "Playing Zed · Mid").
 - Also: the Game events feed is hidden once the match has ended (PR #3).
 - Tests: shared 220, desktop 82, mobile 183, site 1. Lint and typecheck clean.

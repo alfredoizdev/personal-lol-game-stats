@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeRole, prepareHeadline, standingTarget } from '@/lib/prepare-view'
-import { defaultRoles } from '@/lib/prematch-roles'
+import { activeRole, homeRole, prepareHeadline, standingTarget } from '@/lib/prepare-view'
 
 describe('activeRole (which role Prepare shows)', () => {
   it('is the role champion select assigned when there is one', () => {
@@ -34,13 +33,12 @@ describe('standingTarget (what Save goal stores)', () => {
   })
 })
 
-describe('defaultRoles (first time, from your own games)', () => {
+describe('homeRole (the role Prepare shows by itself, nothing to choose)', () => {
   const g = (role: string) => ({ me: { role }, queueId: 420, remake: false }) as never
-  it('primary is your most played role, secondary the next one', () => {
-    expect(defaultRoles([g('MIDDLE'), g('MIDDLE'), g('UTILITY')])).toEqual({ primary: 'MIDDLE', secondary: 'UTILITY' })
+  it('is your most played role', () => {
+    expect(homeRole([g('MIDDLE'), g('UTILITY'), g('UTILITY')])).toBe('UTILITY')
   })
-  it('with one role played, the secondary is a different role; with none, mid and bottom', () => {
-    expect(defaultRoles([g('TOP')])).toEqual({ primary: 'TOP', secondary: 'MIDDLE' })
-    expect(defaultRoles([])).toEqual({ primary: 'MIDDLE', secondary: 'BOTTOM' })
+  it('is mid before any game is loaded', () => {
+    expect(homeRole([])).toBe('MIDDLE')
   })
 })
