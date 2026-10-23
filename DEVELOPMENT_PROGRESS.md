@@ -179,3 +179,11 @@ Design note: `docs/superpowers/specs/2026-10-23-champ-select-screen-design.md`. 
 - For the assigned role (own cell): bans from your games (lane opponents you lost to most, W–L, win rate, sentence form), the curated meta ban list with its `updatedOn` date (`packages/shared/src/prematch/meta-bans.ts`, update by hand each patch), your picks (best win rate with 3+ games, then most played, with KDA and CS/min). Once a champion is locked: your record on it in that role and the goal that will apply.
 - Pure helpers tested: `recommendedPicks`, `metaBansFor` (shared), `champSelectNavigation` (mobile). Riot application text updated (own cell only, statements not orders).
 - Tests: shared 226, desktop 82, mobile 196. Lint and typecheck clean.
+
+## Post-game screen (2026-10-23)
+
+Design note: `docs/superpowers/specs/2026-10-23-post-game-screen-design.md`. Owner request (the second screen after champion select).
+
+- Opens by itself when a game ends (new `endedAt` from the final snapshot), closes when the next queue or game starts, not reopened once dismissed. Shows the last snapshot (portrait, K/D/A, CS/min, stat tiles) and whether the goal was met.
+- Finds the review: refreshes the Matches id list every 20 s until the newest match is this game (`isReviewOf`), then Victory / Defeat and "Open the match review"; gives up after 6 min and points to Matches.
+- Tests: mobile 201 (`post-game.test.ts`). Lint and typecheck clean.
