@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useOwnHistory, type OwnHistory } from '@/hooks/useOwnHistory'
-import { appLoadState, FIRST_READY, type AppLoadState } from '@/lib/app-load'
+import { appLoadState, type AppLoadState } from '@/lib/app-load'
 import type { LinkedAccount } from '@/lib/linked-account'
 
 export type AppHistory = OwnHistory & {
-  /** 'loading' until the first 20 games are ready (the launch screen), then 'ready' for good for this account. */
+  /** 'loading' until every game in the window is ready (the launch screen), then 'ready' for good for this account. */
   state: AppLoadState
   /** True once the launch load was started for this account (screens tell "still loading" from "stopped short"). */
   started: boolean
@@ -32,7 +32,7 @@ export function HistoryProvider({ account, children }: { account: LinkedAccount 
   const state = appLoadState({
     idsPending: history.idsPending,
     total: history.total,
-    loadedInFirst: history.loadedWithin(FIRST_READY),
+    loaded: history.loaded,
     running: history.running,
     wasReady: puuid !== null && readyFor === puuid,
   })

@@ -31,10 +31,10 @@ export default function AppLayout() {
   )
 }
 
-/** The tabs wait behind one loading screen until the first games are ready; the rest loads behind them, once for every tab. */
+/** The tabs wait behind one loading screen until every game is loaded, once for every tab, so nothing moves on screen afterwards. */
 function AppStack() {
   const history = useHistory()
-  if (history.state === 'loading') return <LoadingScreen loaded={history.loadedWithin(20)} total={history.total} idsPending={history.idsPending} />
+  if (history.state === 'loading') return <LoadingScreen loaded={history.loaded} total={history.total} idsPending={history.idsPending} />
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="(tabs)" />
