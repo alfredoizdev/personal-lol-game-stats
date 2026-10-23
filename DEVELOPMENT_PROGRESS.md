@@ -140,3 +140,12 @@ Plan: `docs/superpowers/plans/2026-10-22-phase-8-live-events.md`. Spec: `docs/su
 - Also in this phase at the owner's request: the goal editor starts at the recommended role target with the player's own average beside it; Prepare loads its 100-game window by itself; Save goal shows a lasting confirmation.
 - Tests: shared 209, desktop 75, mobile 167, site 1. Lint and typecheck clean.
 - Pending: simulator pass with the demo session (League was open on the owner's Mac during the build) and the owner's device acceptance of the alerts and the death countdown in a real game.
+
+## Prepare by role (2026-10-23)
+
+Design note: `docs/superpowers/specs/2026-10-23-prepare-by-role-design.md`. Owner feedback after Phase 8 device testing.
+
+- Prepare no longer asks for a champion: you keep your two queue roles (device preference, defaulted from your games), see your record, toughest matchups and ban note for the role shown, and set ONE goal with the existing editor. The goal is stored as a standing goal, "recommended for the role you play" unless moved to a fixed number. The separate "Save for every game" block is gone.
+- In champion select the card follows the assigned role and the locked champion from the player's own cell (headline "Playing Zed · Mid").
+- Also: the Game events feed is hidden once the match has ended (PR #3).
+- Tests: shared 220, desktop 82, mobile 183, site 1. Lint and typecheck clean.

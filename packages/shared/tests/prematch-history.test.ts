@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine } from '../src/match-v5'
-import { banSuggestion, championSummary, lastRole, playedChampions, toughestMatchups } from '../src/prematch/history'
+import { banSuggestion, championSummary, lastRole, playedChampions, playedRoles, roleSummary, toughestMatchups } from '../src/prematch/history'
 import { game, line } from './analysis-fixtures'
 
 const at = (i: number) => new Date(Date.UTC(2026, 9, 1 + i)).toISOString()
@@ -87,5 +87,32 @@ describe('playedChampions / lastRole', () => {
     const all = [g({ role: 'MIDDLE' }, null), g({ role: 'TOP' }, null, { queueId: 450 })]
     expect(lastRole(all)).toBe('MIDDLE')
     expect(lastRole([])).toBeNull()
+  })
+})
+
+describe('roleSummary / playedRoles (Prepare by role, 2026-10-23)', () => {
+  it('roleSummary is your record in that role, whatever champion you played', () => {
+    const all = [
+      g({ win: true, kills: 6, deaths: 3, assists: 9, csPerMin: 7 }, null),
+      g({ win: false, kills: 2, deaths: 6, assists: 2, csPerMin: 6, ...cait }, null),
+      g({ win: true, csPerMin: 9 }, null, { queueId: 450 }), // ARAM ignored
+      g({ win: true, role: 'MIDDLE', csPerMin: 9 }, null), // other role
+    ]
+    const s = roleSummary(all, 'BOTTOM')
+    expect(s.games).toBe(2)
+    expect(s.wins).toBe(1)
+    expect(s.winRate).toBe(50)
+    expect(s.avgCsPerMin).toBe(6.5)
+    expect(s.fewGames).toBe(true)
+    expect(roleSummary([], 'TOP')).toEqual({ games: 0, wins: 0, winRate: null, avgKda: null, avgCsPerMin: null, fewGames: true })
+  })
+  it('playedRoles lists the roles you queued by games, most played first', () => {
+    const all = [g({}, null), g({}, null), g({ role: 'MIDDLE' }, null), g({ role: 'UTILITY' }, null), g({ role: 'UTILITY' }, null), g({ role: 'UTILITY' }, null), g({ role: 'TOP' }, null, { queueId: 450 })]
+    expect(playedRoles(all)).toEqual([
+      { role: 'UTILITY', games: 3 },
+      { role: 'BOTTOM', games: 2 },
+      { role: 'MIDDLE', games: 1 },
+    ])
+    expect(playedRoles([])).toEqual([])
   })
 })

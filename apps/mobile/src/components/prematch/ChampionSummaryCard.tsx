@@ -4,8 +4,8 @@ import { colors, font, space } from '@/theme/tokens'
 
 const fmt = (n: number | null, d: number, suffix = '') => (n === null ? '—' : `${n.toFixed(d)}${suffix}`)
 
-/** Your own record with this champion in this role. Honest about the sample size. */
-export function ChampionSummaryCard({ championName, summary }: { championName: string; summary: ChampionSummary }) {
+/** Your own record for `subject` ("with Zed as mid" or "as mid"). Honest about the sample size. */
+export function ChampionSummaryCard({ subject, summary }: { subject: string; summary: ChampionSummary }) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
@@ -15,9 +15,9 @@ export function ChampionSummaryCard({ championName, summary }: { championName: s
         <Stat value={fmt(summary.avgCsPerMin, 1)} label="CS / min" />
       </View>
       {summary.games === 0 ? (
-        <Text style={styles.note} maxFontSizeMultiplier={1.15}>No games with {championName} in this role among your loaded games.</Text>
+        <Text style={styles.note} maxFontSizeMultiplier={1.15}>No games {subject} among your loaded games.</Text>
       ) : summary.fewGames ? (
-        <Text style={styles.note} maxFontSizeMultiplier={1.15}>Few games with {championName} — numbers may swing.</Text>
+        <Text style={styles.note} maxFontSizeMultiplier={1.15}>Few games {subject} — numbers may swing.</Text>
       ) : null}
     </View>
   )

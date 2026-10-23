@@ -30,7 +30,15 @@ export function championGames(all: MatchSummary[], championId: number, role: Rol
 }
 
 export function championSummary(all: MatchSummary[], championId: number, role: Role): ChampionSummary {
-  const games = championGames(all, championId, role)
+  return summarize(championGames(all, championId, role))
+}
+
+/** Your record in that role, whatever champion you played (Prepare is organised by role: you queue with two). */
+export function roleSummary(all: MatchSummary[], role: Role): ChampionSummary {
+  return summarize(all.filter((s) => analyzable(s) && s.me.role === role))
+}
+
+function summarize(games: MatchSummary[]): ChampionSummary {
   const wins = games.filter((s) => s.me.win).length
   const kda = mean(games.map((s) => kdaRatio(s.me.kills, s.me.deaths, s.me.assists)))
   const cs = mean(games.map((s) => s.me.csPerMin).filter((v): v is number => v !== null))
@@ -82,6 +90,16 @@ export function playedChampions(all: MatchSummary[], role: Role): Array<{ champi
   return [...byChamp.entries()]
     .map(([championId, c]) => ({ championId, ...c }))
     .sort((a, b) => b.games - a.games || a.championName.localeCompare(b.championName))
+}
+
+/** The roles you have queued in, most played first (the default primary and secondary role). */
+export function playedRoles(all: MatchSummary[]): Array<{ role: Role; games: number }> {
+  const byRole = new Map<Role, number>()
+  for (const s of all) {
+    if (!analyzable(s) || s.me.role === null) continue
+    byRole.set(s.me.role, (byRole.get(s.me.role) ?? 0) + 1)
+  }
+  return [...byRole.entries()].map(([role, games]) => ({ role, games })).sort((a, b) => b.games - a.games || a.role.localeCompare(b.role))
 }
 
 export function lastRole(all: MatchSummary[]): Role | null {
