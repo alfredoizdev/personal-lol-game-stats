@@ -1,4 +1,4 @@
-import { Platform } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import Constants from 'expo-constants'
 import * as Device from 'expo-device'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -71,7 +71,11 @@ export async function listenForNotificationTaps(navigate: (route: string) => voi
   try {
     const N = await notifications()
     N.setNotificationHandler({
-      handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+      // In the foreground the Live tab's own alert cards tell the story; the banner only shows when the app is in the background.
+      handleNotification: async () => {
+        const foreground = AppState.currentState === 'active'
+        return { shouldShowBanner: !foreground, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }
+      },
     })
     const open = (data: unknown) => {
       const route = routeForNotification(data)

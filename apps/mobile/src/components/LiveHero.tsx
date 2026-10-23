@@ -1,18 +1,18 @@
 import { Image, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { championLoadingArtUrl, formatDuration, type LiveSnapshotV2 } from '@lpp/shared'
+import { championLoadingArtUrl, formatDuration, respawnNow, type LiveSnapshotV2 } from '@lpp/shared'
 import { ChampionPortrait } from './ChampionPortrait'
 import { ItemRow } from './ItemRow'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 const ROLE_LABEL: Record<string, string> = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' }
 
-function Side({ p, who, ring, align }: { p: LiveSnapshotV2['me']; who: 'You' | 'Enemy'; ring: 'you' | 'enemy'; align: 'left' | 'right' }) {
+function Side({ p, who, ring, align, respawnIn }: { p: LiveSnapshotV2['me']; who: 'You' | 'Enemy'; ring: 'you' | 'enemy'; align: 'left' | 'right'; respawnIn: number | null }) {
   const color = ring === 'you' ? colors.you : colors.enemy
   return (
     <View style={[styles.side, align === 'right' && styles.sideRight]}>
-      <ChampionPortrait championName={p.championName} size={68} ring={ring} />
-      <Text style={[styles.who, { color }]}>{who}</Text>
+      <ChampionPortrait championName={p.championName} size={68} ring={ring} respawnIn={respawnIn} />
+      <Text style={[styles.who, { color: respawnIn !== null ? colors.muted : color }]}>{respawnIn !== null ? 'Dead' : who}</Text>
       <Text style={styles.champ} numberOfLines={1}>{p.championName || '—'}</Text>
       <Text style={styles.meta}>{p.position ? ROLE_LABEL[p.position] : ' '}</Text>
       <View style={styles.items}>
@@ -26,9 +26,25 @@ export type LiveGoal = { text: string; status: 'on_track' | 'below' | 'unknown';
 
 const STATUS_TEXT: Record<LiveGoal['status'], string> = { on_track: 'On track', below: 'Below goal', unknown: '—' }
 
-export function LiveHero({ snapshot, badge, goal = null }: { snapshot: LiveSnapshotV2; badge: 'LIVE' | 'DEMO' | 'RECONNECTING' | 'ENDED'; goal?: LiveGoal | null }) {
+export function LiveHero({
+  snapshot,
+  badge,
+  goal = null,
+  receivedAt = snapshot.ts,
+  now = snapshot.ts,
+}: {
+  snapshot: LiveSnapshotV2
+  badge: 'LIVE' | 'DEMO' | 'RECONNECTING' | 'ENDED'
+  goal?: LiveGoal | null
+  /** Phone clock when the snapshot arrived and now: drives the respawn countdown between snapshots. */
+  receivedAt?: number
+  now?: number
+}) {
   const badgeColor = badge === 'LIVE' || badge === 'DEMO' ? colors.enemy : badge === 'RECONNECTING' ? colors.warn : colors.muted
   const op = snapshot.opponent
+  const ended = badge === 'ENDED'
+  const myRespawn = ended ? null : respawnNow(snapshot.me, receivedAt, now)
+  const opRespawn = ended || !op ? null : respawnNow(op, receivedAt, now)
   return (
     <View style={styles.card}>
       {/* Champion art as a dim backdrop: yours on the left, the enemy's on the right. */}
@@ -38,7 +54,7 @@ export function LiveHero({ snapshot, badge, goal = null }: { snapshot: LiveSnaps
       </View>
       <LinearGradient colors={['rgba(11,10,31,0.35)', 'rgba(11,10,31,0.88)', 'rgba(11,10,31,0.97)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
       <View style={styles.content}>
-        <Side p={snapshot.me} who="You" ring="you" align="left" />
+        <Side p={snapshot.me} who="You" ring="you" align="left" respawnIn={myRespawn} />
         <View style={styles.center}>
           <View style={[styles.badge, { borderColor: badgeColor, backgroundColor: 'rgba(11,10,31,0.6)' }]}>
             <View style={[styles.dot, { backgroundColor: badgeColor }]} />
@@ -55,7 +71,7 @@ export function LiveHero({ snapshot, badge, goal = null }: { snapshot: LiveSnaps
           ) : null}
         </View>
         {op ? (
-          <Side p={op} who="Enemy" ring="enemy" align="right" />
+          <Side p={op} who="Enemy" ring="enemy" align="right" respawnIn={opRespawn} />
         ) : (
           <View style={[styles.side, styles.sideRight]}>
             <Text style={styles.meta}>Lane opponent{'\n'}not identified</Text>
