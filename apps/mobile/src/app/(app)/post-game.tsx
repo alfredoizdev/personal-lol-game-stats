@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDuration, formatGoal, goalFor, goalMet, liveMetrics, metricInfo, summarizeMatch, type MatchV5 } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
+import { LiveMatchupTable } from '@/components/LiveMatchupTable'
 import { LiveStatTiles } from '@/components/LiveStatTiles'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { useChampionList } from '@/hooks/useChampionList'
@@ -21,8 +22,10 @@ const LIST = 20
 
 /**
  * Post-game (owner, 2026-10-23): what you did this game, whether the goal was
- * met, and the match review as soon as Riot's history lists the game. Opens by
- * itself when the game ends; Close returns to the tabs.
+ * met, your lane against the opponent's final scoreboard numbers (owner,
+ * 2026-10-23: the same table Live shows), and the match review as soon as
+ * Riot's history lists the game. Opens by itself when the game ends; Close
+ * returns to the tabs.
  */
 export default function PostGameScreen() {
   const { snapshot, endedAt, now } = useLiveFeed()
@@ -95,6 +98,7 @@ export default function PostGameScreen() {
           <LiveStatTiles me={snapshot.me} teamKills={snapshot.teamKills} />
         </View>
       ) : null}
+      {snapshot ? <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} /> : null}
       <View style={styles.card}>
         <Text style={styles.cardTitle} maxFontSizeMultiplier={1.15}>Match review</Text>
         {wait === 'looking' ? (
