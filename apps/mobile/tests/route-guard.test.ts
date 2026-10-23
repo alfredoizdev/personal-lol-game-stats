@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveEntryRoute, resolveAppGroupRedirect } from '../src/lib/route-guard'
+import { resolveEntryRoute, resolveAppGroupRedirect, isPublicSegment } from '../src/lib/route-guard'
 
 describe('resolveEntryRoute', () => {
   it('returns null while auth is loading', () => {
@@ -15,7 +15,7 @@ describe('resolveEntryRoute', () => {
     expect(resolveEntryRoute({ loading: false, signedIn: true, linked: false })).toBe('/(app)/link')
   })
   it('sends a linked user to matches', () => {
-    expect(resolveEntryRoute({ loading: false, signedIn: true, linked: true })).toBe('/(app)/matches')
+    expect(resolveEntryRoute({ loading: false, signedIn: true, linked: true })).toBe('/(app)/(tabs)/matches')
   })
   it('returns error when signed in and the linked-account query failed', () => {
     expect(resolveEntryRoute({ loading: false, signedIn: true, linked: null, linkError: true })).toBe('error')
@@ -24,22 +24,34 @@ describe('resolveEntryRoute', () => {
 
 describe('resolveAppGroupRedirect', () => {
   it('waits while loading', () => {
-    expect(resolveAppGroupRedirect({ loading: true, signedIn: false, linked: null, segment: 'matches' })).toBeNull()
+    expect(resolveAppGroupRedirect({ loading: true, signedIn: false, linked: null, segment: '(tabs)' })).toBeNull()
   })
   it('redirects a signed-out user to sign-in', () => {
-    expect(resolveAppGroupRedirect({ loading: false, signedIn: false, linked: null, segment: 'matches' })).toBe('/(auth)/sign-in')
+    expect(resolveAppGroupRedirect({ loading: false, signedIn: false, linked: null, segment: '(tabs)' })).toBe('/(auth)/sign-in')
   })
   it('redirects an unlinked user on a tab to the link screen', () => {
-    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: false, segment: 'matches' })).toBe('/(app)/link')
-    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: false, segment: 'live' })).toBe('/(app)/link')
+    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: false, segment: '(tabs)' })).toBe('/(app)/link')
+    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: false, segment: '(tabs)' })).toBe('/(app)/link')
   })
   it('does not redirect an unlinked user already on the link screen', () => {
     expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: false, segment: 'link' })).toBeNull()
   })
   it('lets a linked user stay', () => {
-    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: true, segment: 'matches' })).toBeNull()
+    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: true, segment: '(tabs)' })).toBeNull()
   })
   it('does not redirect while the link status is unknown', () => {
-    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: null, segment: 'matches' })).toBeNull()
+    expect(resolveAppGroupRedirect({ loading: false, signedIn: true, linked: null, segment: '(tabs)' })).toBeNull()
+  })
+})
+
+describe('isPublicSegment', () => {
+  it('treats the legal screens and the auth group as public', () => {
+    expect(isPublicSegment('legal')).toBe(true)
+    expect(isPublicSegment('(auth)')).toBe(true)
+  })
+  it('keeps the app group and unknown segments guarded', () => {
+    expect(isPublicSegment('(app)')).toBe(false)
+    expect(isPublicSegment(undefined)).toBe(false)
+    expect(isPublicSegment('')).toBe(false)
   })
 })

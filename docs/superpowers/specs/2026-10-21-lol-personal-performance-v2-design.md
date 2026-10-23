@@ -105,7 +105,11 @@ Pre-match: móvil → hasta 100 detalles propios cacheados → agrupación local
 
 ### 6.3 Canal Realtime
 
-Se conserva el nombre `user:${user.id}`. Un solo evento, `live-snapshot`, con `isFinal: true` en el último. El móvil v2 ignora cualquier otro evento que un cliente RiftLens pudiera emitir en la misma cuenta.
+Se conserva el nombre `user:${user.id}`. Un solo evento, `live-snapshot`, con `isFinal: true` en el último.
+
+> **Fase 7 (2026-10-22):** el canal pasa a ser `lanepulse:${user.id}` y **privado** (`config: { private: true }`, políticas en `realtime.messages`); helper `liveTopic(userId)` en shared. Ver `2026-10-22-phase-7-riot-submission-design.md` §2.3.
+>
+> **Fase 8 (2026-10-22):** segundo evento `live-phase` en el mismo canal (`{ v: 1, ts, phase, since }`, fase del LCU con latido de 10 s) y campos opcionales en el snapshot (`me.isDead`, `me.respawnSec`, `events[]` normalizados, últimos 20). Ver `2026-10-22-phase-8-live-events-design.md`. El móvil v2 ignora cualquier otro evento que un cliente RiftLens pudiera emitir en la misma cuenta.
 
 Payload de `live-snapshot` (campos nullable, nunca cero inventado):
 
@@ -130,6 +134,9 @@ type LivePlayer = {
   wardScore: number | null
 }
 ```
+
+Campos añadidos en la Fase 4 (visibles en el marcador del juego, sin datos de otros jugadores): `teamKills: number` (kills del equipo propio, para KP) y `items: number[]` en cada `LivePlayer` (siete huecos fijos, 0 = vacío, el séptimo es el trinket).
+
 
 Oponente de línea en vivo: jugador del equipo contrario con la misma `position` del `playerlist`. Si no hay `position` (ARAM, modos) o hay más de un candidato, `opponent = null` y la pantalla muestra solo tus stats. No se intenta adivinar.
 
@@ -214,6 +221,11 @@ Elementos de 06–08 que **no** se construyen tal cual, y por qué:
 2. El product owner aprobó el documento y las decisiones de la sección 5 el 2026-10-21.
 3. **Profile:** sí, tercera pestaña como en los mockups 06–08, con varias cuentas Riot por usuario (decidido 2026-10-21, tarde).
 4. **Pendiente (técnico):** quitar una cuenta vinculada necesita una política `delete` propia en `linked_riot_accounts` (hoy solo hay select/insert/update). Es una migración nueva que se copia al repo de RiftLens según la sección 3. Hasta entonces Profile no ofrece "quitar cuenta".
+
+## 11b. Decisiones añadidas el 2026-10-22
+
+5. **Objetivo: aprobación de Riot.** El owner va a someter LanePulse al portal de desarrolladores de Riot para producción. Toda función se diseña para pasar esa revisión: nada de consejo táctico en vivo, ni en pantalla ni en notificaciones; solo datos propios y estado neutro.
+6. **Notificaciones de objetivo en partida (petición del owner):** se harán en la Fase 6, enviadas por el desktop a través del servicio push de Expo (el móvil registra su token en Supabase), cada 5 minutos o solo al cambiar de estado (opción), con texto de estado ("15:00 · Goal 7.0 CS/min · Below goal, now 5.2"), nunca una instrucción. Requieren build de desarrollo con EAS. **Hecho en la Fase 7** (`2026-10-22-phase-7-riot-submission-design.md`): canal privado `lanepulse:<uid>`, `goal-notifier` compartido, envío desde el desktop, textos legales, sitio público y documento de solicitud en `docs/riot/`.
 
 ## 12. Lo que queda al builder
 

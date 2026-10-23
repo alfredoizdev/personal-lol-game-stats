@@ -8,7 +8,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lpp.mobile"
+      "bundleIdentifier": "com.lpp.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +29,15 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-dev-client",
+      [
+        "expo-notifications",
+        {
+          "color": "#8B5CF6",
+          "defaultChannel": "goals"
+        }
+      ]
     ],
     "scheme": "lpp",
     "backgroundColor": "#0B0A1F",
@@ -34,6 +45,12 @@
       "image": "./assets/splash-icon.png",
       "backgroundColor": "#0B0A1F",
       "resizeMode": "contain"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1db65313-3256-4203-b865-aeb4c4856e5f"
+      }
+    },
+    "owner": "alfredoizjr"
   }
 }

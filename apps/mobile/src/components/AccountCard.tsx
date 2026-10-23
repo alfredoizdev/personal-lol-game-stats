@@ -1,9 +1,8 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
-import { formatRiotId } from '@lpp/shared'
+import { formatRiotId, profileIconUrl } from '@lpp/shared'
+import { useDdragonVersion } from '@/hooks/useDdragonVersion'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { colors, font, radius, space } from '@/theme/tokens'
-
-const DDRAGON_ICON = (id: number) => `https://ddragon.leagueoflegends.com/cdn/15.1.1/img/profileicon/${id}.png`
 
 export function AccountCard({
   account,
@@ -14,6 +13,7 @@ export function AccountCard({
   active: boolean
   onPress?: () => void
 }) {
+  const version = useDdragonVersion()
   const initial = account.gameName.slice(0, 1).toUpperCase()
   return (
     <Pressable
@@ -25,7 +25,7 @@ export function AccountCard({
     >
       <View style={[styles.avatarRing, active && styles.avatarRingActive]}>
         {account.profileIconId ? (
-          <Image source={{ uri: DDRAGON_ICON(account.profileIconId) }} style={styles.avatar} />
+          <Image source={{ uri: profileIconUrl(version, account.profileIconId) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarFallback]}>
             <Text style={styles.avatarInitial}>{initial}</Text>

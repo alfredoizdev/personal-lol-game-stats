@@ -1,4 +1,4 @@
-export type EntryRoute = '/(auth)/sign-in' | '/(app)/link' | '/(app)/matches'
+export type EntryRoute = '/(auth)/sign-in' | '/(app)/link' | '/(app)/(tabs)/matches'
 
 export type EntryInput = {
   loading: boolean
@@ -19,14 +19,14 @@ export function resolveEntryRoute(input: EntryInput): EntryRoute | 'error' | nul
   if (!input.signedIn) return '/(auth)/sign-in'
   if (input.linkError) return 'error'
   if (input.linked === null) return null
-  return input.linked ? '/(app)/matches' : '/(app)/link'
+  return input.linked ? '/(app)/(tabs)/matches' : '/(app)/link'
 }
 
 export type AppGroupInput = {
   loading: boolean
   signedIn: boolean
   linked: boolean | null
-  /** First segment inside the (app) group: 'matches' | 'live' | 'link'. */
+  /** First segment inside the (app) group: '(tabs)' | 'link'. */
   segment: string | undefined
 }
 
@@ -36,4 +36,12 @@ export function resolveAppGroupRedirect(input: AppGroupInput): '/(auth)/sign-in'
   if (!input.signedIn) return '/(auth)/sign-in'
   if (input.linked === false && input.segment !== 'link') return '/(app)/link'
   return null
+}
+
+/**
+ * Root-level segments that never require a session: the auth group and the
+ * legal screens (reachable from the sign-up form before an account exists).
+ */
+export function isPublicSegment(segment: string | undefined): boolean {
+  return segment === 'legal' || segment === '(auth)'
 }

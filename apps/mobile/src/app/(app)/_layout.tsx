@@ -1,23 +1,20 @@
-import { Redirect, Tabs, useSegments } from 'expo-router'
-import { Text } from 'react-native'
+import { Redirect, Stack, useSegments } from 'expo-router'
 import { useAuth } from '@/lib/auth-context'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { resolveAppGroupRedirect } from '@/lib/route-guard'
+import { usePushRegistration } from '@/hooks/usePushRegistration'
+import { LiveFeedProvider } from '@/lib/live-feed-context'
+import { HistoryProvider, useHistory } from '@/lib/history-context'
+import { LoadingScreen } from '@/components/LoadingScreen'
+import { useChampSelectScreen } from '@/hooks/useChampSelectScreen'
+import { usePostGameScreen } from '@/hooks/usePostGameScreen'
 import { colors } from '@/theme/tokens'
-
-function TabLabel({ title, focused }: { title: string; focused: boolean }) {
-  return <Text style={{ color: focused ? colors.accent : colors.muted, fontSize: 13, fontWeight: '600' }}>{title}</Text>
-}
-
-const tab = (title: string) => ({
-  title,
-  tabBarLabel: ({ focused }: { focused: boolean }) => <TabLabel title={title} focused={focused} />,
-})
 
 export default function AppLayout() {
   const { user, loading } = useAuth()
   const { data } = useLinkedAccount()
   const segments = useSegments() as string[]
+  usePushRegistration()
   const redirect = resolveAppGroupRedirect({
     loading,
     signedIn: !!user,
@@ -28,19 +25,26 @@ export default function AppLayout() {
   if (redirect) return <Redirect href={redirect} />
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.border },
-        tabBarShowLabel: true,
-        tabBarIconStyle: { display: 'none' },
-        sceneStyle: { backgroundColor: colors.bg },
-      }}
-    >
-      <Tabs.Screen name="matches" options={tab('Matches')} />
-      <Tabs.Screen name="live" options={tab('Live')} />
-      <Tabs.Screen name="profile" options={tab('Profile')} />
-      <Tabs.Screen name="link" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-    </Tabs>
+    <LiveFeedProvider>
+      <HistoryProvider account={data ?? null}>
+        <AppStack />
+      </HistoryProvider>
+    </LiveFeedProvider>
+  )
+}
+
+/** The tabs wait behind one loading screen until every game is loaded, once for every tab, so nothing moves on screen afterwards. */
+function AppStack() {
+  const history = useHistory()
+  useChampSelectScreen()
+  usePostGameScreen()
+  if (history.state === 'loading') return <LoadingScreen loaded={history.loaded} total={history.total} idsPending={history.idsPending} />
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="link" />
+      <Stack.Screen name="champ-select" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="post-game" options={{ presentation: 'modal' }} />
+    </Stack>
   )
 }
