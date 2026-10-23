@@ -73,12 +73,20 @@ export function defaultGoal(all: MatchSummary[], championId: number, role: Role,
   return t === null ? { metric, target: null, source: 'none', n: 0, average } : { metric, target: t, source: 'target', n: 0, average }
 }
 
-/** The goal in force: newest exact champion row, else newest row for the role; optionally only rows set at or before `beforeMs`. */
-export function goalFor(goals: Goal[], puuid: string, championId: number | null, role: Role, beforeMs?: number): Goal | null {
-  const eligible = goals
-    .filter((g) => g.puuid === puuid && g.role === role && (beforeMs === undefined || Date.parse(g.setAt) <= beforeMs))
+/**
+ * The goal in force: newest exact champion+role row → newest row for the role →
+ * newest row for the champion in any role (autofilled to another lane, or a mode
+ * that reports no position). `role` null = position unknown. Optionally only rows
+ * set at or before `beforeMs`.
+ */
+export function goalFor(goals: Goal[], puuid: string, championId: number | null, role: Role | null, beforeMs?: number): Goal | null {
+  const mine = goals
+    .filter((g) => g.puuid === puuid && (beforeMs === undefined || Date.parse(g.setAt) <= beforeMs))
     .sort((a, b) => Date.parse(b.setAt) - Date.parse(a.setAt))
-  return (championId !== null ? eligible.find((g) => g.championId === championId) : undefined) ?? eligible[0] ?? null
+  const inRole = role === null ? [] : mine.filter((g) => g.role === role)
+  const exact = championId !== null ? inRole.find((g) => g.championId === championId) : undefined
+  const forChampion = championId !== null ? mine.find((g) => g.championId === championId) : undefined
+  return exact ?? inRole[0] ?? forChampion ?? null
 }
 
 const MIN_SEC = 60

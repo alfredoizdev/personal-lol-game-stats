@@ -48,8 +48,14 @@ describe('goalFor', () => {
     expect(goalFor(goals, 'me', 222, 'BOTTOM')!.target).toBe(7.5)
     expect(goalFor(goals, 'me', 81, 'BOTTOM')!.target).toBe(6) // no Ezreal goal → newest in role
     expect(goalFor(goals, 'me', null, 'BOTTOM')!.target).toBe(6)
-    expect(goalFor(goals, 'me', 222, 'MIDDLE')).toBeNull()
     expect(goalFor(goals, 'smurf', 222, 'BOTTOM')!.target).toBe(9)
+  })
+  it('falls back to the newest goal for that champion in any role (autofill, or a mode that reports no position)', () => {
+    const goals = [goal({ target: 7, setAt: '2026-10-20T10:00:00.000Z' }), goal({ target: 7.5, setAt: '2026-10-21T10:00:00.000Z' }), goal({ championId: 51, target: 6, setAt: '2026-10-22T10:00:00.000Z' })]
+    expect(goalFor(goals, 'me', 222, 'MIDDLE')!.target).toBe(7.5) // Jinx goal set as bot, playing Jinx mid
+    expect(goalFor(goals, 'me', 222, null)!.target).toBe(7.5) // position unknown (ARAM/Swiftplay)
+    expect(goalFor(goals, 'me', 81, null)).toBeNull() // no goal for this champion and no role to fall back on
+    expect(goalFor(goals, 'me', null, null)).toBeNull()
   })
   it('honours a cutoff: a goal saved during champ select still counts for that game', () => {
     const goals = [goal({ target: 7, setAt: '2026-10-20T10:00:00.000Z' }), goal({ target: 8, setAt: '2026-10-20T10:31:00.000Z' })]

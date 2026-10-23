@@ -108,10 +108,19 @@ describe('createGoalPush', () => {
     expect(f).toHaveBeenCalledTimes(2)
   })
 
-  it('sends nothing for a champion and role without a goal', async () => {
-    const { gp, fetchFn } = make({ ...base, pre_match_focus: [{ ...goalRow, role: 'TOP' }] })
+  it('sends nothing when no goal matches the champion or the role', async () => {
+    const { gp, fetchFn } = make({ ...base, pre_match_focus: [{ ...goalRow, champion_id: 51, role: 'TOP' }] })
     await gp.onLiveState(live(snap(90, 7.5)))
     expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it('uses the goal saved for this champion even when the game reports another role or none', async () => {
+    const { gp, fetchFn } = make({ ...base, pre_match_focus: [{ ...goalRow, role: 'TOP' }] })
+    await gp.onLiveState(live(snap(90, 7.5)))
+    const noRole = snap(100, 7.5)
+    noRole.me.position = null
+    await gp.onLiveState(live(noRole))
+    expect(fetchFn).toHaveBeenCalledTimes(1) // first known status went out; the same status again does not
   })
 
   it('sends nothing when the LCU identity is not one of the linked accounts', async () => {

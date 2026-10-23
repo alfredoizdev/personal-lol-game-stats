@@ -30,7 +30,7 @@ export default function LiveScreen() {
 
   // The goal for the champion you are playing (by name → Data Dragon id), else the newest one for the role.
   const liveGoal = useMemo(() => {
-    if (!snapshot || !account || !snapshot.me.position) return null
+    if (!snapshot || !account) return null
     const g = goalFor(goals, account.puuid, byName(snapshot.me.championName), snapshot.me.position)
     if (!g) return null
     const value = liveMetrics(snapshot)[g.metric]

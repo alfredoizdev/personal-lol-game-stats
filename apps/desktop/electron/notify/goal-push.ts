@@ -101,7 +101,6 @@ export function createGoalPush(client: SupabaseClient, userId: string, opts: Goa
       return
     }
     const { snapshot } = state
-    if (!snapshot.me.position) return
     const championId = await opts.champions.idByName(snapshot.me.championName)
     const goal = goalFor(ctx.goals, me.puuid, championId, snapshot.me.position)
     if (!goal) return
