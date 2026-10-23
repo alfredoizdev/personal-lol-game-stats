@@ -7,6 +7,7 @@ import { LiveFeedProvider } from '@/lib/live-feed-context'
 import { HistoryProvider, useHistory } from '@/lib/history-context'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { useChampSelectScreen } from '@/hooks/useChampSelectScreen'
+import { usePostGameScreen } from '@/hooks/usePostGameScreen'
 import { colors } from '@/theme/tokens'
 
 export default function AppLayout() {
@@ -36,12 +37,14 @@ export default function AppLayout() {
 function AppStack() {
   const history = useHistory()
   useChampSelectScreen()
+  usePostGameScreen()
   if (history.state === 'loading') return <LoadingScreen loaded={history.loaded} total={history.total} idsPending={history.idsPending} />
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="link" />
       <Stack.Screen name="champ-select" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="post-game" options={{ presentation: 'modal' }} />
     </Stack>
   )
 }
