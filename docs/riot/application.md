@@ -37,6 +37,12 @@ links their own Riot ID and gets:
    can be looked at),
    and in champion select it follows the assigned role and locked champion
    read from the player's own cell. The source of every number is stated.
+   In champion select the phone shows a screen built from the player's own
+   games for the assigned role (lane opponents they lost to most, their own
+   best and most played champions, the goal that will apply) plus a curated,
+   dated meta ban list kept in the app; only the player's own cell is read
+   from the client, never the other players' picks, and every line is a
+   statement about their own record.
 3. **Live** — while a game runs, the desktop companion reads the local Live
    Client Data API and relays the player's own stats (CS, KDA, level, vision,
    items, game time) to their phone over a private channel. The phone shows
