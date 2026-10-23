@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { useSegments } from 'expo-router'
 import { colors, font } from '@/theme/tokens'
 import { activeTabFor, tabBarHiddenFor } from '@/lib/tab-bar'
 
@@ -19,9 +20,10 @@ type TabBarProps = {
 }
 
 export function TabBar({ state, navigateToTab, insets }: TabBarProps) {
+  const segments = useSegments() as string[]
   const focusedRoute = state.routes[state.index] ?? { key: 'matches', name: 'matches' }
   const focusedName = focusedRoute.name
-  if (tabBarHiddenFor(focusedRoute)) return null
+  if (tabBarHiddenFor({ ...focusedRoute, segments })) return null
   const active = activeTabFor(focusedName)
   const visible = state.routes.filter((r) => TABS[r.name])
   return (
