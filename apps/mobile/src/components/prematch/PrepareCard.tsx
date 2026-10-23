@@ -1,28 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import { banSuggestion, championSummary, roleSummary, toughestMatchups, ROLE_LABEL, type Role } from '@lpp/shared'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
 import { useOwnHistory } from '@/hooks/useOwnHistory'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { useLiveFeed } from '@/lib/live-feed-context'
-import { defaultRoles, loadRoles, saveRoles, type RolePair } from '@/lib/prematch-roles'
-import { activeRole, prepareHeadline } from '@/lib/prepare-view'
+import { activeRole, homeRole, prepareHeadline } from '@/lib/prepare-view'
 import { colors, font, radius, space } from '@/theme/tokens'
 import { BackfillBar } from './BackfillBar'
 import { ChampionSummaryCard } from './ChampionSummaryCard'
 import { GoalEditor } from './GoalEditor'
 import { MatchupsTable } from './MatchupsTable'
-import { RolePairPicker } from './RolePairPicker'
+import { RoleChips } from './RoleChips'
 
 const roleWord = (r: Role) => (r === 'UTILITY' ? 'support' : r.toLowerCase())
 
 /**
  * "Prepare your next game", by role (owner, 2026-10-23): you queue with two roles
  * and may get either, and a champion can be banned, so nothing here asks for a
- * champion. Your two roles → your record, toughest matchups and ban note for the
- * role shown → one goal for every game. In champion select the card follows the
- * assigned role and the locked champion by itself.
+ * champion and nothing has to be set up: the card shows your most played role
+ * (tap another to look at it) → your record, toughest matchups and ban note →
+ * one goal for every game. In champion select it follows the assigned role and
+ * the locked champion by itself.
  */
 export function PrepareCard({ account }: { account: LinkedAccount }) {
   const history = useOwnHistory(account, false)
@@ -36,29 +36,11 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   const { champions } = useChampionList()
   const { goals, save, saving } = useGoals(account)
 
-  // Your two roles: restored from the device, else from your own games the first time.
-  const [roles, setRoles] = useState<RolePair | null>(null)
-  const [restored, setRestored] = useState(false)
-  useEffect(() => {
-    void loadRoles().then((pair) => {
-      if (pair) setRoles(pair)
-      setRestored(true)
-    })
-  }, [])
-  useEffect(() => {
-    if (restored && roles === null && history.summaries.length) setRoles(defaultRoles(history.summaries))
-  }, [restored, roles, history.summaries])
-  const changeRoles = (pair: RolePair) => {
-    setRoles(pair)
-    setViewing(null)
-    void saveRoles(pair)
-  }
-
   const { phase } = useLiveFeed()
   const pick = phase?.phase === 'ChampSelect' ? phase.pick ?? null : null
+  // The role shown: champion select's, else the one you tapped to look at, else your most played. Nothing to set up.
   const [viewing, setViewing] = useState<Role | null>(null)
-  const pair = roles ?? { primary: 'MIDDLE' as Role, secondary: 'BOTTOM' as Role }
-  const role = activeRole({ pick, viewing, primary: pair.primary })
+  const role = activeRole({ pick, viewing, primary: homeRole(history.summaries) })
   const pickedChampion = pick?.championId ? champions.find((c) => c.id === pick.championId) ?? null : null
   const headline = prepareHeadline(pick, pickedChampion?.name ?? null)
 
@@ -83,19 +65,10 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
           <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{pick?.position ? 'From your champion select. Everything below is for this role.' : 'Waiting for your assigned role from the client.'}</Text>
         </View>
       ) : (
-        <>
-          <RolePairPicker value={pair} onChange={changeRoles} />
-          {pair.primary !== pair.secondary ? (
-            <View style={styles.showing}>
-              <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Showing</Text>
-              {[pair.primary, pair.secondary].map((r) => (
-                <Pressable key={r} onPress={() => setViewing(r)} accessibilityRole="tab" accessibilityState={{ selected: r === role }} style={[styles.seg, r === role && styles.segOn]}>
-                  <Text style={[styles.segText, r === role && styles.segTextOn]} maxFontSizeMultiplier={1.15}>{ROLE_LABEL[r]}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-        </>
+        <View style={styles.showing}>
+          <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Showing {ROLE_LABEL[role]}{viewing ? '' : ' · your most played role'}. Tap another to look at it; champion select sets it for you.</Text>
+          <RoleChips value={role} onChange={setViewing} />
+        </View>
       )}
       <View style={styles.divider} />
       <Text style={styles.section} maxFontSizeMultiplier={1.15}>{pickedChampion ? `You with ${pickedChampion.name} as ${roleWord(role)}` : `You as ${roleWord(role)}`}</Text>
@@ -115,10 +88,6 @@ const styles = StyleSheet.create({
   section: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   headline: { gap: 2, paddingVertical: space.xs },
   headlineText: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
-  showing: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  seg: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: colors.surface },
-  segOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
-  segText: { color: colors.muted, fontSize: font.caption, fontWeight: '700' },
-  segTextOn: { color: colors.text },
+  showing: { gap: 8, paddingTop: 2 },
   divider: { height: 1, backgroundColor: colors.border },
 })

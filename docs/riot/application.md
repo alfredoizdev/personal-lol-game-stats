@@ -30,10 +30,11 @@ links their own Riot ID and gets:
    role targets (CS per minute, kill participation, deaths, vision), with a
    per-game review of farming, combat, vision and lane that shows the number,
    the target and the gap. Every figure is the player's own.
-2. **Prepare** — before queueing, the player keeps their two queue roles and
-   sets one goal (for example 7.0 CS per minute) that applies to every game;
-   left at the recommended value it resolves to the role they are assigned.
-   The card shows their own record and toughest lane opponents for the role,
+2. **Prepare** — before queueing, the player sets one goal (for example
+   7.0 CS per minute) that applies to every game; left at the recommended
+   value it resolves to the role they are assigned. The card shows their own
+   record and toughest lane opponents for their most played role (any role
+   can be looked at),
    and in champion select it follows the assigned role and locked champion
    read from the player's own cell. The source of every number is stated.
 3. **Live** — while a game runs, the desktop companion reads the local Live
