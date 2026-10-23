@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { GOAL_METRICS, defaultGoal, formatGoal, goalFor, goalReference, metricInfo, type Goal, type GoalMetric, type MatchSummary, type Role } from '@lpp/shared'
 import { GoalReference } from './GoalReference'
 import { stepTarget } from '@/lib/goal-steps'
+import { goalSaveState } from '@/lib/prematch-ui'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 /**
@@ -36,7 +37,7 @@ export function GoalEditor({
   const suggested = defaultGoal(summaries, championId, role, metric)
   const [target, setTarget] = useState<number | null>(() => (exact?.metric === metric ? exact.target : suggested.target))
   const [touched, setTouched] = useState(false)
-  const [savedAt, setSavedAt] = useState<string | null>(null)
+  const [savedGoal, setSavedGoal] = useState<{ metric: GoalMetric; target: number } | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const lastSuggested = useRef(suggested.target)
 
@@ -63,7 +64,7 @@ export function GoalEditor({
         : suggested.source === 'target'
           ? 'Default: the target for your role'
           : 'No default for this metric in this role — set it by hand'
-  const saved = savedAt !== null && exact?.setAt === savedAt
+  const saveState = goalSaveState(savedGoal, { metric, target })
   const step = (dir: 1 | -1) => {
     setTouched(true)
     setSaveError(null)
@@ -105,15 +106,20 @@ export function GoalEditor({
           if (target === null) return
           setSaveError(null)
           onSave({ championId, role, metric, target })
-            .then(() => setSavedAt(new Date().toISOString()))
+            .then(() => setSavedGoal({ metric, target }))
             .catch((e: unknown) => setSaveError(e instanceof Error ? e.message : 'Could not save the goal'))
         }}
         accessibilityRole="button"
         style={[styles.save, (target === null || saving) && styles.saveOff]}
       >
-        <Text style={styles.saveText} maxFontSizeMultiplier={1.15}>{saving ? 'Saving…' : saved || (savedAt && !exact) ? 'Saved ✓' : 'Save goal'}</Text>
+        <Text style={styles.saveText} maxFontSizeMultiplier={1.15}>{saving ? 'Saving…' : saveState?.kind === 'saved' ? 'Saved ✓' : 'Save goal'}</Text>
       </Pressable>
       {saveError ? <Text style={styles.error} maxFontSizeMultiplier={1.15}>Couldn't save: {saveError}</Text> : null}
+      {saveState ? (
+        <Text style={saveState.kind === 'saved' ? styles.savedLine : styles.source} maxFontSizeMultiplier={1.15}>
+          {saveState.line}
+        </Text>
+      ) : null}
       <Text style={styles.hint} maxFontSizeMultiplier={1.15}>
         Shows on the Live tab when you play {championName} as {role === 'UTILITY' ? 'support' : role.toLowerCase()}, and is checked in the match review. Step {info.step}{info.unit.trim()}.
       </Text>
@@ -134,6 +140,7 @@ const styles = StyleSheet.create({
   stepText: { color: colors.text, fontSize: 24, lineHeight: 26, fontWeight: '700' },
   value: { color: colors.text, fontSize: font.body + 3, fontWeight: '800', flex: 1, textAlign: 'center' },
   source: { color: colors.muted, fontSize: font.caption },
+  savedLine: { color: colors.win, fontSize: font.caption + 1, fontWeight: '600' },
   save: { backgroundColor: colors.accent, borderRadius: radius.control, paddingVertical: 12, alignItems: 'center' },
   saveOff: { opacity: 0.5 },
   saveText: { color: colors.text, fontSize: font.body, fontWeight: '800' },

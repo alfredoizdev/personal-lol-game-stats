@@ -17,6 +17,13 @@ import { ROLE_LABEL, RoleChips } from './RoleChips'
 /** "Prepare your next game": champion + role → your own history → a goal (spec 2.1–2.4). */
 export function PrepareCard({ account }: { account: LinkedAccount }) {
   const history = useOwnHistory(account, false)
+  // One rule for every stats page: it loads its window (the last 100 games) by itself, once per account.
+  const startedFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (history.total === 0 || startedFor.current === account.puuid) return
+    startedFor.current = account.puuid
+    if (history.loaded < history.total) history.start()
+  }, [account.puuid, history])
   const { champions, byName } = useChampionList()
   const { goals, save, saving } = useGoals(account)
   const [role, setRole] = useState<Role | null>(null)
@@ -64,7 +71,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Prepare your next game</Text>
       <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Your own games only. Pick what you are about to play.</Text>
-      <BackfillBar loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onStart={history.start} />
+      <BackfillBar loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onRetry={() => history.start()} />
       <RoleChips value={effectiveRole} onChange={setRole} />
       <ChampionPicker champions={champions} played={played} selected={selected} onSelect={(c) => setChampionId(c.id)} />
       {selected && summary ? (
