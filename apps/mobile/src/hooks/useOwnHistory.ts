@@ -23,6 +23,8 @@ export type OwnHistory = {
   /** The last run's problem (rate limit, failed ids) or the ids query's error. */
   error: unknown | null
   idsPending: boolean
+  /** The id list is being fetched or refreshed right now (a restored list refreshes on launch). */
+  idsFetching: boolean
 }
 
 /**
@@ -151,5 +153,6 @@ export function useOwnHistory(account: LinkedAccount | null, paused: boolean): O
     loadedWithin,
     error: run.error ?? idsQuery.error ?? null,
     idsPending: !!account && idsQuery.isPending,
+    idsFetching: !!account && idsQuery.isFetching,
   }
 }
