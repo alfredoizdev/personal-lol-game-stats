@@ -3,14 +3,13 @@ import { colors, font, space } from '@/theme/tokens'
 
 /** The launch screen while your games load (once per account, then instant). */
 export function LoadingScreen({ loaded, total, idsPending }: { loaded: number; total: number; idsPending: boolean }) {
-  const window = Math.min(total, 20)
-  const pct = window ? Math.round((Math.min(loaded, window) / window) * 100) : 0
+  const pct = total ? Math.round((loaded / total) * 100) : 0
   return (
     <View style={styles.center}>
       <Text style={styles.brand} maxFontSizeMultiplier={1.15}>LanePulse</Text>
       <ActivityIndicator color={colors.muted} />
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Loading your games</Text>
-      <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{idsPending || !total ? 'Finding your recent games…' : `${Math.min(loaded, window)} of ${window} ready · once per account, then instant`}</Text>
+      <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{idsPending || !total ? 'Finding your recent games…' : `${loaded} of your last ${total} games ready · once per account, then instant`}</Text>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${pct}%` }]} />
       </View>

@@ -155,5 +155,5 @@ Design note: `docs/superpowers/specs/2026-10-23-prepare-by-role-design.md`. Owne
 Owner feedback: "a loading screen while the games load, and load them once at start for every page, not each time I enter a screen".
 
 - `HistoryProvider` in the app layout mounts the own-history hook once per account and starts the 100-game window as soon as the id list is known; `useHistory()` replaces per-screen `useOwnHistory` calls in Performance and Prepare (no screen starts a load on entry any more; Retry remains).
-- `LoadingScreen` holds the tabs until the first 20 games are ready (what Matches and Performance show first); the remaining 80 keep loading behind the tabs. Never blocks on nothing (no games or a run that stopped short shows the tabs, which explain and offer Retry); sticky per account so a later refetch never flashes it.
+- `LoadingScreen` holds the tabs until EVERY game in the window is loaded (owner: no numbers moving on screen once inside; a first cut opened the tabs after 20 and Live kept shifting). Never blocks on nothing (no games or a run that stopped short shows the tabs, which explain and offer Retry); sticky per account so a later refetch never flashes it.
 - Tests: mobile 187 (`app-load.test.ts`). Lint and typecheck clean.
