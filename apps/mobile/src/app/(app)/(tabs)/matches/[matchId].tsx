@@ -38,7 +38,6 @@ export default function MatchReviewScreen() {
   const { data: account } = useLinkedAccount()
   const region = account?.region ?? 'NA'
   const detail = useQuery({ ...matchDetailQuery(id, region), enabled: !!matchId && !!account })
-  const now = Date.now()
   const summary = useMemo(
     () => (detail.data && account ? summarizeMatch(detail.data, identityOf(account)) : null),
     [detail.data, account],
@@ -105,7 +104,7 @@ export default function MatchReviewScreen() {
 
         {summary ? (
           <>
-            <MatchHero summary={summary} now={now} />
+            <MatchHero summary={summary} />
 
             {analysis?.analyzable ? (
               <>
