@@ -1,4 +1,4 @@
-import { playedRoles, ROLE_LABEL, type ChampSelectPick, type MatchSummary, type Role } from '@lpp/shared'
+import { playedRoles, ROLE_LABEL, type ChampSelectPick, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
 
 /** The role Prepare shows by itself: your most played; mid before any game is loaded. Nothing to choose. */
 export function homeRole(summaries: MatchSummary[]): Role {
@@ -18,20 +18,13 @@ export function prepareHeadline(pick: ChampSelectPick | null, championName: stri
   return role ? `Champion select · ${role}` : 'Champion select'
 }
 
-/**
- * What Save goal stores: null while the editor still shows the recommended
- * value (resolved at game time to the role you end up playing), the number
- * once the player moved away from it.
- */
-export function standingTarget(editor: number, recommended: number | null): number | null {
-  return editor === recommended ? null : editor
-}
+export type GoalEditorInitial = { mode: 'recommended'; metric: null } | { mode: 'fixed'; metric: GoalMetric; target: number }
 
 /**
- * The editor when the metric is not scored for the role shown (CS for support) and
- * the player fixed no number: the role's own recommended goal is shown instead of a
- * dash, without a stepper; Save keeps "recommended for the role you play".
+ * Where the editor starts (2026-10-26): "recommended for my role" unless the
+ * player saved a fixed metric and number (a standing row with a target).
  */
-export function goalEditorMode({ recommended, fixed }: { recommended: number | null; fixed: number | null }): 'edit' | 'fallback' {
-  return recommended === null && fixed === null ? 'fallback' : 'edit'
+export function goalEditorInitial(standing: Pick<StoredGoal, 'metric' | 'target'> | null): GoalEditorInitial {
+  if (!standing || standing.target === null) return { mode: 'recommended', metric: null }
+  return { mode: 'fixed', metric: standing.metric, target: standing.target }
 }

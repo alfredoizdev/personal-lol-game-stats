@@ -76,9 +76,15 @@ export function ownAverage(all: MatchSummary[], championId: number, role: Role, 
   return null
 }
 
-/** The metric a role is measured on first: vision for support (farming is not scored there), CS for every lane. */
+/**
+ * The metric a role is measured on first (owner, 2026-10-26): kill participation
+ * for jungle (its game is the map, not the farm), vision for support (farming is
+ * not scored there), CS for every lane.
+ */
 export function defaultMetricFor(role: Role): GoalMetric {
-  return role === 'UTILITY' ? 'visionPerMin' : 'csPerMin'
+  if (role === 'UTILITY') return 'visionPerMin'
+  if (role === 'JUNGLE') return 'kpPct'
+  return 'csPerMin'
 }
 
 /** Recommended goal = the role target (what the match score measures against), with the player's own average beside it. */
@@ -101,9 +107,14 @@ export function goalFor(goals: StoredGoal[], puuid: string, championId: number |
   const specific = mine.filter((g) => g.role !== 'ANY')
   const inRole = role === null ? [] : specific.filter((g) => g.role === role)
   const exact = championId !== null ? inRole.find((g) => g.championId === championId) : undefined
+  // A newer role-wide row (champion 0) beats an older champion-specific one: the one editor writes a row per role now (2026-10-26).
+  const newestInRole = inRole[0]
+  const roleFirst = exact !== undefined && newestInRole !== undefined && newestInRole !== exact && newestInRole.championId === 0 && Date.parse(newestInRole.setAt) > Date.parse(exact.setAt)
   const forChampion = championId !== null && championId !== 0 ? specific.find((g) => g.championId === championId) : undefined
   const standing = mine.find((g) => g.role === 'ANY')
-  const candidates: Array<[StoredGoal | undefined, GoalSource]> = [[exact, 'exact'], [inRole[0], 'role'], [forChampion, 'champion'], [standing, 'standing']]
+  const candidates: Array<[StoredGoal | undefined, GoalSource]> = roleFirst
+    ? [[newestInRole, 'role'], [exact, 'exact'], [forChampion, 'champion'], [standing, 'standing']]
+    : [[exact, 'exact'], [newestInRole, 'role'], [forChampion, 'champion'], [standing, 'standing']]
   for (const [g, source] of candidates) {
     if (!g) continue
     const resolvedRole: Role | null = g.role === 'ANY' ? role : g.role

@@ -30,9 +30,11 @@ links their own Riot ID and gets:
    role targets (CS per minute, kill participation, deaths, vision), with a
    per-game review of farming, combat, vision and lane that shows the number,
    the target and the gap. Every figure is the player's own.
-2. **Prepare** — before queueing, the player sets one goal (for example
-   7.0 CS per minute) that applies to every game; left at the recommended
-   value it resolves to the role they are assigned. The card shows their own
+2. **Prepare** — before queueing, the player sets one goal: either
+   "recommended for my role" (each role gets the metric where the player is
+   furthest below that role's published target in their own recent games,
+   for example vision for jungle or CS for mid) or a fixed metric and number
+   (for example 7.0 CS per minute) that applies to every game. The card shows their own
    record and toughest lane opponents for their most played role (any role
    can be looked at),
    and in champion select it follows the assigned role and locked champion
