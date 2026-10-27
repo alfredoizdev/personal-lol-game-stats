@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeRole, goalEditorInitial, homeRole, prepareHeadline } from '@/lib/prepare-view'
+import { activeRole, goalEditorInitial, homeRole, prepareHeadline, standingTarget } from '@/lib/prepare-view'
 
 describe('activeRole (which role Prepare shows)', () => {
   it('is the role champion select assigned when there is one', () => {
@@ -33,12 +33,23 @@ describe('homeRole (the role Prepare shows by itself, nothing to choose)', () =>
   })
 })
 
-describe('goalEditorInitial (where the one editor starts, 2026-10-26)', () => {
-  it('starts on "recommended for my role" with no saved goal or a recommended one', () => {
-    expect(goalEditorInitial(null)).toEqual({ mode: 'recommended', metric: null })
-    expect(goalEditorInitial({ metric: 'csPerMin', target: null })).toEqual({ mode: 'recommended', metric: null })
+describe('goalEditorInitial (where the one editor starts, 2026-10-27: you pick the metric, the number follows the role)', () => {
+  it("starts on the shown role's first metric at the recommended value with nothing saved", () => {
+    expect(goalEditorInitial(null, 'UTILITY')).toEqual({ metric: 'visionPerMin', target: null })
+    expect(goalEditorInitial(null, 'JUNGLE')).toEqual({ metric: 'kpPct', target: null })
   })
-  it('starts on the fixed metric and number the player saved', () => {
-    expect(goalEditorInitial({ metric: 'deathsPer10', target: 1.2 })).toEqual({ mode: 'fixed', metric: 'deathsPer10', target: 1.2 })
+  it('starts on the saved metric, recommended or fixed', () => {
+    expect(goalEditorInitial({ metric: 'csPerMin', target: null }, 'UTILITY')).toEqual({ metric: 'csPerMin', target: null })
+    expect(goalEditorInitial({ metric: 'deathsPer10', target: 1.2 }, 'TOP')).toEqual({ metric: 'deathsPer10', target: 1.2 })
+  })
+})
+
+describe('standingTarget (what Save goal stores)', () => {
+  it('stores null (the number follows the role) while the value is the recommended one', () => {
+    expect(standingTarget(7, 7)).toBeNull()
+  })
+  it('stores the number once the player moved away from it', () => {
+    expect(standingTarget(7.5, 7)).toBe(7.5)
+    expect(standingTarget(7.5, null)).toBe(7.5)
   })
 })

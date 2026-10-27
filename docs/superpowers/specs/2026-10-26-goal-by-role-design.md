@@ -40,3 +40,13 @@ vision depends on that player's own numbers, and the app has them.
 
 Own data only; the recommendation is a statement about the player's record
 against published role targets; no instruction in-game.
+
+## Revision (2026-10-27, owner on the simulator)
+
+The five-role list was too much ("hay que hacerlo más sencillo"; "el user escoge
+el goal que quiere"). The player picks the metric; the number follows the role
+(each role's target) unless they fix one. The weakest-metric computation stays
+as a one-line suggestion for the role shown, tap to pick. Save still writes one
+row per role. The Save button sits right under the number; the reference ruler
+moves to the bottom.
+
