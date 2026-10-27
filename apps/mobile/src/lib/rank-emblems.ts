@@ -8,6 +8,7 @@ import platinum from '../../assets/ranked-emblem/emblem-platinum.png'
 import emerald from '../../assets/ranked-emblem/emblem-emerald.png'
 import diamond from '../../assets/ranked-emblem/emblem-diamond.png'
 import master from '../../assets/ranked-emblem/emblem-master.png'
+import unranked from '../../assets/ranked-emblem/emblem-unraked.png'
 
 /** Riot's ranked emblems (the same PNGs the owner used in RiftLens), one per ladder step. */
 export const RANK_EMBLEM: Record<RankTier, ImageSourcePropType> = {
@@ -20,3 +21,6 @@ export const RANK_EMBLEM: Record<RankTier, ImageSourcePropType> = {
   Diamond: diamond,
   'Master+': master,
 }
+
+/** Shown while the account has no Solo/Duo entry yet. */
+export const UNRANKED_EMBLEM: ImageSourcePropType = unranked

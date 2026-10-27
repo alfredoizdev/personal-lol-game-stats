@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatRank, parseRankedEntries, rankTier, type RankEntry } from '../src/rank'
+import { formatRank, parseRankedEntries, rankCard, rankTier, type RankEntry } from '../src/rank'
 
 const solo: RankEntry = { queue: 'solo', tier: 'GOLD', division: 'II', leaguePoints: 45, wins: 12, losses: 8 }
 
@@ -28,5 +28,10 @@ describe('ranked entries (owner, 2026-10-27: the account rank shows nowhere)', (
     expect(rankTier('GRANDMASTER')).toBe('Master+')
     expect(rankTier('CHALLENGER')).toBe('Master+')
     expect(rankTier(null)).toBeNull()
+  })
+  it('rankCard splits the standing for the header: tier name on top, LP, record and win rate below', () => {
+    expect(rankCard(solo)).toEqual({ name: 'Gold II', standing: '45 LP · 12W 8L · 60% win rate' })
+    expect(rankCard({ ...solo, tier: 'CHALLENGER', division: 'I', leaguePoints: 812, wins: 0, losses: 0 })).toEqual({ name: 'Challenger', standing: '812 LP · 0W 0L' })
+    expect(rankCard(null)).toEqual({ name: 'Unranked', standing: 'Solo/Duo · play ranked to place' })
   })
 })

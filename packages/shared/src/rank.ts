@@ -36,8 +36,20 @@ const word = (tier: string) => tier.charAt(0) + tier.slice(1).toLowerCase()
 /** "Gold II · 45 LP · 12W 8L"; apex tiers have no division; "Unranked" without an entry. */
 export function formatRank(entry: RankEntry | null): string {
   if (!entry) return 'Unranked'
-  const name = APEX.has(entry.tier) || !entry.division ? word(entry.tier) : `${word(entry.tier)} ${entry.division}`
-  return `${name} · ${entry.leaguePoints} LP · ${entry.wins}W ${entry.losses}L`
+  return `${rankName(entry)} · ${entry.leaguePoints} LP · ${entry.wins}W ${entry.losses}L`
+}
+
+const rankName = (entry: RankEntry) => (APEX.has(entry.tier) || !entry.division ? word(entry.tier) : `${word(entry.tier)} ${entry.division}`)
+
+/**
+ * The Matches header card (owner, 2026-10-27: "remueve ese título tan grande, usa las imágenes png para el elo"):
+ * the tier name sits next to the emblem, LP, record and win rate go below. Win rate only once there is a game.
+ */
+export function rankCard(entry: RankEntry | null): { name: string; standing: string } {
+  if (!entry) return { name: 'Unranked', standing: 'Solo/Duo · play ranked to place' }
+  const games = entry.wins + entry.losses
+  const wr = games > 0 ? ` · ${Math.round((entry.wins / games) * 100)}% win rate` : ''
+  return { name: rankName(entry), standing: `${entry.leaguePoints} LP · ${entry.wins}W ${entry.losses}L${wr}` }
 }
 
 /** The ladder tier on the goal ruler that matches a Riot tier. */
