@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { postGameNavigation, type PostGameObservation } from '@/lib/post-game-nav'
-import { isReviewOf, reviewWaitState, REVIEW_GIVE_UP_MS } from '@/lib/post-game-review'
+import { isReviewOf, postGameRedirect, reviewWaitState, REVIEW_GIVE_UP_MS, REVIEW_REDIRECT_DWELL_MS } from '@/lib/post-game-review'
 
 const o = (p: Partial<PostGameObservation>): PostGameObservation => ({ view: 'waiting', phase: null, endedAt: null, ...p })
 
@@ -33,5 +33,14 @@ describe('post-game review lookup (the match shows up in Riot history a minute o
     expect(reviewWaitState({ found: false, endedAt: 0, nowMs: 30_000 })).toBe('looking')
     expect(reviewWaitState({ found: true, endedAt: 0, nowMs: 30_000 })).toBe('found')
     expect(reviewWaitState({ found: false, endedAt: 0, nowMs: REVIEW_GIVE_UP_MS + 1 })).toBe('gave-up')
+  })
+})
+
+describe('postGameRedirect (owner, 2026-10-27: once the review is ready, the post-game screen goes to it by itself)', () => {
+  it('redirects once the review has been found for a short dwell, so the summary does not flash away', () => {
+    expect(REVIEW_REDIRECT_DWELL_MS).toBe(3000)
+    expect(postGameRedirect({ foundAtMs: null, nowMs: 10_000 })).toBe(false)
+    expect(postGameRedirect({ foundAtMs: 10_000, nowMs: 11_000 })).toBe(false)
+    expect(postGameRedirect({ foundAtMs: 10_000, nowMs: 13_000 })).toBe(true)
   })
 })
