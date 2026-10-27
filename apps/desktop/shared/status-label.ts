@@ -21,6 +21,7 @@ const WAITING_LABEL: Partial<Record<string, string>> = {
   ReadyCheck: 'Match found — accept it!',
   ChampSelect: 'Champion select',
   GameStart: 'Loading into the game…',
+  InProgress: 'Loading into the game…',
   Lobby: 'In lobby',
 }
 

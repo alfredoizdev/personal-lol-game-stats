@@ -141,6 +141,8 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
         if (lastPhase !== 'InProgress' && lockfile) {
           queueId = await deps.getQueueId(lockfile).catch(() => null)
         }
+        // The loading screen: InProgress before the Live Client answers. Say so, instead of leaving the phone on champ select (owner, 2026-10-27).
+        if (!lastSnapshot) emit({ kind: 'waiting', phase: 'InProgress' })
         startLive()
       } else if (phase === 'Reconnect' || (phase === 'GameStart' && lastSnapshot)) {
         // Client dropped mid-game (Reconnect → GameStart → InProgress): keep what we had, keep polling.
@@ -149,8 +151,8 @@ export function startLivePoller(opts: LivePollerOptions): LivePollerHandle {
         if (lastSnapshot) endGame()
         else if (phase === 'ChampSelect' && lockfile) emit({ kind: 'waiting', phase, pick: await deps.getPick(lockfile).catch(() => null) })
         else emit({ kind: 'waiting', phase })
-      } else if (phase === null && lastSnapshot && nullStreak < NULL_PHASE_GRACE) {
-        // A slow/unreachable LCU for a moment is not the end of the game.
+      } else if (phase === null && nullStreak < NULL_PHASE_GRACE && (lastSnapshot || state.kind === 'waiting')) {
+        // A slow/unreachable LCU for a moment is not the end of the game, nor of the queue: the LCU stalls while the game client launches.
       } else if (phase === null || END_PHASES.includes(phase)) {
         if (lastSnapshot) endGame()
         // After `ended`, keep that state while the phase that ended the game holds; a new phase
