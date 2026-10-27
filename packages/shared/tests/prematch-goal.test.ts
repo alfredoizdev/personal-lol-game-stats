@@ -127,10 +127,10 @@ describe('formatGoal', () => {
 })
 
 describe('standing goal where the metric is not scored for the role (owner, 2026-10-23: support showed no goal)', () => {
-  it('defaultMetricFor is vision for support and CS for every lane', () => {
+  it('defaultMetricFor is vision for support, kill participation for jungle (2026-10-26) and CS for every lane', () => {
     expect(defaultMetricFor('UTILITY')).toBe('visionPerMin')
     expect(defaultMetricFor('MIDDLE')).toBe('csPerMin')
-    expect(defaultMetricFor('JUNGLE')).toBe('csPerMin')
+    expect(defaultMetricFor('JUNGLE')).toBe('kpPct')
   })
   it('a recommended CS goal resolves, for a support game, to the recommended vision goal instead of nothing', () => {
     const standing = goal({ championId: 0, role: 'ANY', metric: 'csPerMin', target: null })

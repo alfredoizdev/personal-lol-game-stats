@@ -18,15 +18,10 @@ export async function fetchGoals(client: SupabaseClient, userId: string, puuid: 
   return ((data ?? []) as GoalRow[]).map(rowToGoal).filter((g): g is StoredGoal => g !== null)
 }
 
-/** Append-only: every save is a new row (the newest one is the goal in force). */
-export async function saveGoal(client: SupabaseClient, userId: string, goal: Omit<StoredGoal, 'setAt'>): Promise<void> {
-  const { error } = await client.from('pre_match_focus').insert({
-    user_id: userId,
-    puuid: goal.puuid,
-    champion_id: goal.championId,
-    role: goal.role,
-    metric: goal.metric,
-    target: goal.target,
-  })
+/** Several rows in one insert (the standing row plus one per role, 2026-10-26); all share one set_at order of arrival. */
+export async function saveGoalRows(client: SupabaseClient, userId: string, rows: Array<Omit<StoredGoal, 'setAt'>>): Promise<void> {
+  const { error } = await client.from('pre_match_focus').insert(
+    rows.map((goal) => ({ user_id: userId, puuid: goal.puuid, champion_id: goal.championId, role: goal.role, metric: goal.metric, target: goal.target })),
+  )
   if (error) throw new Error(error.message)
 }
