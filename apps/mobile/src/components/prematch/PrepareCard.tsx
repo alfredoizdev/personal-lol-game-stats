@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { banSuggestion, championSummary, roleSummary, toughestMatchups, ROLE_LABEL, type Role } from '@lpp/shared'
+import { banSuggestion, championSummary, roleSummary, toughestMatchups, ROLE_LABEL, type Role, bestRole } from '@lpp/shared'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
 import { useHistory } from '@/lib/history-context'
@@ -44,6 +44,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
     void saveViewRole(r)
   }
   const role = activeRole({ pick, viewing, primary: homeRole(history.summaries) })
+  const best = useMemo(() => bestRole(history.summaries), [history.summaries])
   const pickedChampion = pick?.championId ? champions.find((c) => c.id === pick.championId) ?? null : null
   const headline = prepareHeadline(pick, pickedChampion?.name ?? null)
 
@@ -69,8 +70,10 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
         </View>
       ) : (
         <View style={styles.showing}>
-          <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Showing {ROLE_LABEL[role]}{viewing ? '' : ' · your most played role'}. Tap another to look at it; champion select sets it for you.</Text>
-          <RoleChips value={role} onChange={lookAt} />
+          <Text style={styles.sub} maxFontSizeMultiplier={1.15}>
+            Showing {ROLE_LABEL[role]}{viewing ? '' : ' · your most played role'}.{best ? ` ★ ${ROLE_LABEL[best.role]} is where you win most: ${best.winRate} % over ${best.games} games.` : ''} Tap another to look at it; champion select sets it for you.
+          </Text>
+          <RoleChips value={role} onChange={lookAt} best={best?.role ?? null} />
         </View>
       )}
       <View style={styles.divider} />

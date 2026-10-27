@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine } from '../src/match-v5'
-import { banSuggestion, championSummary, lastRole, playedChampions, playedRoles, roleSummary, toughestMatchups } from '../src/prematch/history'
+import { banSuggestion, bestRole, BEST_ROLE_MIN_GAMES, championSummary, lastRole, playedChampions, playedRoles, roleSummary, toughestMatchups } from '../src/prematch/history'
 import { game, line } from './analysis-fixtures'
 
 const at = (i: number) => new Date(Date.UTC(2026, 9, 1 + i)).toISOString()
@@ -114,5 +114,24 @@ describe('roleSummary / playedRoles (Prepare by role, 2026-10-23)', () => {
       { role: 'MIDDLE', games: 1 },
     ])
     expect(playedRoles([])).toEqual([])
+  })
+})
+
+describe('bestRole (owner, 2026-10-27: a mark on the role you play best)', () => {
+  const r = (role: PlayerLine['role'], win: boolean) => g({ role, win }, null)
+  it('is the role with the highest win rate among roles with enough games; ties go to the role with more games', () => {
+    const all = [
+      ...Array.from({ length: 5 }, (_, i) => r('UTILITY', i < 4)), // 80 % over 5
+      ...Array.from({ length: 10 }, (_, i) => r('MIDDLE', i < 6)), // 60 % over 10
+      ...Array.from({ length: 2 }, () => r('TOP', true)), // 100 % but only 2 games
+    ]
+    expect(BEST_ROLE_MIN_GAMES).toBe(5)
+    expect(bestRole(all)).toEqual({ role: 'UTILITY', games: 5, winRate: 80 })
+    const tie = [...Array.from({ length: 5 }, (_, i) => r('UTILITY', i < 3)), ...Array.from({ length: 10 }, (_, i) => r('MIDDLE', i < 6))] // both 60 %
+    expect(bestRole(tie)?.role).toBe('MIDDLE')
+  })
+  it('is null until some role has enough games', () => {
+    expect(bestRole([])).toBeNull()
+    expect(bestRole(Array.from({ length: 4 }, () => r('TOP', true)))).toBeNull()
   })
 })
