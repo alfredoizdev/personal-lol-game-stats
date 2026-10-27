@@ -198,3 +198,4 @@ Design note: `docs/superpowers/specs/2026-10-23-post-game-screen-design.md`. Own
 - Post-game screen: a "Your numbers" grid (KDA, kill participation, CS/min with total, vision, level, damage + gold once the match record arrives, items) replaces the three tiles; the hero line shows champion, role and queue. Tests: shared 230 (`champ-select.test.ts`), mobile 204.
 - Phase 9 (partial, 2026-10-26): desktop companion packaged with electron-builder (`pnpm dist` → `release/LanePulse-0.1.0-arm64.dmg`, ad-hoc signed, runs without the dev servers; smoke run: signs in, connects, polls League). Owner asked for it after running `pnpm dev` by hand. Notarized Developer ID build and an app icon remain. See `docs/desktop/install.md`.
 
+- Match review hero (owner, 2026-10-26): the "Played · 40m ago" column removed; KDA, CS/min and Duration remain.

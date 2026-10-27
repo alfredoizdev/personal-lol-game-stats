@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
-import { formatDuration, formatKda, relativeTimeShort, type MatchSummary } from '@lpp/shared'
+import { formatDuration, formatKda, type MatchSummary } from '@lpp/shared'
 import { PortraitWithBadges } from './PortraitWithBadges'
 import { ItemRow } from './ItemRow'
 import { resultWord } from './MatchRow'
@@ -18,7 +18,7 @@ function Stat({ value, label, sub }: { value: string; label: string; sub?: strin
   )
 }
 
-export function MatchHero({ summary, now }: { summary: MatchSummary; now: number }) {
+export function MatchHero({ summary }: { summary: MatchSummary }) {
   const r = resultWord(summary)
   const me = summary.me
   return (
@@ -39,8 +39,6 @@ export function MatchHero({ summary, now }: { summary: MatchSummary; now: number
         <Stat value={me.csPerMin === null ? '—' : me.csPerMin.toFixed(1)} label="CS / min" />
         <View style={styles.divider} />
         <Stat value={formatDuration(summary.durationSec)} label="Duration" />
-        <View style={styles.divider} />
-        <Stat value={relativeTimeShort(summary.startedAt, now)} label="Played" />
       </View>
     </View>
   )
