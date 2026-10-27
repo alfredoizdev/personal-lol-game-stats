@@ -102,6 +102,26 @@ export function playedRoles(all: MatchSummary[]): Array<{ role: Role; games: num
   return [...byRole.entries()].map(([role, games]) => ({ role, games })).sort((a, b) => b.games - a.games || a.role.localeCompare(b.role))
 }
 
+/** Games a role needs before it can be called your best. */
+export const BEST_ROLE_MIN_GAMES = 5
+
+/** The role you win most with (owner, 2026-10-27): highest win rate among roles with 5+ games, ties to the one with more games. A statement about your record. */
+export function bestRole(all: MatchSummary[]): { role: Role; games: number; winRate: number } | null {
+  const byRole = new Map<Role, { games: number; wins: number }>()
+  for (const s of all) {
+    if (!analyzable(s) || s.me.role === null) continue
+    const e = byRole.get(s.me.role) ?? { games: 0, wins: 0 }
+    e.games += 1
+    if (s.me.win) e.wins += 1
+    byRole.set(s.me.role, e)
+  }
+  const rows = [...byRole.entries()]
+    .filter(([, e]) => e.games >= BEST_ROLE_MIN_GAMES)
+    .map(([role, e]) => ({ role, games: e.games, winRate: pct(e.wins, e.games) }))
+    .sort((a, b) => b.winRate - a.winRate || b.games - a.games || a.role.localeCompare(b.role))
+  return rows[0] ?? null
+}
+
 export function lastRole(all: MatchSummary[]): Role | null {
   const newest = all.filter((s) => analyzable(s) && s.me.role !== null).sort(newestFirst)[0]
   return newest?.me.role ?? null
