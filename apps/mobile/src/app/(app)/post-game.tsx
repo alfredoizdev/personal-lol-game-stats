@@ -12,7 +12,7 @@ import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { identityOf, matchDetailQuery, matchKeys } from '@/hooks/useRecentMatches'
 import { useLiveFeed } from '@/lib/live-feed-context'
-import { isReviewOf, reviewWaitState } from '@/lib/post-game-review'
+import { isReviewOf, postGameRedirect, reviewWaitState } from '@/lib/post-game-review'
 import { fetchMatchIds, isRetryableRiotError } from '@/lib/riot-api'
 import { supabase } from '@/lib/supabase'
 import { colors, font, radius, space } from '@/theme/tokens'
@@ -24,8 +24,10 @@ const LIST = 20
  * Post-game (owner, 2026-10-23): what you did this game, whether the goal was
  * met, your final numbers (owner, 2026-10-23: more stats here, the deep read in
  * the review), your lane against the opponent, and the match review as soon as
- * Riot's history lists the game. Opens by itself when the game ends; Close
- * returns to the tabs.
+ * Riot's history lists the game. Opens by itself when the game ends, full
+ * screen with no tab bar and nothing to close (owner, 2026-10-27): once the
+ * review is ready it moves to the match review by itself; the next queue closes
+ * it; after six minutes without a listing it offers Matches.
  */
 export default function PostGameScreen() {
   const { snapshot, endedAt, now } = useLiveFeed()
@@ -46,6 +48,7 @@ export default function PostGameScreen() {
 
   // Riot lists the game a minute or two later: refresh the Matches id list every 20 s until the newest match is this game.
   const [found, setFound] = useState<string | null>(null)
+  const [foundAt, setFoundAt] = useState<number | null>(null)
   const ids = useQuery({
     queryKey: matchKeys.ids(account?.puuid, LIST),
     queryFn: () => fetchMatchIds(supabase, { gameName: account!.gameName, tagLine: account!.tagLine, region: account!.region, count: LIST }),
@@ -61,6 +64,7 @@ export default function PostGameScreen() {
     const s = summarizeMatch(detail.data as MatchV5, identityOf(account))
     if (s && isReviewOf(s, endedAtRef.current, snapshot?.gameTimeSeconds ?? null)) {
       setFound(newest)
+      setFoundAt(Date.now())
       void qc.invalidateQueries({ queryKey: matchKeys.ownIds(account.puuid) }) // Prepare / Performance pick the game up too
     }
   }, [found, newest, detail.data, account, snapshot, qc])
@@ -69,16 +73,15 @@ export default function PostGameScreen() {
     return summarizeMatch(detail.data as MatchV5, identityOf(account))
   }, [found, detail.data, account])
   const wait = reviewWaitState({ found: found !== null, endedAt: endedAtRef.current, nowMs: now })
+  // The review is ready: show the result for a moment, then go there (the review has its own back chevron to Matches).
+  useEffect(() => {
+    if (found && postGameRedirect({ foundAtMs: foundAt, nowMs: now })) router.replace(`/(app)/(tabs)/matches/${found}`)
+  }, [found, foundAt, now])
 
   return (
     <Screen
       title="Match ended"
       subtitle={snapshot ? `${snapshot.me.championName} · ${snapshot.gameTimeSeconds === null ? '--:--' : formatDuration(snapshot.gameTimeSeconds)}` : 'Your last game'}
-      right={
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={styles.close}>
-          <Text style={styles.closeText} maxFontSizeMultiplier={1.15}>Close</Text>
-        </Pressable>
-      }
     >
       {snapshot ? (
         <View style={styles.card}>
@@ -108,9 +111,10 @@ export default function PostGameScreen() {
           </View>
         ) : null}
         {wait === 'found' && found ? (
-          <Pressable style={styles.button} onPress={() => router.replace(`/(app)/(tabs)/matches/${found}`)} accessibilityRole="button">
-            <Text style={styles.buttonText} maxFontSizeMultiplier={1.15}>Open the match review</Text>
-          </Pressable>
+          <View style={styles.row}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.muted} maxFontSizeMultiplier={1.15}>Your match review is ready. Opening it…</Text>
+          </View>
         ) : null}
         {wait === 'gave-up' ? (
           <>
@@ -126,8 +130,6 @@ export default function PostGameScreen() {
 }
 
 const styles = StyleSheet.create({
-  close: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 7 },
-  closeText: { color: colors.text, fontSize: font.caption + 1, fontWeight: '700' },
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
   cardTitle: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
   hero: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -137,7 +139,6 @@ const styles = StyleSheet.create({
   goal: { borderWidth: 1, borderRadius: radius.control, padding: space.sm, gap: 2 },
   goalTitle: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  button: { alignSelf: 'flex-start', backgroundColor: colors.accent, borderRadius: radius.control, paddingVertical: 12, paddingHorizontal: 18 },
   buttonGhost: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.border, borderRadius: radius.control, paddingVertical: 12, paddingHorizontal: 18 },
   buttonText: { color: colors.text, fontWeight: '700' },
 })

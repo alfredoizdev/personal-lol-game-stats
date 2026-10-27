@@ -44,7 +44,8 @@ function AppStack() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="link" />
       <Stack.Screen name="champ-select" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="post-game" options={{ presentation: 'modal' }} />
+      {/* Full screen, no swipe-down: it closes by itself (review ready → match review; next queue → Live). Owner, 2026-10-27. */}
+      <Stack.Screen name="post-game" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
     </Stack>
   )
 }

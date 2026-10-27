@@ -13,3 +13,11 @@ export function reviewWaitState({ found, endedAt, nowMs }: { found: boolean; end
   if (found) return 'found'
   return nowMs - endedAt > REVIEW_GIVE_UP_MS ? 'gave-up' : 'looking'
 }
+
+/** Once the review is found, the summary stays this long before the screen moves to the review by itself. */
+export const REVIEW_REDIRECT_DWELL_MS = 3000
+
+export function postGameRedirect({ foundAtMs, nowMs }: { foundAtMs: number | null; nowMs: number }): boolean {
+  return foundAtMs !== null && nowMs - foundAtMs >= REVIEW_REDIRECT_DWELL_MS
+}
+
