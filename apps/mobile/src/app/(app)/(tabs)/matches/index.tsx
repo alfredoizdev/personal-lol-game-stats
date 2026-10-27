@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { formatRank, formatRiotId, inQueueFilter, QUEUE_FILTER_LABEL } from '@lpp/shared'
+import { inQueueFilter, QUEUE_FILTER_LABEL } from '@lpp/shared'
 import { Disclaimer } from '@/components/Disclaimer'
-import { SummonerAvatar } from '@/components/SummonerAvatar'
+import { RankHeader } from '@/components/RankHeader'
 import { MatchRow } from '@/components/MatchRow'
 import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { PerformanceHeader } from '@/components/PerformanceHeader'
@@ -24,7 +24,7 @@ export default function MatchesScreen() {
   const now = Date.now()
 
   const [queueFilter, setQueueFilter] = useQueueFilter()
-  const { rank } = useRank(account ?? null)
+  const { rank, loading: rankLoading } = useRank(account ?? null)
   // Ranked apart from normals (owner, 2026-10-27): the filter applies to the list and to the Last 10 donuts; rows carry the queue tag.
   const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready' && inQueueFilter(m.summary.queueId, queueFilter)), [matches, queueFilter])
   const visible = useMemo(
@@ -37,23 +37,7 @@ export default function MatchesScreen() {
 
   const header = (
     <View style={styles.headerBlock}>
-      <View style={styles.titleRow}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>My Matches</Text>
-          {account ? <Text style={styles.summoner}>{formatRiotId(account.gameName, account.tagLine)}</Text> : null}
-          {rank ? (
-            <Text style={styles.rank} maxFontSizeMultiplier={1.15}>
-              Solo/Duo {formatRank(rank.solo)}{rank.flex ? ` · Flex ${formatRank(rank.flex)}` : ''}
-            </Text>
-          ) : null}
-          <Text style={styles.subtitle}>Recent performance</Text>
-        </View>
-        {account ? (
-          <Pressable onPress={() => router.push('/(app)/(tabs)/profile')} accessibilityRole="button" accessibilityLabel="Profile" hitSlop={8}>
-            <SummonerAvatar account={account} size={52} />
-          </Pressable>
-        ) : null}
-      </View>
+      {account ? <RankHeader account={account} rank={rank} loading={rankLoading} /> : null}
       <QueueFilterChips value={queueFilter} onChange={setQueueFilter} />
       {ready.length > 0 ? <PerformanceHeader games={agg.games} donuts={donuts} /> : null}
       {ready.length === 0 && ids.isSuccess && ids.data.length > 0 && queueFilter !== 'all' ? <Text style={styles.muted}>No {QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} games among your recent ones. Scroll loads more.</Text> : null}
@@ -114,12 +98,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   list: { paddingHorizontal: space.md, paddingTop: space.md, gap: space.sm + 4, maxWidth: 720, width: '100%', alignSelf: 'center' },
   headerBlock: { gap: space.md, marginBottom: 4 },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.md },
-  titleBlock: { flex: 1 },
-  title: { color: colors.text, fontSize: font.title, fontWeight: '800', letterSpacing: -0.5 },
-  summoner: { color: colors.you, fontSize: font.body, fontWeight: '700', marginTop: 2 },
-  rank: { color: colors.text, fontSize: font.caption + 1, fontWeight: '600', marginTop: 2 },
-  subtitle: { color: colors.muted, fontSize: font.caption + 2, marginTop: 2 },
   section: { color: colors.text, fontSize: font.body, fontWeight: '700', marginTop: space.xs },
   muted: { color: colors.muted, fontSize: font.body },
   placeholder: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, minHeight: 92, justifyContent: 'center' },

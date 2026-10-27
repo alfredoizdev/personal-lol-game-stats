@@ -3,7 +3,8 @@
 // for Solo/Duo and Flex. No server cache: the phone keeps it for an hour.
 //
 // Request:  POST { gameName, tagLine, region: 'NA' }   (or an encrypted puuid)
-// Response: { entries: LeagueEntry[] }   (Riot's array, passed through)
+// Response: { entries: LeagueEntry[], summoner: { summonerLevel, profileIconId } | null }
+//           (Riot's league array passed through; summoner-v4 for the level, null if it fails)
 //
 // Identity: LanePulse stores the LCU's 36-char UUID as the account's puuid,
 // which the Web API cannot decrypt. Like match-list-ids, the encrypted puuid
@@ -126,5 +127,17 @@ Deno.serve(async (req: Request) => {
   if (!res.ok) return json({ error: 'UNKNOWN', status: res.status }, 502)
 
   const entries = await res.json()
-  return json({ entries: Array.isArray(entries) ? entries : [] })
+
+  // summoner-v4 for the level badge on the header; its failure never hides the rank.
+  let summoner: { summonerLevel: number; profileIconId: number } | null = null
+  try {
+    const sum = await fetch(`https://${platform}/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`, { headers: { 'X-Riot-Token': apiKey } })
+    if (sum.ok) {
+      const s = (await sum.json()) as { summonerLevel?: number; profileIconId?: number }
+      if (typeof s.summonerLevel === 'number') summoner = { summonerLevel: s.summonerLevel, profileIconId: typeof s.profileIconId === 'number' ? s.profileIconId : 0 }
+    }
+  } catch {
+    summoner = null
+  }
+  return json({ entries: Array.isArray(entries) ? entries : [], summoner })
 })
