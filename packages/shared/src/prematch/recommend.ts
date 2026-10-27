@@ -67,14 +67,15 @@ export function recommendedGoal(all: MatchSummary[], role: Role): RecommendedGoa
 export type RoleGoalRow = Pick<StoredGoal, 'championId' | 'role' | 'metric' | 'target'> & { role: Role; target: number }
 
 /**
- * One row per role for what the editor saved. `target` null = recommended: each
- * role gets its own recommended metric and target. A number = that metric and
- * number for every role, except roles where the metric is not scored (CS for
- * support), which get their recommended goal instead.
+ * One row per role for what the editor saved (owner, 2026-10-27: the player picks
+ * the metric; the number follows the role). `target` null = the metric at each
+ * role's own target; a number = that number for every role. Roles where the
+ * metric is not scored (CS for support) get their recommended goal instead.
  */
 export function roleGoalRows(all: MatchSummary[], standing: { metric: GoalMetric; target: number | null }): RoleGoalRow[] {
   return ROLES.map((role) => {
-    if (standing.target !== null && roleTargetFor(role, standing.metric) !== null) return { championId: 0, role, metric: standing.metric, target: standing.target }
+    const roleTarget = roleTargetFor(role, standing.metric)
+    if (roleTarget !== null) return { championId: 0, role, metric: standing.metric, target: standing.target ?? roleTarget }
     const r = recommendedGoal(all, role)
     return { championId: 0, role, metric: r.metric, target: r.target }
   })

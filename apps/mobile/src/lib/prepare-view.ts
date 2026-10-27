@@ -1,4 +1,4 @@
-import { playedRoles, ROLE_LABEL, type ChampSelectPick, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
+import { defaultMetricFor, playedRoles, ROLE_LABEL, type ChampSelectPick, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
 
 /** The role Prepare shows by itself: your most played; mid before any game is loaded. Nothing to choose. */
 export function homeRole(summaries: MatchSummary[]): Role {
@@ -18,13 +18,21 @@ export function prepareHeadline(pick: ChampSelectPick | null, championName: stri
   return role ? `Champion select · ${role}` : 'Champion select'
 }
 
-export type GoalEditorInitial = { mode: 'recommended'; metric: null } | { mode: 'fixed'; metric: GoalMetric; target: number }
+/**
+ * What Save goal stores: null while the editor still shows the recommended
+ * value (the number then follows the role you end up playing), the number
+ * once the player moved away from it.
+ */
+export function standingTarget(editor: number, recommended: number | null): number | null {
+  return editor === recommended ? null : editor
+}
 
 /**
- * Where the editor starts (2026-10-26): "recommended for my role" unless the
- * player saved a fixed metric and number (a standing row with a target).
+ * Where the one editor starts (owner, 2026-10-27: the player picks the metric,
+ * the number follows the role): the saved metric, else the shown role's first
+ * metric; the saved fixed number, else null (recommended for the role).
  */
-export function goalEditorInitial(standing: Pick<StoredGoal, 'metric' | 'target'> | null): GoalEditorInitial {
-  if (!standing || standing.target === null) return { mode: 'recommended', metric: null }
-  return { mode: 'fixed', metric: standing.metric, target: standing.target }
+export function goalEditorInitial(standing: Pick<StoredGoal, 'metric' | 'target'> | null, role: Role): { metric: GoalMetric; target: number | null } {
+  if (!standing) return { metric: defaultMetricFor(role), target: null }
+  return { metric: standing.metric, target: standing.target }
 }

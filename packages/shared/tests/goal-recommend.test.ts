@@ -50,21 +50,21 @@ describe('recommendedGoal (owner, 2026-10-26: the goal should follow the role; r
 
 describe('roleGoalRows (what Save goal materialises: one row per role, so Live, the review and the desktop push agree)', () => {
   const all = Array.from({ length: 5 }, () => jg({ kills: 5, assists: 8, deaths: 2, csPerMin: 5.6, visionScore: 15 }))
-  it('"recommended" writes each role its own recommended metric and target', () => {
+  it('a metric left at the recommended value gets each role its own target for that metric', () => {
     const rows = roleGoalRows(all, { metric: 'csPerMin', target: null })
     expect(rows.map((r) => [r.role, r.metric, r.target])).toEqual([
       ['TOP', 'csPerMin', 7.0],
-      ['JUNGLE', 'visionPerMin', 1.0], // weakest from the games above
+      ['JUNGLE', 'csPerMin', 5.5],
       ['MIDDLE', 'csPerMin', 7.0],
       ['BOTTOM', 'csPerMin', 7.5],
-      ['UTILITY', 'visionPerMin', 2.0],
+      ['UTILITY', 'visionPerMin', 2.0], // CS is not scored for support: its recommended goal instead
     ])
     expect(rows.every((r) => r.championId === 0)).toBe(true)
   })
-  it('a fixed metric and number applies to every role, except where the metric is not scored (CS for support → the recommended support goal)', () => {
-    const rows = roleGoalRows(all, { metric: 'csPerMin', target: 6.5 })
-    expect(rows.find((r) => r.role === 'JUNGLE')).toMatchObject({ metric: 'csPerMin', target: 6.5 })
-    expect(rows.find((r) => r.role === 'UTILITY')).toMatchObject({ metric: 'visionPerMin', target: 2.0 })
+  it('a fixed number applies to every role where the metric is scored', () => {
+    const rows = roleGoalRows(all, { metric: 'kpPct', target: 55 })
+    expect(rows.map((r) => r.target)).toEqual([55, 55, 55, 55, 55])
+    expect(roleGoalRows(all, { metric: 'csPerMin', target: 6.5 }).find((r) => r.role === 'UTILITY')).toMatchObject({ metric: 'visionPerMin', target: 2.0 })
   })
 })
 
