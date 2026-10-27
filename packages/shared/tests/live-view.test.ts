@@ -97,6 +97,19 @@ describe('respawnNow', () => {
   })
 })
 
+describe('phaseView while the game loads (owner, 2026-10-27: the client sits on the loading screen and the phone said nothing useful)', () => {
+  const p = (phase: 'GameStart' | 'InProgress' | 'Reconnect' | 'ChampSelect') => ({ v: 1 as const, ts: 0, phase, since: 0 })
+  it('GameStart and InProgress without a snapshot read as loading, with a spinner', () => {
+    expect(phaseView(p('GameStart'), 1000, 1000)).toEqual({ label: 'Loading into the game…', timer: null, loading: true })
+    expect(phaseView(p('InProgress'), 1000, 1000)).toEqual({ label: 'Loading into the game…', timer: null, loading: true })
+    expect(phaseView(p('Reconnect'), 1000, 1000)).toMatchObject({ loading: true })
+  })
+  it('other phases are not loading', () => {
+    expect(phaseView(p('ChampSelect'), 1000, 1000)).toEqual({ label: 'Champion select', timer: null, loading: false })
+    expect(phaseView(null, 1000, 1000)).toMatchObject({ loading: false })
+  })
+})
+
 describe('phaseView', () => {
   it('labels every phase and runs the queue timer from since + elapsed', () => {
     expect(PHASE_LABEL.Matchmaking).toBe('Searching for a match')
@@ -104,13 +117,13 @@ describe('phaseView', () => {
     expect(PHASE_LABEL.ChampSelect).toBe('Champion select')
     expect(PHASE_LABEL.GameStart).toBe('Loading into the game…')
     expect(PHASE_LABEL.Lobby).toBe('In lobby')
-    expect(phaseView({ v: 1, ts: 0, phase: 'Matchmaking', since: 80_000 }, 10_000, 13_500)).toEqual({ label: 'Searching for a match', timer: '1:23' })
-    expect(phaseView({ v: 1, ts: 0, phase: 'ChampSelect', since: 0 }, 0, 0)).toEqual({ label: 'Champion select', timer: null })
+    expect(phaseView({ v: 1, ts: 0, phase: 'Matchmaking', since: 80_000 }, 10_000, 13_500)).toEqual({ label: 'Searching for a match', timer: '1:23', loading: false })
+    expect(phaseView({ v: 1, ts: 0, phase: 'ChampSelect', since: 0 }, 0, 0)).toEqual({ label: 'Champion select', timer: null, loading: false })
   })
   it('falls back to waiting when there is no phase or it is older than 30 s', () => {
-    expect(phaseView(null, 0, 0)).toEqual({ label: 'Waiting for a match', timer: null })
-    expect(phaseView({ v: 1, ts: 0, phase: 'Matchmaking', since: 0 }, 0, 31_000)).toEqual({ label: 'Waiting for a match', timer: null })
-    expect(phaseView({ v: 1, ts: 0, phase: 'None', since: 0 }, 0, 0)).toEqual({ label: 'Waiting for a match', timer: null })
+    expect(phaseView(null, 0, 0)).toEqual({ label: 'Waiting for a match', timer: null, loading: false })
+    expect(phaseView({ v: 1, ts: 0, phase: 'Matchmaking', since: 0 }, 0, 31_000)).toEqual({ label: 'Waiting for a match', timer: null, loading: false })
+    expect(phaseView({ v: 1, ts: 0, phase: 'None', since: 0 }, 0, 0)).toEqual({ label: 'Waiting for a match', timer: null, loading: false })
   })
 })
 

@@ -131,13 +131,16 @@ export const PHASE_LABEL: Record<GameflowPhase, string> = {
 
 /** Phase older than this (no heartbeat) is treated as unknown. */
 export const PHASE_STALE_MS = 30_000
-const WAITING = { label: 'Waiting for a match', timer: null }
+const WAITING = { label: 'Waiting for a match', timer: null, loading: false }
+/** The game client is starting or coming back: the pre-game card shows a spinner (the card only shows while there is no live snapshot). */
+const LOADING_PHASES: readonly GameflowPhase[] = ['GameStart', 'InProgress', 'Reconnect']
 
 /** What the pre-game card says; the queue timer runs from `since` plus the time elapsed since the phone received the phase. */
-export function phaseView(phase: LivePhasePayload | null, receivedAtMs: number, nowMs: number): { label: string; timer: string | null } {
+export function phaseView(phase: LivePhasePayload | null, receivedAtMs: number, nowMs: number): { label: string; timer: string | null; loading: boolean } {
   if (!phase || phase.phase === 'None' || nowMs - receivedAtMs > PHASE_STALE_MS) return WAITING
   const timer = phase.phase === 'Matchmaking' ? formatDuration(Math.floor((phase.since + Math.max(0, nowMs - receivedAtMs)) / 1000)) : null
-  return { label: PHASE_LABEL[phase.phase], timer }
+  const loading = LOADING_PHASES.includes(phase.phase)
+  return { label: phase.phase === 'InProgress' ? PHASE_LABEL.GameStart : PHASE_LABEL[phase.phase], timer, loading }
 }
 
 export type LiveScreenMode = 'pre' | 'live' | 'ended' | 'after'

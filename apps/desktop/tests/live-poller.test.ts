@@ -125,6 +125,32 @@ describe('startLivePoller', () => {
     h.handle.stop()
   })
 
+  it('InProgress before the Live Client answers (loading screen) surfaces as waiting InProgress once, then live', async () => {
+    const h = harness('ChampSelect')
+    await tick(0)
+    h.setPhase('InProgress') // the game client is launching; allgamedata still null
+    await tick(2000)
+    await tick(2000)
+    expect(h.states.filter((s) => s.kind === 'waiting' && s.phase === 'InProgress').length).toBe(1)
+    h.setData(raw(10, 30))
+    await tick(2000)
+    expect(h.states.at(-1)?.kind).toBe('live')
+    h.handle.stop()
+  })
+
+  it('an unreadable phase while the game client launches (after champ select) does not drop to idle', async () => {
+    const h = harness('ChampSelect')
+    await tick(0)
+    h.setPhase(null) // LCU busy while the game client starts
+    await tick(2000)
+    await tick(2000)
+    expect(h.states.some((s) => s.kind === 'idle')).toBe(false)
+    h.setPhase('InProgress')
+    await tick(2000)
+    expect(h.states.at(-1)).toMatchObject({ kind: 'waiting', phase: 'InProgress' })
+    h.handle.stop()
+  })
+
   it('does not end the game on Reconnect', async () => {
     const h = harness('InProgress')
     h.setData(raw(100))
