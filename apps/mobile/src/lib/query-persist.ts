@@ -4,7 +4,7 @@
  * (refreshed on launch anyway) and the champion list. Goals and the linked
  * account come fresh from Supabase every launch.
  */
-const PERSISTED: readonly string[] = ['match-detail', 'own-ids', 'match-ids', 'champions']
+const PERSISTED: readonly string[] = ['match-detail', 'own-ids', 'match-ids', 'champions', 'rank']
 
 export const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 export const PERSIST_KEY = 'lpp.query-cache.v1'

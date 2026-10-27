@@ -14,6 +14,7 @@ import {
   roleTargetFor,
   type GoalMetric,
   type MatchSummary,
+  type RankTier,
   type Role,
   type RoleGoalRow,
   type StoredGoal,
@@ -47,6 +48,7 @@ export function GoalEditor({
   role,
   onSave,
   saving,
+  tier = null,
 }: {
   summaries: MatchSummary[]
   goals: StoredGoal[]
@@ -54,6 +56,8 @@ export function GoalEditor({
   role: Role
   onSave: (g: Omit<StoredGoal, 'setAt' | 'puuid'>, rows: RoleGoalRow[]) => Promise<void>
   saving: boolean
+  /** Your Solo/Duo tier, ringed on the reference ruler. */
+  tier?: RankTier | null
 }) {
   const standing = goals.filter((g) => g.puuid === puuid && g.role === 'ANY').sort((a, b) => Date.parse(b.setAt) - Date.parse(a.setAt))[0] ?? null
   const initial = goalEditorInitial(standing, role)
@@ -154,7 +158,7 @@ export function GoalEditor({
       <Text style={styles.hint} maxFontSizeMultiplier={1.15}>
         One goal for every game. Left at the recommended value, the number follows the role you get ({ROLES.filter((r) => roleTargetFor(r, metric) !== null).map((r) => `${ROLE_LABEL[r]} ${fmtValue(metric, roleTargetFor(r, metric)!)}`).join(' · ')}); move it and your number applies.
       </Text>
-      {!unscored ? <GoalReference metric={metric} role={role} reference={goalReference(summaries, 0, role, metric)} target={target} /> : null}
+      {!unscored ? <GoalReference metric={metric} role={role} reference={goalReference(summaries, 0, role, metric)} target={target} tier={tier} /> : null}
     </View>
   )
 }

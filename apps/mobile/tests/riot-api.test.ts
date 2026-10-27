@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { fetchMatchIds, fetchMatchDetail, isRetryableRiotError, RiotApiError } from '../src/lib/riot-api'
+import { fetchMatchIds, fetchMatchDetail, fetchRankedEntries, isRetryableRiotError, RiotApiError } from '../src/lib/riot-api'
 
 function fakeClient(result: { data?: unknown; error?: { context?: { status?: number }; message?: string } }) {
   return { functions: { invoke: vi.fn(async () => ({ data: result.data ?? null, error: result.error ?? null })) } }
@@ -59,5 +59,19 @@ describe('isRetryableRiotError', () => {
     expect(isRetryableRiotError(new RiotApiError('KEY_INVALID'))).toBe(false)
     expect(isRetryableRiotError(new RiotApiError('NOT_FOUND'))).toBe(false)
     expect(isRetryableRiotError(new Error('plain'))).toBe(true)
+  })
+})
+
+describe('fetchRankedEntries (the account rank, league-v4 by puuid through the ranked-entries function)', () => {
+  it('sends puuid and region and returns the parsed solo and flex entries', async () => {
+    const client = fakeClient({ data: { entries: [{ queueType: 'RANKED_SOLO_5x5', tier: 'GOLD', rank: 'II', leaguePoints: 45, wins: 12, losses: 8 }] } })
+    await expect(fetchRankedEntries(client as never, { puuid: 'p1', region: 'NA' })).resolves.toEqual({
+      solo: { queue: 'solo', tier: 'GOLD', division: 'II', leaguePoints: 45, wins: 12, losses: 8 },
+      flex: null,
+    })
+    expect(client.functions.invoke).toHaveBeenCalledWith('ranked-entries', { body: { puuid: 'p1', region: 'NA' } })
+  })
+  it('maps errors like the other calls', async () => {
+    await expect(fetchRankedEntries(fakeClient({ data: { error: 'RATE_LIMITED' } }) as never, { puuid: 'p1', region: 'NA' })).rejects.toMatchObject({ code: 'RATE_LIMITED' })
   })
 })

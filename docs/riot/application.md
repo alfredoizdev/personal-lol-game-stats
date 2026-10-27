@@ -77,11 +77,12 @@ scraping; no sale of data.
 | Match ids | match-v5 ids by puuid | The match list (20) and the 100-game window |
 | Match details | match-v5 match | Scores, reviews, performance aggregates |
 | Match timeline | match-v5 timeline | Lane review (CS and gold curves of the player's own lane) |
+| Ranked standing | league-v4 entries by puuid | The player's own tier, division, LP and season record under their Riot ID; their tier ringed on the goal ruler |
 | Live game stats | Live Client Data API (local) | Live tab, goal status, push text |
 | Client phase and signed-in Riot ID | LCU (local) | Detecting a game; matching the player to their linked account |
 
 Call volume, caching and limits: `docs/riot/call-budget.md` (≈ 145 calls on a
-user's first day, ≈ 45 a day after; one bounded burst of up to 100 requests
+user's first day, ≈ 45 a day after, plus one league-v4 call per hour of use; one bounded burst of up to 100 requests
 in a 10 s window during the one-time 100-game load, which a 429 stops).
 
 Data retention and deletion: `docs/riot/deletion.md`; Privacy Policy sections

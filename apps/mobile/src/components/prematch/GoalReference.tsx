@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Image, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native'
 import Svg, { Circle, Line, Rect, Text as SvgText } from 'react-native-svg'
 import { RANK_EMBLEM } from '@/lib/rank-emblems'
-import { metricInfo, rankBenchmarks, type GoalMetric, type GoalReference as Ref, type Role } from '@lpp/shared'
+import { metricInfo, rankBenchmarks, type GoalMetric, type GoalReference as Ref, type RankTier, type Role } from '@lpp/shared'
 import { linearScale } from '@/lib/chart-geometry'
 import { BAR_ENEMY, BAR_YOU } from '@/components/CompareBar'
 import { colors, font } from '@/theme/tokens'
@@ -16,7 +16,8 @@ const EMBLEM = 26
  * average, the opponents you faced, your best game, the role target and the
  * (approximate) typical value per rank. Text in text tokens; markers carry colour.
  */
-export function GoalReference({ metric, role, reference, target }: { metric: GoalMetric; role: Role; reference: Ref; target: number | null }) {
+/** `tier`: the player's own ranked tier (league-v4), ringed on the ruler so the ladder reads relative to where they are. */
+export function GoalReference({ metric, role, reference, target, tier = null }: { metric: GoalMetric; role: Role; reference: Ref; target: number | null; tier?: RankTier | null }) {
   const [width, setWidth] = useState(0)
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)
   const info = metricInfo(metric)
@@ -75,13 +76,9 @@ export function GoalReference({ metric, role, reference, target }: { metric: Goa
       {width > 0 ? (
         <View style={styles.emblems} pointerEvents="none">
           {ladder.map((b, i) => (
-            <Image
-              key={b.tier}
-              source={RANK_EMBLEM[b.tier]}
-              accessibilityLabel={`${b.tier} ${fmt(b.value)}`}
-              style={[styles.emblem, { left: x(b.value) - EMBLEM / 2, top: rows[i] === 0 ? 0 : EMBLEM * 0.7 }]}
-              resizeMode="contain"
-            />
+            <View key={b.tier} style={[styles.emblemWrap, b.tier === tier && styles.emblemMine, { left: x(b.value) - EMBLEM / 2, top: rows[i] === 0 ? 0 : EMBLEM * 0.7 }]}>
+              <Image source={RANK_EMBLEM[b.tier]} accessibilityLabel={`${b.tier} ${fmt(b.value)}${b.tier === tier ? ', your rank' : ''}`} style={styles.emblem} resizeMode="contain" />
+            </View>
           ))}
         </View>
       ) : null}
@@ -97,7 +94,7 @@ export function GoalReference({ metric, role, reference, target }: { metric: Goa
         ))}
       </View>
       <Text style={styles.note} maxFontSizeMultiplier={1.15}>
-        Rank marks are typical {info.label.toLowerCase()} values by tier, worse on the left and better on the right (community estimates, not Riot data). Your own numbers are the ones that matter.
+        Rank marks are typical {info.label.toLowerCase()} values by tier, worse on the left and better on the right (community estimates, not Riot data).{tier ? ` The ringed emblem is your current Solo/Duo tier (${tier}).` : ''} Your own numbers are the ones that matter.
       </Text>
     </View>
   )
@@ -106,7 +103,9 @@ export function GoalReference({ metric, role, reference, target }: { metric: Goa
 const styles = StyleSheet.create({
   wrap: { gap: 4 },
   emblems: { height: EMBLEM * 1.75, marginTop: -4 },
-  emblem: { position: 'absolute', width: EMBLEM, height: EMBLEM },
+  emblemWrap: { position: 'absolute', width: EMBLEM, height: EMBLEM, borderRadius: EMBLEM / 2 },
+  emblemMine: { borderWidth: 2, borderColor: colors.you, backgroundColor: 'rgba(34, 211, 238, 0.15)' },
+  emblem: { width: EMBLEM, height: EMBLEM },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   swatch: { width: 9, height: 9, borderRadius: 5 },
