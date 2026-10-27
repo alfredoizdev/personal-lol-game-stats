@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { TimelineSeries, MatchV5, Region } from '@lpp/shared'
+import { parseRankedEntries, type RankedEntries, type TimelineSeries, type MatchV5, type Region } from '@lpp/shared'
 
 export type RiotErrorCode = 'KEY_INVALID' | 'RATE_LIMITED' | 'NOT_FOUND' | 'UNKNOWN'
 
@@ -92,6 +92,12 @@ export async function fetchMatchTimeline(
 }
 
 /** Retry only when a retry can change the outcome. */
+/** The account's ranked standing (Solo/Duo and Flex) through the ranked-entries function; own puuid only. */
+export async function fetchRankedEntries(client: SupabaseClient, input: { puuid: string; region: Region }): Promise<RankedEntries> {
+  const data = await invoke<{ entries?: unknown }>(client, 'ranked-entries', { puuid: input.puuid, region: input.region })
+  return parseRankedEntries(data?.entries)
+}
+
 export function isRetryableRiotError(err: unknown): boolean {
   if (err instanceof RiotApiError) return err.code === 'RATE_LIMITED' || err.code === 'UNKNOWN'
   return true

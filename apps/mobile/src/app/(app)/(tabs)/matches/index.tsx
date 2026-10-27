@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { formatRiotId, inQueueFilter, QUEUE_FILTER_LABEL } from '@lpp/shared'
+import { formatRank, formatRiotId, inQueueFilter, QUEUE_FILTER_LABEL } from '@lpp/shared'
 import { Disclaimer } from '@/components/Disclaimer'
 import { SummonerAvatar } from '@/components/SummonerAvatar'
 import { MatchRow } from '@/components/MatchRow'
@@ -11,6 +11,7 @@ import { PerformanceHeader } from '@/components/PerformanceHeader'
 import { RiotErrorView } from '@/components/RiotErrorView'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useQueueFilter } from '@/hooks/useQueueFilter'
+import { useRank } from '@/hooks/useRank'
 import { useRecentMatches, type MatchRowState } from '@/hooks/useRecentMatches'
 import { headerDonuts } from '@/lib/header-donuts'
 import { aggregateMatches } from '@/lib/match-aggregates'
@@ -23,6 +24,7 @@ export default function MatchesScreen() {
   const now = Date.now()
 
   const [queueFilter, setQueueFilter] = useQueueFilter()
+  const { rank } = useRank(account ?? null)
   // Ranked apart from normals (owner, 2026-10-27): the filter applies to the list and to the Last 10 donuts; rows carry the queue tag.
   const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready' && inQueueFilter(m.summary.queueId, queueFilter)), [matches, queueFilter])
   const visible = useMemo(
@@ -39,6 +41,11 @@ export default function MatchesScreen() {
         <View style={styles.titleBlock}>
           <Text style={styles.title}>My Matches</Text>
           {account ? <Text style={styles.summoner}>{formatRiotId(account.gameName, account.tagLine)}</Text> : null}
+          {rank ? (
+            <Text style={styles.rank} maxFontSizeMultiplier={1.15}>
+              Solo/Duo {formatRank(rank.solo)}{rank.flex ? ` · Flex ${formatRank(rank.flex)}` : ''}
+            </Text>
+          ) : null}
           <Text style={styles.subtitle}>Recent performance</Text>
         </View>
         {account ? (
@@ -111,6 +118,7 @@ const styles = StyleSheet.create({
   titleBlock: { flex: 1 },
   title: { color: colors.text, fontSize: font.title, fontWeight: '800', letterSpacing: -0.5 },
   summoner: { color: colors.you, fontSize: font.body, fontWeight: '700', marginTop: 2 },
+  rank: { color: colors.text, fontSize: font.caption + 1, fontWeight: '600', marginTop: 2 },
   subtitle: { color: colors.muted, fontSize: font.caption + 2, marginTop: 2 },
   section: { color: colors.text, fontSize: font.body, fontWeight: '700', marginTop: space.xs },
   muted: { color: colors.muted, fontSize: font.body },

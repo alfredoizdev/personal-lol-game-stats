@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { banSuggestion, championSummary, roleSummary, toughestMatchups, ROLE_LABEL, type Role, bestRole } from '@lpp/shared'
+import { banSuggestion, bestRole, championSummary, rankTier, roleSummary, toughestMatchups, ROLE_LABEL, type Role } from '@lpp/shared'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
+import { useRank } from '@/hooks/useRank'
 import { useHistory } from '@/lib/history-context'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { useLiveFeed } from '@/lib/live-feed-context'
@@ -29,6 +30,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   const history = useHistory() // loaded once at launch, shared by every tab
   const { champions } = useChampionList()
   const { goals, save, saving } = useGoals(account)
+  const { rank } = useRank(account)
 
   const { phase } = useLiveFeed()
   const pick = phase?.phase === 'ChampSelect' ? phase.pick ?? null : null
@@ -80,7 +82,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
       <Text style={styles.section} maxFontSizeMultiplier={1.15}>{pickedChampion ? `You with ${pickedChampion.name} as ${roleWord(role)}` : `You as ${roleWord(role)}`}</Text>
       <ChampionSummaryCard subject={pickedChampion ? `with ${pickedChampion.name} as ${roleWord(role)}` : `as ${roleWord(role)}`} summary={record} />
       <View style={styles.divider} />
-      <GoalEditor summaries={history.summaries} goals={goals} puuid={account.puuid} role={role} onSave={save} saving={saving} />
+      <GoalEditor summaries={history.summaries} goals={goals} puuid={account.puuid} role={role} onSave={save} saving={saving} tier={rankTier(rank?.solo?.tier ?? null)} />
       <View style={styles.divider} />
       <MatchupsTable rows={matchups} ban={ban} />
     </View>
