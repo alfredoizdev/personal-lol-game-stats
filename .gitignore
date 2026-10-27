@@ -21,3 +21,6 @@ webhooks
 
 # packaged desktop app (electron-builder output)
 apps/desktop/release/
+
+# Supabase CLI scratch (created by `supabase secrets set` / `link` from the repo root)
+supabase/.temp/
