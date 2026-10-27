@@ -2,8 +2,12 @@
 // the signed-in player's own ranked standing (tier, division, LP, season W/L)
 // for Solo/Duo and Flex. No server cache: the phone keeps it for an hour.
 //
-// Request:  POST { puuid: '...', region: 'NA' }
+// Request:  POST { gameName, tagLine, region: 'NA' }   (or an encrypted puuid)
 // Response: { entries: LeagueEntry[] }   (Riot's array, passed through)
+//
+// Identity: LanePulse stores the LCU's 36-char UUID as the account's puuid,
+// which the Web API cannot decrypt. Like match-list-ids, the encrypted puuid
+// is resolved from the Riot ID through riot_account_cache, then ACCOUNT-V1.
 //           or { error: 'KEY_INVALID'|'RATE_LIMITED'|'NOT_FOUND'|'UNKNOWN' }
 //
 // Same skeleton as match-timeline: API key from the RIOT_API_KEY env (prod)
@@ -20,6 +24,20 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+/** ACCOUNT-V1 lives on the regional cluster. */
+const REGION_TO_CLUSTER: Record<Region, string> = {
+  NA: 'americas.api.riotgames.com',
+  EUW: 'europe.api.riotgames.com',
+  EUNE: 'europe.api.riotgames.com',
+  KR: 'asia.api.riotgames.com',
+  LAN: 'americas.api.riotgames.com',
+  BR: 'americas.api.riotgames.com',
+  JP: 'asia.api.riotgames.com',
+  OCE: 'sea.api.riotgames.com',
+  TR: 'europe.api.riotgames.com',
+  RU: 'europe.api.riotgames.com',
 }
 
 /** LEAGUE-V4 is a platform endpoint (na1, euw1…), not a regional cluster. */
@@ -68,15 +86,38 @@ Deno.serve(async (req: Request) => {
     return json({ error: code, detail: keyError }, code === 'KEY_INVALID' ? 401 : 500)
   }
 
-  let body: { puuid?: string; region?: Region }
+  let body: { puuid?: string; gameName?: string; tagLine?: string; region?: Region }
   try {
     body = await req.json()
   } catch {
     return json({ error: 'UNKNOWN', detail: 'Invalid JSON body' }, 400)
   }
-  const puuid = String(body.puuid ?? '').trim()
-  if (!puuid) return json({ error: 'UNKNOWN', detail: 'puuid required' }, 400)
-  const platform = REGION_TO_PLATFORM[body.region ?? 'NA'] ?? REGION_TO_PLATFORM.NA
+  const region: Region = body.region ?? 'NA'
+  const platform = REGION_TO_PLATFORM[region] ?? REGION_TO_PLATFORM.NA
+  const cluster = REGION_TO_CLUSTER[region] ?? REGION_TO_CLUSTER.NA
+
+  // The encrypted puuid: passed directly (78 chars), else from the Riot ID via the cache, else ACCOUNT-V1.
+  let puuid = String(body.puuid ?? '').trim()
+  if (puuid.length < 60) puuid = ''
+  if (!puuid) {
+    const gameName = String(body.gameName ?? '').trim()
+    const tagLine = String(body.tagLine ?? '').trim()
+    if (!gameName || !tagLine) return json({ error: 'UNKNOWN', detail: 'send an encrypted puuid OR gameName + tagLine' }, 400)
+    const { data: cached } = await supabase.from('riot_account_cache').select('puuid').eq('game_name', gameName).eq('tag_line', tagLine).maybeSingle()
+    if (cached?.puuid) {
+      puuid = cached.puuid as string
+    } else {
+      const acc = await fetch(`https://${cluster}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`, { headers: { 'X-Riot-Token': apiKey } })
+      if (acc.status === 401 || acc.status === 403) return json({ error: 'KEY_INVALID' }, 401)
+      if (acc.status === 429) return json({ error: 'RATE_LIMITED' }, 429)
+      if (acc.status === 404) return json({ error: 'NOT_FOUND', detail: 'riot id not found' }, 404)
+      if (!acc.ok) return json({ error: 'UNKNOWN', stage: 'account-v1', status: acc.status }, 502)
+      const account = (await acc.json()) as { puuid?: string }
+      if (!account.puuid) return json({ error: 'UNKNOWN', stage: 'account-v1', detail: 'no puuid in response' }, 502)
+      puuid = account.puuid
+      await supabase.from('riot_account_cache').upsert({ game_name: gameName, tag_line: tagLine, puuid, fetched_at: new Date().toISOString() }, { onConflict: 'game_name,tag_line' })
+    }
+  }
 
   const res = await fetch(`https://${platform}/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`, { headers: { 'X-Riot-Token': apiKey } })
   if (res.status === 401 || res.status === 403) return json({ error: 'KEY_INVALID' }, 401)

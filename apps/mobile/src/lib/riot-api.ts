@@ -92,9 +92,9 @@ export async function fetchMatchTimeline(
 }
 
 /** Retry only when a retry can change the outcome. */
-/** The account's ranked standing (Solo/Duo and Flex) through the ranked-entries function; own puuid only. */
-export async function fetchRankedEntries(client: SupabaseClient, input: { puuid: string; region: Region }): Promise<RankedEntries> {
-  const data = await invoke<{ entries?: unknown }>(client, 'ranked-entries', { puuid: input.puuid, region: input.region })
+/** The account's ranked standing (Solo/Duo and Flex) through the ranked-entries function. By Riot ID: the stored puuid is the LCU's UUID, which the Web API cannot decrypt. */
+export async function fetchRankedEntries(client: SupabaseClient, input: { gameName: string; tagLine: string; region: Region }): Promise<RankedEntries> {
+  const data = await invoke<{ entries?: unknown }>(client, 'ranked-entries', { gameName: input.gameName, tagLine: input.tagLine, region: input.region })
   return parseRankedEntries(data?.entries)
 }
 
