@@ -12,7 +12,8 @@ const EMBLEM_H = EMBLEM_W * 0.6 // Riot's emblem PNGs are 200×120
 /**
  * The Matches header, op.gg-style (owner, 2026-10-27): avatar with the summoner level,
  * the Riot ID, then one card per ranked queue — emblem, "Ranked Solo", tier, LP and the
- * record with its win rate. A queue without an entry shows the greyed unranked emblem.
+ * record with its win rate. Flex shows only when the player has a Flex entry (owner:
+ * "si no tiene ni el WR es inútil"); Solo is always there, "Unranked" before placement.
  */
 export function RankHeader({ account, rank, loading }: { account: LinkedAccount; rank: RankedEntries | null; loading: boolean }) {
   return (
@@ -26,7 +27,7 @@ export function RankHeader({ account, rank, loading }: { account: LinkedAccount;
       </Pressable>
       <View style={styles.cards}>
         <RankCard label="Ranked Solo" entry={rank?.solo ?? null} loading={loading} />
-        <RankCard label="Ranked Flex" entry={rank?.flex ?? null} loading={loading} />
+        {rank?.flex ? <RankCard label="Ranked Flex" entry={rank.flex} loading={loading} /> : null}
       </View>
     </View>
   )
