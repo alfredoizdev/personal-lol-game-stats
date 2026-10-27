@@ -11,7 +11,7 @@ const HOUR_MS = 60 * 60 * 1000
 export function useRank(account: LinkedAccount | null): { rank: RankedEntries | null; loading: boolean } {
   const q = useQuery({
     queryKey: matchKeys.rank(account?.puuid),
-    queryFn: () => fetchRankedEntries(supabase, { puuid: account!.puuid, region: account!.region }),
+    queryFn: () => fetchRankedEntries(supabase, { gameName: account!.gameName, tagLine: account!.tagLine, region: account!.region }),
     enabled: !!account,
     staleTime: HOUR_MS,
     retry: (n, err) => n < 2 && isRetryableRiotError(err),
