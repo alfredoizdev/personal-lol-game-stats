@@ -2,13 +2,15 @@ import { useMemo } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { formatRiotId } from '@lpp/shared'
+import { formatRiotId, inQueueFilter, QUEUE_FILTER_LABEL } from '@lpp/shared'
 import { Disclaimer } from '@/components/Disclaimer'
 import { SummonerAvatar } from '@/components/SummonerAvatar'
 import { MatchRow } from '@/components/MatchRow'
+import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { PerformanceHeader } from '@/components/PerformanceHeader'
 import { RiotErrorView } from '@/components/RiotErrorView'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useQueueFilter } from '@/hooks/useQueueFilter'
 import { useRecentMatches, type MatchRowState } from '@/hooks/useRecentMatches'
 import { headerDonuts } from '@/lib/header-donuts'
 import { aggregateMatches } from '@/lib/match-aggregates'
@@ -20,8 +22,13 @@ export default function MatchesScreen() {
   const { ids, matches, refresh, isRefreshing, hasMore, loadMore, total } = useRecentMatches(account ?? null)
   const now = Date.now()
 
-  const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready'), [matches])
-  const visible = useMemo(() => matches.filter((m) => !(m.status === 'error' && m.error === 'NOT_FOUND')), [matches])
+  const [queueFilter, setQueueFilter] = useQueueFilter()
+  // Ranked apart from normals (owner, 2026-10-27): the filter applies to the list and to the Last 10 donuts; rows carry the queue tag.
+  const ready = useMemo(() => matches.filter((m): m is Extract<MatchRowState, { status: 'ready' }> => m.status === 'ready' && inQueueFilter(m.summary.queueId, queueFilter)), [matches, queueFilter])
+  const visible = useMemo(
+    () => matches.filter((m) => !(m.status === 'error' && m.error === 'NOT_FOUND') && (m.status !== 'ready' || inQueueFilter(m.summary.queueId, queueFilter))),
+    [matches, queueFilter],
+  )
   const summaries = useMemo(() => ready.map((m) => m.summary), [ready])
   const agg = useMemo(() => aggregateMatches(summaries), [summaries])
   const donuts = useMemo(() => headerDonuts(summaries), [summaries])
@@ -40,10 +47,12 @@ export default function MatchesScreen() {
           </Pressable>
         ) : null}
       </View>
+      <QueueFilterChips value={queueFilter} onChange={setQueueFilter} />
       {ready.length > 0 ? <PerformanceHeader games={agg.games} donuts={donuts} /> : null}
+      {ready.length === 0 && ids.isSuccess && ids.data.length > 0 && queueFilter !== 'all' ? <Text style={styles.muted}>No {QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} games among your recent ones. Scroll loads more.</Text> : null}
       {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
       {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
-      <Text style={styles.section}>Recent Games{ids.data ? ` (${total})` : ''}</Text>
+      <Text style={styles.section}>Recent Games{ids.data ? ` (${queueFilter === 'all' ? total : `${ready.length} ${QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} of ${total}`})` : ''}</Text>
     </View>
   )
 
