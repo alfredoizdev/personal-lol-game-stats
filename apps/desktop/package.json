@@ -11,10 +11,11 @@
     "build": "vite build && tsc -p tsconfig.main.json && tsc-alias -p tsconfig.main.json",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.main.json --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "pnpm build && electron .",
+    "dist": "pnpm build && electron-builder --mac --arm64"
   },
   "dependencies": {
-    "@lpp/shared": "workspace:*",
     "@supabase/supabase-js": "^2.106.2",
     "dotenv": "^16.4.5",
     "electron-store": "8.2.0"
@@ -26,15 +27,61 @@
     "@vitejs/plugin-react": "^4.3.0",
     "concurrently": "^9.0.0",
     "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
     "eslint": "^9.0.0",
     "nock": "^13.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "tsc-alias": "^1.8.0",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.0.0",
     "vite": "^6.0.0",
     "vitest": "^3.0.0",
     "wait-on": "^8.0.0",
-    "tsc-alias": "^1.8.0"
+    "@lpp/shared": "workspace:*"
+  },
+  "description": "LanePulse desktop companion: relays your own live game stats to your phone while League is open.",
+  "author": "LanePulse",
+  "build": {
+    "appId": "com.lanepulse.desktop",
+    "productName": "LanePulse",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "dist-electron/**",
+      "dist-renderer/**",
+      "assets/**",
+      "package.json",
+      ".env"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "LanePulse"
+    },
+    "electronVersion": "45.0.0"
   }
 }
