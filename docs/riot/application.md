@@ -77,7 +77,8 @@ scraping; no sale of data.
 | Match ids | match-v5 ids by puuid | The match list (20) and the 100-game window |
 | Match details | match-v5 match | Scores, reviews, performance aggregates |
 | Match timeline | match-v5 timeline | Lane review (CS and gold curves of the player's own lane) |
-| Ranked standing | league-v4 entries by puuid | The player's own tier, division, LP and season record under their Riot ID; their tier ringed on the goal ruler |
+| Ranked standing | league-v4 entries by puuid | The player's own tier, division, LP and season record on rank cards under their Riot ID; their tier ringed on the goal ruler |
+| Summoner level | summoner-v4 by puuid | The player's own level on the avatar badge (same hourly call as the standing) |
 | Live game stats | Live Client Data API (local) | Live tab, goal status, push text |
 | Client phase and signed-in Riot ID | LCU (local) | Detecting a game; matching the player to their linked account |
 

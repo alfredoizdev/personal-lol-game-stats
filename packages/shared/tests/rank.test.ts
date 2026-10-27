@@ -13,9 +13,10 @@ describe('ranked entries (owner, 2026-10-27: the account rank shows nowhere)', (
     expect(parseRankedEntries(raw)).toEqual({
       solo,
       flex: { queue: 'flex', tier: 'SILVER', division: 'I', leaguePoints: 10, wins: 3, losses: 4 },
+      level: null,
     })
-    expect(parseRankedEntries([])).toEqual({ solo: null, flex: null })
-    expect(parseRankedEntries(null)).toEqual({ solo: null, flex: null })
+    expect(parseRankedEntries([])).toEqual({ solo: null, flex: null, level: null })
+    expect(parseRankedEntries(null)).toEqual({ solo: null, flex: null, level: null })
   })
   it('formats a rank line: tier, division, LP and record; apex tiers carry no division', () => {
     expect(formatRank(solo)).toBe('Gold II · 45 LP · 12W 8L')
@@ -29,9 +30,14 @@ describe('ranked entries (owner, 2026-10-27: the account rank shows nowhere)', (
     expect(rankTier('CHALLENGER')).toBe('Master+')
     expect(rankTier(null)).toBeNull()
   })
-  it('rankCard splits the standing for the header: tier name on top, LP, record and win rate below', () => {
-    expect(rankCard(solo)).toEqual({ name: 'Gold II', standing: '45 LP · 12W 8L · 60% win rate' })
-    expect(rankCard({ ...solo, tier: 'CHALLENGER', division: 'I', leaguePoints: 812, wins: 0, losses: 0 })).toEqual({ name: 'Challenger', standing: '812 LP · 0W 0L' })
-    expect(rankCard(null)).toEqual({ name: 'Unranked', standing: 'Solo/Duo · play ranked to place' })
+  it('rankCard splits the standing for the op.gg-style card: tier name, LP line, record with win rate', () => {
+    expect(rankCard(solo)).toEqual({ name: 'Gold II', lp: '45 LP', record: '12W 8L (60%)' })
+    expect(rankCard({ ...solo, tier: 'CHALLENGER', division: 'I', leaguePoints: 812, wins: 0, losses: 0 })).toEqual({ name: 'Challenger', lp: '812 LP', record: '0W 0L' })
+    expect(rankCard(null)).toEqual({ name: 'Unranked', lp: null, record: null })
+  })
+  it('carries the summoner level from summoner-v4 when the function sends it; null otherwise', () => {
+    expect(parseRankedEntries([], { summonerLevel: 109, profileIconId: 1 }).level).toBe(109)
+    expect(parseRankedEntries([], null).level).toBeNull()
+    expect(parseRankedEntries([]).level).toBeNull()
   })
 })

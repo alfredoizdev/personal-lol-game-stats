@@ -7,14 +7,15 @@ import type { RankTier } from './prematch/reference'
 
 export type RankQueue = 'solo' | 'flex'
 export type RankEntry = { queue: RankQueue; tier: string; division: string; leaguePoints: number; wins: number; losses: number }
-export type RankedEntries = { solo: RankEntry | null; flex: RankEntry | null }
+export type RankedEntries = { solo: RankEntry | null; flex: RankEntry | null; /** summoner-v4 level, when the function sends it */ level: number | null }
 
 const QUEUE: Record<string, RankQueue> = { RANKED_SOLO_5x5: 'solo', RANKED_FLEX_SR: 'flex' }
 const APEX: ReadonlySet<string> = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER'])
 
-/** Riot league-v4 `entries/by-puuid` payload → solo and flex; anything else (TFT, unknown) is ignored. */
-export function parseRankedEntries(raw: unknown): RankedEntries {
-  const out: RankedEntries = { solo: null, flex: null }
+/** Riot league-v4 `entries/by-puuid` payload → solo and flex; anything else (TFT, unknown) is ignored. `summoner` is the summoner-v4 row for the level. */
+export function parseRankedEntries(raw: unknown, summoner?: unknown): RankedEntries {
+  const lvl = (summoner as { summonerLevel?: unknown } | null | undefined)?.summonerLevel
+  const out: RankedEntries = { solo: null, flex: null, level: typeof lvl === 'number' ? lvl : null }
   if (!Array.isArray(raw)) return out
   for (const e of raw as Array<Record<string, unknown>>) {
     const queue = QUEUE[String(e?.queueType ?? '')]
@@ -42,14 +43,14 @@ export function formatRank(entry: RankEntry | null): string {
 const rankName = (entry: RankEntry) => (APEX.has(entry.tier) || !entry.division ? word(entry.tier) : `${word(entry.tier)} ${entry.division}`)
 
 /**
- * The Matches header card (owner, 2026-10-27: "remueve ese título tan grande, usa las imágenes png para el elo"):
- * the tier name sits next to the emblem, LP, record and win rate go below. Win rate only once there is a game.
+ * The rank card (owner, 2026-10-27, op.gg-style header): tier name beside the emblem,
+ * the LP line, the record with its win rate. Unranked cards carry only the name.
  */
-export function rankCard(entry: RankEntry | null): { name: string; standing: string } {
-  if (!entry) return { name: 'Unranked', standing: 'Solo/Duo · play ranked to place' }
+export function rankCard(entry: RankEntry | null): { name: string; lp: string | null; record: string | null } {
+  if (!entry) return { name: 'Unranked', lp: null, record: null }
   const games = entry.wins + entry.losses
-  const wr = games > 0 ? ` · ${Math.round((entry.wins / games) * 100)}% win rate` : ''
-  return { name: rankName(entry), standing: `${entry.leaguePoints} LP · ${entry.wins}W ${entry.losses}L${wr}` }
+  const wr = games > 0 ? ` (${Math.round((entry.wins / games) * 100)}%)` : ''
+  return { name: rankName(entry), lp: `${entry.leaguePoints} LP`, record: `${entry.wins}W ${entry.losses}L${wr}` }
 }
 
 /** The ladder tier on the goal ruler that matches a Riot tier. */

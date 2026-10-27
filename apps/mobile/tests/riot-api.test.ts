@@ -64,10 +64,11 @@ describe('isRetryableRiotError', () => {
 
 describe('fetchRankedEntries (the account rank, league-v4 by puuid through the ranked-entries function)', () => {
   it('sends the Riot ID and region (the stored puuid is the LCU UUID) and returns the parsed solo and flex entries', async () => {
-    const client = fakeClient({ data: { entries: [{ queueType: 'RANKED_SOLO_5x5', tier: 'GOLD', rank: 'II', leaguePoints: 45, wins: 12, losses: 8 }] } })
+    const client = fakeClient({ data: { entries: [{ queueType: 'RANKED_SOLO_5x5', tier: 'GOLD', rank: 'II', leaguePoints: 45, wins: 12, losses: 8 }], summoner: { summonerLevel: 109, profileIconId: 1 } } })
     await expect(fetchRankedEntries(client as never, { ...account })).resolves.toEqual({
       solo: { queue: 'solo', tier: 'GOLD', division: 'II', leaguePoints: 45, wins: 12, losses: 8 },
       flex: null,
+      level: 109,
     })
     expect(client.functions.invoke).toHaveBeenCalledWith('ranked-entries', { body: { gameName: 'Name', tagLine: 'NA1', region: 'NA' } })
   })

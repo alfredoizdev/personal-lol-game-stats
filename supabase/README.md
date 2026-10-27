@@ -8,7 +8,7 @@ there (design doc, section 3).
 
 | Path | Purpose |
 |---|---|
-| `functions/ranked-entries/` | Riot LEAGUE-V4 `entries/by-puuid` proxy: the player's own Solo/Duo and Flex standing (tier, division, LP, W/L). No server cache; the phone keeps it an hour. |
+| `functions/ranked-entries/` | Riot LEAGUE-V4 `entries/by-puuid` proxy plus SUMMONER-V4 for the level: the player's own Solo/Duo and Flex standing (tier, division, LP, W/L) and summoner level. No server cache; the phone keeps it an hour. |
 | `functions/match-timeline/` | Riot MATCH-V5 timeline proxy; caches the full blob, returns a reduced per-minute series (`reduce.ts`, unit-tested from `packages/shared/tests/timeline-reduce.test.ts`). |
 | `migrations/20261022000001_match_timeline_cache.sql` | `match_timeline_cache` table (service_role only). |
 | `migrations/20261022000002_pre_match_focus.sql` | `pre_match_focus` table: append-only personal goals per Riot account, RLS own (read/written by the phone). |
