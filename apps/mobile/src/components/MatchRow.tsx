@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { formatDuration, formatKda, relativeTimeShort, type MatchSummary } from '@lpp/shared'
+import { formatDuration, formatKda, queueTag, relativeTimeShort, type MatchSummary } from '@lpp/shared'
 import { PortraitWithBadges } from './PortraitWithBadges'
 import { ItemRow } from './ItemRow'
 import { resultOf } from '@/lib/result-badge'
@@ -32,7 +32,7 @@ export function MatchRow({ summary, now, onPress }: { summary: MatchSummary; now
           </View>
           <View style={styles.colTime}>
             <Text style={styles.big} numberOfLines={1}>{formatDuration(summary.durationSec)}</Text>
-            <Text style={styles.meta} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{relativeTimeShort(summary.startedAt, now)}</Text>
+            <Text style={styles.meta} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{queueTag(summary.queueId)} · {relativeTimeShort(summary.startedAt, now)}</Text>
           </View>
         </View>
         <ItemRow items={me.items} trinket={me.trinket} size={24} />

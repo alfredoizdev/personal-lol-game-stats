@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { formatRiotId, performanceProfile } from '@lpp/shared'
+import { formatRiotId, inQueueFilter, performanceProfile, QUEUE_FILTER_LABEL } from '@lpp/shared'
+import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { Screen } from '@/components/Screen'
 import { AreasCard } from '@/components/performance/AreasCard'
 import { ChampionsCard } from '@/components/performance/ChampionsCard'
@@ -8,6 +9,7 @@ import { MatchupsCard } from '@/components/performance/MatchupsCard'
 import { OverviewCard } from '@/components/performance/OverviewCard'
 import { RolesCard } from '@/components/performance/RolesCard'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useQueueFilter } from '@/hooks/useQueueFilter'
 import { useHistory } from '@/lib/history-context'
 import { BACKFILL_COUNT } from '@/lib/backfill'
 import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
@@ -27,12 +29,15 @@ export default function PerformanceScreen() {
   const windowSize = Math.min(WINDOW, history.total)
 
   const state = loadState({ idsPending: history.idsPending, total: history.total, loadedInWindow, running: history.running, attempted: !!puuid && history.started })
-  const profile = useMemo(() => performanceProfile(history.summaries, WINDOW), [history.summaries])
-  const subtitle = account ? `${formatRiotId(account.gameName, account.tagLine)} · ${gamesNote(profile).toLowerCase()}` : 'Your own games only'
+  const [queueFilter, setQueueFilter] = useQueueFilter()
+  const filtered = useMemo(() => history.summaries.filter((s) => inQueueFilter(s.queueId, queueFilter)), [history.summaries, queueFilter])
+  const profile = useMemo(() => performanceProfile(filtered, WINDOW), [filtered])
+  const subtitle = account ? `${formatRiotId(account.gameName, account.tagLine)} · ${queueFilter === 'all' ? '' : `${QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} · `}${gamesNote(profile).toLowerCase()}` : 'Your own games only'
   const rateLimited = riotErrorCode(history.error) === 'RATE_LIMITED'
 
   return (
     <Screen title="Performance" subtitle={subtitle}>
+      <QueueFilterChips value={queueFilter} onChange={setQueueFilter} />
       {state === 'loading' ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle} maxFontSizeMultiplier={1.15}>Loading your last {WINDOW} games…</Text>
