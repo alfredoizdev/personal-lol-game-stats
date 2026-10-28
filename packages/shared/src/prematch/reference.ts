@@ -18,14 +18,27 @@ import { ANALYZABLE_QUEUES } from '../analysis/targets'
 export const RANK_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master+'] as const
 export type RankTier = (typeof RANK_TIERS)[number]
 
-/** Laner baselines per tier (approximate). Vision has a separate support ladder. */
+/**
+ * Typical values per tier, Iron → Master+. Recalibrated 2026-10-27 on per-rank
+ * community datasets (CS/min and KP by rank, vision by role) after the owner
+ * saw a 5.5 CS goal land in a tier above his: mid CS/min runs 5.4 (Iron) to
+ * 7.6 (Master+), jungle has its own CS ladder (camps count, so it is NOT the
+ * laner one scaled down), KP climbs only 41 → 49 for laners (support 50 → 59),
+ * and vision is a role thing far more than a rank thing. Still estimates, not
+ * Riot data; labelled as such in the UI and documented in docs/ANALYSIS.md.
+ */
 const LADDER: Record<GoalMetric, number[]> = {
-  csPerMin: [4.0, 4.6, 5.2, 5.8, 6.3, 6.8, 7.3, 8.0],
-  visionPerMin: [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2],
+  csPerMin: [5.4, 5.7, 6.0, 6.3, 6.6, 6.9, 7.2, 7.6],
+  visionPerMin: [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.2],
   deathsPer10: [2.2, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.3],
-  kpPct: [45, 48, 50, 52, 54, 55, 57, 60],
+  kpPct: [41, 43, 44, 45, 46, 47, 48, 49],
 }
-const SUPPORT_VISION = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6]
+const JUNGLE_CS = [5.7, 5.9, 6.1, 6.4, 6.6, 6.9, 7.1, 7.3]
+const JUNGLE_VISION = [1.2, 1.25, 1.3, 1.4, 1.45, 1.5, 1.6, 1.8]
+const SUPPORT_VISION = [1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 3.0]
+const SUPPORT_KP = [50, 52, 53, 54, 55, 56, 57, 59]
+const JUNGLE_KP_BONUS = 8
+/** Mid is the laner reference; top and bot scale by their CS target (bot ×7.5/7). */
 const LANER_CS_TARGET = 7.0
 
 const roundTo = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
@@ -37,13 +50,15 @@ export function rankBenchmarks(metric: GoalMetric, role: Role): Array<{ tier: Ra
   if (metric === 'csPerMin') {
     const t = ROLE_TARGETS[role].csPerMin
     if (t === null) return []
-    values = values.map((v) => v * (t / LANER_CS_TARGET))
+    values = role === 'JUNGLE' ? JUNGLE_CS : values.map((v) => v * (t / LANER_CS_TARGET))
   } else if (metric === 'visionPerMin' && role === 'UTILITY') {
     values = SUPPORT_VISION
   } else if (metric === 'visionPerMin' && role === 'JUNGLE') {
-    values = values.map((v) => v * 1.5)
-  } else if (metric === 'kpPct' && (role === 'JUNGLE' || role === 'UTILITY')) {
-    values = values.map((v) => v + 8)
+    values = JUNGLE_VISION
+  } else if (metric === 'kpPct' && role === 'UTILITY') {
+    values = SUPPORT_KP
+  } else if (metric === 'kpPct' && role === 'JUNGLE') {
+    values = values.map((v) => v + JUNGLE_KP_BONUS)
   }
   return RANK_TIERS.map((tier, i) => ({ tier, value: roundTo(values[i]!, d) }))
 }

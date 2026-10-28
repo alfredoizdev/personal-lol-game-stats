@@ -40,7 +40,7 @@ const CHAMPIONS_LIMIT = 8
 export type RoleStat = { role: Role; games: number; wins: number; winRate: number; avgScore: number | null; fewGames: boolean }
 export type AreaSubrowStat = { key: string; label: string; avg: number | null; target: number | null; decimals: number; suffix: string; n: number }
 export type AreaStat = { key: AreaKey; label: string; avgScore: number | null; rating: Rating | null; n: number; subrows: AreaSubrowStat[] }
-export type ChampionStat = { championId: number; championName: string; role: Role | null; games: number; wins: number; winRate: number; avgScore: number | null; tier: PerformanceTier | null; fewGames: boolean }
+export type ChampionStat = { championId: number; championName: string; role: Role | null; games: number; wins: number; winRate: number; avgScore: number | null; tier: PerformanceTier | null; fewGames: boolean; /** (kills + assists) / deaths over its games, one decimal; null without a death. */ kda: number | null }
 export type MatchupStat = { championId: number; championName: string; role: Role; games: number; wins: number; winRate: number; fewGames: boolean }
 export type RecentGame = { matchId: string; win: boolean; score: number | null; championName: string }
 export type Streak = { kind: 'win' | 'loss'; n: number } | null
@@ -227,7 +227,9 @@ function championStats(games: Scored[]): ChampionStat[] {
     .map(([championId, e]) => {
       const wins = e.gs.filter((g) => g.s.me.win).length
       const avgScore = meanInt(e.gs.map((g) => g.score).filter((v): v is number => v !== null))
-      return { championId, championName: e.name, role: mostPlayedRole(e.gs), games: e.gs.length, wins, winRate: pct(wins, e.gs.length), avgScore, tier: avgScore === null ? null : performanceTier(avgScore), fewGames: e.gs.length < FEW_GAMES }
+      const deaths = e.gs.reduce((sum, g) => sum + g.s.me.deaths, 0)
+      const kda = deaths === 0 ? null : roundTo(e.gs.reduce((sum, g) => sum + g.s.me.kills + g.s.me.assists, 0) / deaths, 1)
+      return { championId, championName: e.name, role: mostPlayedRole(e.gs), games: e.gs.length, wins, winRate: pct(wins, e.gs.length), avgScore, tier: avgScore === null ? null : performanceTier(avgScore), fewGames: e.gs.length < FEW_GAMES, kda }
     })
     .sort((a, b) => b.games - a.games || b.winRate - a.winRate || a.championName.localeCompare(b.championName))
     .slice(0, CHAMPIONS_LIMIT)

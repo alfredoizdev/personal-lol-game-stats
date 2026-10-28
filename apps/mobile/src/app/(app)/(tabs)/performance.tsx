@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { formatRiotId, inQueueFilter, performanceProfile, QUEUE_FILTER_LABEL } from '@lpp/shared'
+import { bestRole, formatRiotId, inQueueFilter, mainRole, performanceProfile, QUEUE_FILTER_LABEL, rankTier, RECENT_FORM_N, recentSnapshot, tierComparison } from '@lpp/shared'
 import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { Screen } from '@/components/Screen'
-import { AreasCard } from '@/components/performance/AreasCard'
 import { ChampionsCard } from '@/components/performance/ChampionsCard'
-import { MatchupsCard } from '@/components/performance/MatchupsCard'
-import { OverviewCard } from '@/components/performance/OverviewCard'
 import { RolesCard } from '@/components/performance/RolesCard'
+import { SnapshotCard } from '@/components/performance/SnapshotCard'
+import { TierCompareCard } from '@/components/performance/TierCompareCard'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useQueueFilter } from '@/hooks/useQueueFilter'
+import { useRank } from '@/hooks/useRank'
 import { useHistory } from '@/lib/history-context'
 import { BACKFILL_COUNT } from '@/lib/backfill'
 import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
@@ -19,7 +19,10 @@ import { colors, font, radius, space } from '@/theme/tokens'
 /** Retry reloads the whole window the launch load fetches (the history is loaded once for every tab). */
 const AUTO_LOAD = BACKFILL_COUNT
 
-/** Your performance from your last 100 Summoner's Rift games (Phase 6 spec; owner's window). */
+/**
+ * Your performance from your last 100 Summoner's Rift games (owner's window), laid out
+ * like op.gg mobile since 2026-10-27: recent 20, you vs your tier, roles, champions.
+ */
 export default function PerformanceScreen() {
   const { data: account } = useLinkedAccount()
   const history = useHistory()
@@ -32,6 +35,12 @@ export default function PerformanceScreen() {
   const [queueFilter, setQueueFilter] = useQueueFilter()
   const filtered = useMemo(() => history.summaries.filter((s) => inQueueFilter(s.queueId, queueFilter)), [history.summaries, queueFilter])
   const profile = useMemo(() => performanceProfile(filtered, WINDOW), [filtered])
+  const snapshot = useMemo(() => recentSnapshot(filtered, RECENT_FORM_N), [filtered])
+  const { rank } = useRank(account ?? null)
+  const tier = rankTier(rank?.solo?.tier ?? null)
+  const role = useMemo(() => mainRole(filtered), [filtered])
+  const compare = useMemo(() => (role ? tierComparison(filtered, tier, role) : []), [filtered, tier, role])
+  const best = useMemo(() => bestRole(filtered)?.role ?? null, [filtered])
   const subtitle = account ? `${formatRiotId(account.gameName, account.tagLine)} · ${queueFilter === 'all' ? '' : `${QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} · `}${gamesNote(profile).toLowerCase()}` : 'Your own games only'
   const rateLimited = riotErrorCode(history.error) === 'RATE_LIMITED'
 
@@ -65,11 +74,10 @@ export default function PerformanceScreen() {
       ) : null}
       {state === 'ready' || state === 'short' ? (
         <>
-          <OverviewCard profile={profile} />
-          <RolesCard profile={profile} />
-          <AreasCard profile={profile} />
+          <SnapshotCard snapshot={snapshot} />
+          {role && compare.length ? <TierCompareCard rows={compare} tier={tier ?? 'Gold'} ranked={tier !== null} role={role} games={profile.roles.find((r) => r.role === role)?.games ?? 0} /> : null}
+          <RolesCard profile={profile} best={best} />
           <ChampionsCard profile={profile} />
-          <MatchupsCard profile={profile} />
         </>
       ) : null}
     </Screen>
