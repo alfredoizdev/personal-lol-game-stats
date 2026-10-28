@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { inQueueFilter, lpChanges, QUEUE_FILTER_LABEL, type LpChange } from '@lpp/shared'
+import { inQueueFilter, lpChanges, QUEUE_FILTER_LABEL, queueGroup, type LpChange } from '@lpp/shared'
 import { Disclaimer } from '@/components/Disclaimer'
 import { RankHeader } from '@/components/RankHeader'
 import { MatchRow } from '@/components/MatchRow'
@@ -15,6 +15,7 @@ import { useRank, useRankHistory } from '@/hooks/useRank'
 import { useRecentMatches, type MatchRowState } from '@/hooks/useRecentMatches'
 import { headerDonuts } from '@/lib/header-donuts'
 import { aggregateMatches } from '@/lib/match-aggregates'
+import { lpHint } from '@/lib/match-row-view'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
@@ -35,6 +36,7 @@ export default function MatchesScreen() {
     [matches, queueFilter],
   )
   const summaries = useMemo(() => ready.map((m) => m.summary), [ready])
+  const hint = lpHint({ lpCount: lp.size, rankedListed: ready.some((m) => queueGroup(m.summary.queueId) === 'ranked') })
   const agg = useMemo(() => aggregateMatches(summaries), [summaries])
   const donuts = useMemo(() => headerDonuts(summaries), [summaries])
 
@@ -47,6 +49,7 @@ export default function MatchesScreen() {
       {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
       {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
       <Text style={styles.section}>Recent Games{ids.data ? ` (${queueFilter === 'all' ? total : `${ready.length} ${QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} of ${total}`})` : ''}</Text>
+      {hint ? <Text style={styles.hint} maxFontSizeMultiplier={1.15}>{hint}</Text> : null}
     </View>
   )
 
@@ -103,6 +106,7 @@ const styles = StyleSheet.create({
   headerBlock: { gap: space.md, marginBottom: 4 },
   section: { color: colors.text, fontSize: font.body, fontWeight: '700', marginTop: space.xs },
   muted: { color: colors.muted, fontSize: font.body },
+  hint: { color: colors.muted, fontSize: font.caption, marginTop: -8 },
   placeholder: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, minHeight: 92, justifyContent: 'center' },
   skeleton: { opacity: 0.5 },
   code: { color: colors.muted, fontSize: font.caption - 1, marginTop: 4 },
