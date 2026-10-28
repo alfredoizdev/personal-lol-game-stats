@@ -24,3 +24,4 @@ apps/desktop/release/
 
 # Supabase CLI scratch (created by `supabase secrets set` / `link` from the repo root)
 supabase/.temp/
+apps/desktop/release-next/

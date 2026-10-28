@@ -83,6 +83,12 @@ export default function PostGameScreen() {
     <Screen
       title="Match ended"
       subtitle={snapshot ? `${snapshot.me.championName} · ${snapshot.gameTimeSeconds === null ? '--:--' : formatDuration(snapshot.gameTimeSeconds)}` : 'Your last game'}
+      right={
+        // Owner, 2026-10-28: a way out when the review never comes (wrong account, custom game) — the auto-open still happens when it does.
+        <Pressable onPress={() => router.replace('/(app)/(tabs)/matches')} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={styles.close}>
+          <Text style={styles.closeText} maxFontSizeMultiplier={1.15}>Close</Text>
+        </Pressable>
+      }
     >
       {snapshot ? (
         <View style={styles.card}>
@@ -133,6 +139,8 @@ export default function PostGameScreen() {
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
   cardTitle: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
+  close: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 7, marginTop: 4 },
+  closeText: { color: colors.text, fontSize: font.caption + 1, fontWeight: '700' },
   hero: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   heroText: { flex: 1, gap: 2 },
   result: { color: colors.text, fontSize: font.body + 6, fontWeight: '900' },
