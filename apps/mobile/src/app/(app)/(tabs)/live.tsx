@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
-import { formatGoal, goalFor, goalMet, goalStatus, liveMetrics, liveScreenMode, metricInfo } from '@lpp/shared'
+import { accountToFollow, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, liveScreenMode, metricInfo } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { LiveHero } from '@/components/LiveHero'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
@@ -14,7 +14,7 @@ import { PhaseCard } from '@/components/live/PhaseCard'
 import { PrepareCard } from '@/components/prematch/PrepareCard'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
-import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useLinkedAccount, useLinkedAccounts } from '@/hooks/useLinkedAccount'
 import { useLiveAlerts } from '@/hooks/useLiveAlerts'
 import { useLiveFeed } from '@/lib/live-feed-context'
 import { showEventsFeed } from '@/lib/live-sections'
@@ -24,6 +24,10 @@ import { colors, font, radius, space } from '@/theme/tokens'
 export default function LiveScreen() {
   const { snapshot, state, connected, phase, phaseReceivedAt, receivedAt, endedAt, now } = useLiveFeed()
   const { data: account } = useLinkedAccount()
+  const { data: accounts } = useLinkedAccounts()
+  // League signed in as an account that is not linked: say so (a linked one is switched to by itself).
+  const follow = accountToFollow(phase?.who, accounts ?? [], account?.puuid ?? null)
+  const unlinked = follow?.kind === 'unlinked' ? follow.riotId : null
   const { goals } = useGoals(account ?? null)
   const { byName } = useChampionList()
   const [trend, setTrend] = useState<TrendPoint[]>([])
@@ -56,6 +60,11 @@ export default function LiveScreen() {
         <>
           {mode === 'after' && snapshot ? <LastMatchCard snapshot={snapshot} goal={liveGoal ? { text: liveGoal.text, met: liveGoal.met } : null} onDismiss={() => setDismissed(true)} /> : null}
           <PhaseCard phase={phase} receivedAt={phaseReceivedAt} now={now} connected={connected} />
+          {unlinked ? (
+            <Pressable onPress={() => router.push('/(app)/link')} accessibilityRole="button" style={styles.unlinked}>
+              <Text style={styles.unlinkedText} maxFontSizeMultiplier={1.15}>League is signed in as {unlinked}, which isn't linked. Tap to link it.</Text>
+            </Pressable>
+          ) : null}
           {account ? <PrepareCard account={account} /> : null}
         </>
       ) : snapshot ? (
@@ -88,6 +97,8 @@ export default function LiveScreen() {
 }
 
 const styles = StyleSheet.create({
+  unlinked: { borderWidth: 1, borderColor: colors.warn, borderRadius: radius.card, padding: space.sm + 4 },
+  unlinkedText: { color: colors.warn, fontSize: font.caption + 1, lineHeight: 19 },
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.sm },
   cardTitle: { color: colors.text, fontSize: font.body + 2, fontWeight: '800' },
   muted: { color: colors.muted, fontSize: font.body },
