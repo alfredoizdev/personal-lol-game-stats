@@ -22,9 +22,9 @@ describe('recentSnapshot (owner, 2026-10-27: op.gg-style "Recent 20 games" block
     const s = recentSnapshot(all, 20)
     expect(s).toMatchObject({ games: 4, wins: 3, losses: 1, winRate: 75, kills: 7, deaths: 4, assists: 5, kda: 3 })
     expect(s.champions).toEqual([
-      { championId: 222, championName: 'Jinx', games: 2, winRate: 50 },
-      { championId: 103, championName: 'Ahri', games: 1, winRate: 100 },
-      { championId: 51, championName: 'Caitlyn', games: 1, winRate: 100 },
+      { championId: 222, championName: 'Jinx', games: 2, wins: 1, winRate: 50 },
+      { championId: 103, championName: 'Ahri', games: 1, wins: 1, winRate: 100 },
+      { championId: 51, championName: 'Caitlyn', games: 1, wins: 1, winRate: 100 },
     ])
     expect(s.mainRole).toEqual({ role: 'BOTTOM', pct: 75 })
   })

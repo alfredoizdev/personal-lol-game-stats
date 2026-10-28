@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { formatDuration, type MatchSummary } from '@lpp/shared'
+import { formatDuration, formatLpChange, type LpChange, type MatchSummary } from '@lpp/shared'
 import { PortraitWithBadges } from './PortraitWithBadges'
 import { ItemRow } from './ItemRow'
 import { rowMeta } from '@/lib/match-row-view'
@@ -23,14 +23,14 @@ const STRIP: Record<'win' | 'loss' | 'none', { bg: string; letter: string }> = {
  * duration, the champion with its badges, the KDA with deaths in red and the K/P line,
  * the queue and time ago on the right, items below.
  */
-export function MatchRow({ summary, now, onPress }: { summary: MatchSummary; now: number; onPress: () => void }) {
+export function MatchRow({ summary, now, lp = null, onPress }: { summary: MatchSummary; now: number; /** LP change of this ranked game, when the app saw the standing move (owner, 2026-10-27). */ lp?: LpChange | null; onPress: () => void }) {
   const r = resultWord(summary)
   const me = summary.me
   const rating = quickRating(summary)
   const meta = rowMeta(summary, now)
   const strip = STRIP[r.ring]
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${r.text}, ${me.championName}, ${me.kills} ${me.deaths} ${me.assists}, ${meta.queue}, ${meta.when}`} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${r.text}, ${me.championName}, ${me.kills} ${me.deaths} ${me.assists}, ${meta.queue}, ${meta.when}${lp ? `, ${formatLpChange(lp)}` : ''}`} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={[styles.strip, { backgroundColor: strip.bg }]}>
         <Text style={[styles.stripLetter, { color: r.color }]} allowFontScaling={false}>{strip.letter}</Text>
         <View style={[styles.stripRule, { backgroundColor: r.color }]} />
@@ -48,6 +48,7 @@ export function MatchRow({ summary, now, onPress }: { summary: MatchSummary; now
           <View style={styles.metaBlock}>
             <Text style={styles.sub} numberOfLines={1}>{meta.queue}</Text>
             <Text style={styles.sub} numberOfLines={1}>{meta.when}</Text>
+            {lp ? <Text style={[styles.lp, { color: lp.delta < 0 ? colors.loss : colors.win }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{formatLpChange(lp)}</Text> : null}
           </View>
         </View>
         <ItemRow items={me.items} trinket={me.trinket} size={24} />
@@ -80,4 +81,5 @@ const styles = StyleSheet.create({
   deaths: { color: colors.loss },
   sub: { color: colors.muted, fontSize: font.caption - 1 },
   metaBlock: { alignItems: 'flex-end', gap: 1 },
+  lp: { fontSize: font.caption - 1, fontWeight: '800' },
 })

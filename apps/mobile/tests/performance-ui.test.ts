@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile, type CompareRow } from '@lpp/shared'
-import { compareValues, deltaChip, gamesNote, kdaLine, loadState, recordLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
+import { compareValues, deltaChip, gamesNote, loadState, mainRoleLine, recordLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -21,11 +21,13 @@ describe('performance-ui — win rate colour', () => {
 })
 
 describe('performance-ui — recent snapshot copy (op.gg-style, owner 2026-10-27)', () => {
-  it('record line and the K/D/A line with its ratio', () => {
-    expect(recordLine({ games: 20, wins: 12, losses: 8, winRate: 60 })).toBe('12W 8L · 60%')
+  it('record line under the win-rate arc and the main-role sentence', () => {
+    expect(recordLine({ games: 20, wins: 12, losses: 8, winRate: 60 })).toBe('12 wins · 8 losses')
+    expect(recordLine({ games: 1, wins: 1, losses: 0, winRate: 100 })).toBe('1 win · 0 losses')
     expect(recordLine({ games: 0, wins: 0, losses: 0, winRate: null })).toBe('No games yet')
-    expect(kdaLine({ kills: 6.8, deaths: 6.2, assists: 5.1, kda: 1.9 })).toEqual({ kda: '6.8 / 6.2 / 5.1', ratio: '1.9:1 KDA' })
-    expect(kdaLine({ kills: 3, deaths: 0, assists: 3, kda: null })).toEqual({ kda: '3.0 / 0.0 / 3.0', ratio: 'Perfect KDA' })
+    expect(mainRoleLine({ role: 'JUNGLE', pct: 50 }, 20)).toBe('Mostly Jungle · 10 of 20 games')
+    expect(mainRoleLine({ role: 'BOTTOM', pct: 100 }, 1)).toBe('Bot · 1 of 1 game')
+    expect(mainRoleLine(null, 0)).toBeNull()
   })
 })
 

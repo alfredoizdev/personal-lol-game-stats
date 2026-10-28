@@ -5,11 +5,13 @@ import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { Screen } from '@/components/Screen'
 import { ChampionsCard } from '@/components/performance/ChampionsCard'
 import { RolesCard } from '@/components/performance/RolesCard'
-import { SnapshotCard } from '@/components/performance/SnapshotCard'
+import { RecentCard } from '@/components/performance/RecentCard'
+import { ChampionPoolCard } from '@/components/performance/ChampionPoolCard'
 import { TierCompareCard } from '@/components/performance/TierCompareCard'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useQueueFilter } from '@/hooks/useQueueFilter'
 import { useRank } from '@/hooks/useRank'
+import { headerDonuts } from '@/lib/header-donuts'
 import { useHistory } from '@/lib/history-context'
 import { BACKFILL_COUNT } from '@/lib/backfill'
 import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
@@ -36,6 +38,7 @@ export default function PerformanceScreen() {
   const filtered = useMemo(() => history.summaries.filter((s) => inQueueFilter(s.queueId, queueFilter)), [history.summaries, queueFilter])
   const profile = useMemo(() => performanceProfile(filtered, WINDOW), [filtered])
   const snapshot = useMemo(() => recentSnapshot(filtered, RECENT_FORM_N), [filtered])
+  const donuts = useMemo(() => headerDonuts(filtered, RECENT_FORM_N), [filtered]) // the same arcs as the Matches header, over the same 20
   const { rank } = useRank(account ?? null)
   const tier = rankTier(rank?.solo?.tier ?? null)
   const role = useMemo(() => mainRole(filtered), [filtered])
@@ -74,7 +77,8 @@ export default function PerformanceScreen() {
       ) : null}
       {state === 'ready' || state === 'short' ? (
         <>
-          <SnapshotCard snapshot={snapshot} />
+          <RecentCard snapshot={snapshot} donuts={donuts} />
+          <ChampionPoolCard champions={snapshot.champions} games={snapshot.games} />
           {role && compare.length ? <TierCompareCard rows={compare} tier={tier ?? 'Gold'} ranked={tier !== null} role={role} games={profile.roles.find((r) => r.role === role)?.games ?? 0} /> : null}
           <RolesCard profile={profile} best={best} />
           <ChampionsCard profile={profile} />
