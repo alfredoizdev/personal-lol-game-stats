@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global require, module */
 // Android keeps AsyncStorage in a SQLite file capped at 6 MB by default; a
 // hundred cached match details need more (owner's Android, 2026-10-27:
 // "database or disk is full (code 13 SQLITE_FULL)"). Raises the cap through
