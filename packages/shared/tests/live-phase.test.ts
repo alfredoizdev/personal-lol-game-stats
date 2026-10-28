@@ -28,3 +28,13 @@ describe('live-phase · champion select pick (phase 8, piece 2)', () => {
     expect(parseLivePhase({ v: 1, ts: 1, phase: 'ChampSelect', since: 0, pick: { championId: 1, position: 'FEEDER' } })).toBeNull()
   })
 })
+
+describe('live-phase · who League is signed in as (owner, 2026-10-28: the phone should follow the client account)', () => {
+  it('carries the Riot ID the client is signed in with and round-trips it; absent on an older desktop', () => {
+    const p = buildLivePhase('Lobby', 1_000, 1, null, { gameName: 'Hexed', tagLine: '7551' })
+    expect(p.who).toEqual({ gameName: 'Hexed', tagLine: '7551' })
+    expect(parseLivePhase(JSON.parse(JSON.stringify(p)))).toEqual(p)
+    expect(parseLivePhase({ v: 1, ts: 1, phase: 'Lobby', since: 0 })?.who).toBeUndefined()
+    expect(parseLivePhase({ v: 1, ts: 1, phase: 'Lobby', since: 0, who: { gameName: 'Hexed' } })).toBeNull()
+  })
+})

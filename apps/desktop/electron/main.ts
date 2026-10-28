@@ -123,7 +123,7 @@ function isDemo(): boolean {
 /** The client phase the phone shows before and after a game; re-sent every 10 s so a stale phone can tell. */
 function publishPhase(): void {
   if (!publisher) return
-  publisher.publishPhase(buildLivePhase(phaseNow, Date.now() - phaseSince, Date.now(), phaseNow === 'ChampSelect' ? pickNow : null)).catch((err) => logger.warn(`phase publish failed: ${String(err)}`))
+  publisher.publishPhase(buildLivePhase(phaseNow, Date.now() - phaseSince, Date.now(), phaseNow === 'ChampSelect' ? pickNow : null, lcuIdentity())).catch((err) => logger.warn(`phase publish failed: ${String(err)}`))
 }
 
 function onLiveState(state: LiveState): void {

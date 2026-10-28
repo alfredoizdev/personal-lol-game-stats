@@ -7,6 +7,7 @@ import { LiveFeedProvider } from '@/lib/live-feed-context'
 import { HistoryProvider, useHistory } from '@/lib/history-context'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { useChampSelectScreen } from '@/hooks/useChampSelectScreen'
+import { useFollowLeagueAccount } from '@/hooks/useFollowLeagueAccount'
 import { usePostGameScreen } from '@/hooks/usePostGameScreen'
 import { colors } from '@/theme/tokens'
 
@@ -38,6 +39,7 @@ function AppStack() {
   const history = useHistory()
   useChampSelectScreen()
   usePostGameScreen()
+  useFollowLeagueAccount()
   if (history.state === 'loading') return <LoadingScreen loaded={history.loaded} total={history.total} idsPending={history.idsPending} />
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>

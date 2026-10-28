@@ -4,16 +4,22 @@ import type { Role } from './match-v5'
 /** The player's own champion-select cell: locked champion (null until locked) and assigned position (null in modes without one). */
 export type ChampSelectPick = { championId: number | null; position: Role | null }
 
-/** Client phase relayed by the desktop on the live channel (event `live-phase`): what League is doing before and after a game. */
-export type LivePhasePayload = { v: 1; ts: number; phase: GameflowPhase; since: number; pick?: ChampSelectPick }
+/** The Riot ID League is signed in with (owner, 2026-10-28: the phone follows the client account). */
+export type ClientIdentity = { gameName: string; tagLine: string }
+
+/** Client phase relayed by the desktop on the live channel (event `live-phase`): what League is doing before and after a game, and as whom. */
+export type LivePhasePayload = { v: 1; ts: number; phase: GameflowPhase; since: number; pick?: ChampSelectPick; who?: ClientIdentity }
 
 const ROLES: readonly string[] = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']
 
 export const GAMEFLOW_PHASES: readonly GameflowPhase[] = ['None', 'Lobby', 'Matchmaking', 'ReadyCheck', 'ChampSelect', 'GameStart', 'InProgress', 'WaitingForStats', 'PreEndOfGame', 'EndOfGame', 'Reconnect']
 
 /** `since` = ms the client has been in this phase (the phone runs the queue timer from it). */
-export function buildLivePhase(phase: GameflowPhase, since: number, ts: number, pick?: ChampSelectPick | null): LivePhasePayload {
-  return pick ? { v: 1, ts, phase, since, pick } : { v: 1, ts, phase, since }
+export function buildLivePhase(phase: GameflowPhase, since: number, ts: number, pick?: ChampSelectPick | null, who?: ClientIdentity | null): LivePhasePayload {
+  const out: LivePhasePayload = { v: 1, ts, phase, since }
+  if (pick) out.pick = pick
+  if (who) out.who = who
+  return out
 }
 
 export function parseChampSelectPick(v: unknown): ChampSelectPick | null {
@@ -34,6 +40,11 @@ export function parseLivePhase(payload: unknown): LivePhasePayload | null {
     const pick = parseChampSelectPick(p.pick)
     if (!pick) return null
     out.pick = pick
+  }
+  if (p.who !== undefined && p.who !== null) {
+    const w = p.who as Record<string, unknown>
+    if (typeof w !== 'object' || typeof w.gameName !== 'string' || typeof w.tagLine !== 'string') return null
+    out.who = { gameName: w.gameName, tagLine: w.tagLine }
   }
   return out
 }
