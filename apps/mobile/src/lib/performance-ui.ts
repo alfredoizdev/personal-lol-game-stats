@@ -12,15 +12,15 @@ export function winRateColor(winRate: number): string {
   return winRate >= 50 ? colors.win : colors.loss
 }
 
-/** "12W 8L · 60%" for the recent block. */
+/** "12W 8L · 60% win rate" for the recent block (owner, 2026-10-27: every number says what it is). */
 export function recordLine(s: Pick<RecentSnapshot, 'games' | 'wins' | 'losses' | 'winRate'>): string {
   if (s.games === 0 || s.winRate === null) return 'No games yet'
-  return `${s.wins}W ${s.losses}L · ${s.winRate}%`
+  return `${s.wins}W ${s.losses}L · ${s.winRate}% win rate`
 }
 
-/** "6.8 / 6.2 / 5.1" and "1.9:1 KDA" (op.gg's two lines); "Perfect KDA" without a death. */
+/** "6.8 / 6.2 / 5.1" and "1.9 KDA"; "Perfect KDA" without a death. */
 export function kdaLine(s: Pick<RecentSnapshot, 'kills' | 'deaths' | 'assists' | 'kda'>): { kda: string; ratio: string } {
-  return { kda: `${s.kills.toFixed(1)} / ${s.deaths.toFixed(1)} / ${s.assists.toFixed(1)}`, ratio: s.kda === null ? 'Perfect KDA' : `${s.kda.toFixed(1)}:1 KDA` }
+  return { kda: `${s.kills.toFixed(1)} / ${s.deaths.toFixed(1)} / ${s.assists.toFixed(1)}`, ratio: s.kda === null ? 'Perfect KDA' : `${s.kda.toFixed(1)} KDA` }
 }
 
 const fmt = (n: number, r: Pick<CompareRow, 'decimals' | 'suffix'>) => `${n.toFixed(r.decimals)}${r.suffix}`

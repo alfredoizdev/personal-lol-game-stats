@@ -7,4 +7,5 @@ export const matchKeys = {
   champions: (version: string) => ['champions', version] as const,
   ownIds: (puuid: string | undefined) => ['own-ids', puuid] as const,
   rank: (puuid: string | undefined) => ['rank', puuid] as const,
+  rankHistory: (puuid: string | undefined) => ['rank-history', puuid] as const,
 }

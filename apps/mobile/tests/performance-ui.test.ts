@@ -22,9 +22,9 @@ describe('performance-ui — win rate colour', () => {
 
 describe('performance-ui — recent snapshot copy (op.gg-style, owner 2026-10-27)', () => {
   it('record line and the K/D/A line with its ratio', () => {
-    expect(recordLine({ games: 20, wins: 12, losses: 8, winRate: 60 })).toBe('12W 8L · 60%')
+    expect(recordLine({ games: 20, wins: 12, losses: 8, winRate: 60 })).toBe('12W 8L · 60% win rate')
     expect(recordLine({ games: 0, wins: 0, losses: 0, winRate: null })).toBe('No games yet')
-    expect(kdaLine({ kills: 6.8, deaths: 6.2, assists: 5.1, kda: 1.9 })).toEqual({ kda: '6.8 / 6.2 / 5.1', ratio: '1.9:1 KDA' })
+    expect(kdaLine({ kills: 6.8, deaths: 6.2, assists: 5.1, kda: 1.9 })).toEqual({ kda: '6.8 / 6.2 / 5.1', ratio: '1.9 KDA' })
     expect(kdaLine({ kills: 3, deaths: 0, assists: 3, kda: null })).toEqual({ kda: '3.0 / 0.0 / 3.0', ratio: 'Perfect KDA' })
   })
 })

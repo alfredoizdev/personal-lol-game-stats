@@ -66,6 +66,7 @@ export default function PostGameScreen() {
       setFound(newest)
       setFoundAt(Date.now())
       void qc.invalidateQueries({ queryKey: matchKeys.ownIds(account.puuid) }) // Prepare / Performance pick the game up too
+      void qc.invalidateQueries({ queryKey: matchKeys.rank(account.puuid) }) // re-read the standing now: its move is this game's LP
     }
   }, [found, newest, detail.data, account, snapshot, qc])
   const review = useMemo(() => {
