@@ -7,7 +7,9 @@
 const PERSISTED: readonly string[] = ['match-detail', 'own-ids', 'match-ids', 'champions', 'rank', 'rank-history']
 
 export const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
-export const PERSIST_KEY = 'lpp.query-cache.v1'
+/** v2: one row per query (see sharded-persister.ts); v1 was one blob, which Android could not read back. */
+export const PERSIST_KEY = 'lpp.query-cache.v2'
+export const LEGACY_PERSIST_KEY = 'lpp.query-cache.v1'
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
   return typeof queryKey[0] === 'string' && PERSISTED.includes(queryKey[0])
