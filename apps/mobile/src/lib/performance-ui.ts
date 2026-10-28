@@ -1,5 +1,5 @@
 import { colors } from '@/theme/tokens'
-import type { CompareRow, PerformanceProfile, RecentSnapshot } from '@lpp/shared'
+import { ROLE_LABEL, type CompareRow, type PerformanceProfile, type RecentSnapshot, type Role } from '@lpp/shared'
 
 /** Copy and state for the Performance tab (op.gg-style since 2026-10-27); pure so it is testable. */
 
@@ -12,15 +12,18 @@ export function winRateColor(winRate: number): string {
   return winRate >= 50 ? colors.win : colors.loss
 }
 
-/** "12W 8L · 60% win rate" for the recent block (owner, 2026-10-27: every number says what it is). */
+/** "12 wins · 8 losses": the plain record under the win-rate arc (owner, 2026-10-27: every number says what it is, once). */
 export function recordLine(s: Pick<RecentSnapshot, 'games' | 'wins' | 'losses' | 'winRate'>): string {
   if (s.games === 0 || s.winRate === null) return 'No games yet'
-  return `${s.wins}W ${s.losses}L · ${s.winRate}% win rate`
+  return `${s.wins} win${s.wins === 1 ? '' : 's'} · ${s.losses} loss${s.losses === 1 ? '' : 'es'}`
 }
 
-/** "6.8 / 6.2 / 5.1" and "1.9 KDA"; "Perfect KDA" without a death. */
-export function kdaLine(s: Pick<RecentSnapshot, 'kills' | 'deaths' | 'assists' | 'kda'>): { kda: string; ratio: string } {
-  return { kda: `${s.kills.toFixed(1)} / ${s.deaths.toFixed(1)} / ${s.assists.toFixed(1)}`, ratio: s.kda === null ? 'Perfect KDA' : `${s.kda.toFixed(1)} KDA` }
+/** "Mostly Jungle · 10 of 20 games"; the role alone when it is every game. */
+export function mainRoleLine(main: { role: Role; pct: number } | null, games: number): string | null {
+  if (!main || games === 0) return null
+  const n = Math.round((main.pct / 100) * games)
+  const name = ROLE_LABEL[main.role]
+  return `${main.pct >= 100 ? name : `Mostly ${name}`} · ${n} of ${games} game${games === 1 ? '' : 's'}`
 }
 
 const fmt = (n: number, r: Pick<CompareRow, 'decimals' | 'suffix'>) => `${n.toFixed(r.decimals)}${r.suffix}`

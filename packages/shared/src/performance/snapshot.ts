@@ -1,12 +1,12 @@
 /**
  * The "Recent 20 games" block of the Performance tab (owner, 2026-10-27, after
  * op.gg mobile): record, average K/D/A per game, KDA ratio, the three most
- * played champions and the main role's share. Newest analyzable games only.
+ * played champions (the pool) and the main role's share. Newest analyzable games only.
  */
 import type { MatchSummary, Role } from '../match-v5'
 import { ANALYZABLE_QUEUES } from '../analysis/targets'
 
-export type SnapshotChampion = { championId: number; championName: string; games: number; winRate: number }
+export type SnapshotChampion = { championId: number; championName: string; games: number; wins: number; winRate: number }
 export type RecentSnapshot = {
   games: number
   wins: number
@@ -22,7 +22,7 @@ export type RecentSnapshot = {
   mainRole: { role: Role; pct: number } | null
 }
 
-const CHAMPIONS = 3
+const CHAMPIONS = 4
 const pct = (part: number, whole: number) => Math.round((part / whole) * 100)
 const round1 = (n: number) => Math.round(n * 10) / 10
 
@@ -47,7 +47,7 @@ export function recentSnapshot(all: MatchSummary[], n: number): RecentSnapshot {
     if (s.me.role) byRole.set(s.me.role, (byRole.get(s.me.role) ?? 0) + 1)
   }
   const champions = [...byChamp.entries()]
-    .map(([championId, c]) => ({ championId, championName: c.name, games: c.games, winRate: pct(c.wins, c.games) }))
+    .map(([championId, c]) => ({ championId, championName: c.name, games: c.games, wins: c.wins, winRate: pct(c.wins, c.games) }))
     .sort((x, y) => y.games - x.games || y.winRate - x.winRate || x.championName.localeCompare(y.championName))
     .slice(0, CHAMPIONS)
   const main = [...byRole.entries()].sort((x, y) => y[1] - x[1])[0]
