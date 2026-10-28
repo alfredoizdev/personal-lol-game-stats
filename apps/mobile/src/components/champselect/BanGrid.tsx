@@ -28,7 +28,7 @@ function Group({ label, hint, children }: { label: string; hint: string; childre
 /**
  * Six bans to consider (owner, 2026-10-23): three from your own games (the lane
  * opponents you lose to most in this role) and three from the dated meta list.
- * Statements about your record, never orders.
+ * Statements about your record, never orders. Red tiles (owner, 2026-10-28: "hazla roja para que se vea más").
  */
 export function BanGrid({ bans, roleLabel, updatedOn }: { bans: ChampSelectBans; roleLabel: string; updatedOn: string }) {
   return (
@@ -42,21 +42,21 @@ export function BanGrid({ bans, roleLabel, updatedOn }: { bans: ChampSelectBans;
         )}
       </Group>
       <Group label="Meta" hint={`community list · ${updatedOn}`}>
-        {bans.meta.map((m) => <Tile key={m.championId} name={m.championName} reason="Strong this patch" ring="none" tone="muted" />)}
+        {bans.meta.map((m) => <Tile key={m.championId} name={m.championName} reason="Strong this patch" ring="loss" tone="muted" />)}
       </Group>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
-  title: { color: colors.text, fontSize: font.body + 3, fontWeight: '900' },
+  card: { backgroundColor: 'rgba(251, 92, 122, 0.08)', borderColor: 'rgba(251, 92, 122, 0.45)', borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.md },
+  title: { color: colors.loss, fontSize: font.body + 3, fontWeight: '900' },
   group: { gap: space.sm },
   groupHead: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, flexWrap: 'wrap' },
   groupLabel: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   groupHint: { color: colors.muted, fontSize: font.caption },
   row: { flexDirection: 'row', gap: space.sm },
-  tile: { flex: 1, alignItems: 'center', gap: 4, backgroundColor: colors.accentSoft, borderRadius: radius.control, paddingVertical: space.sm, paddingHorizontal: 4 },
+  tile: { flex: 1, alignItems: 'center', gap: 4, backgroundColor: 'rgba(251, 92, 122, 0.16)', borderWidth: 1, borderColor: 'rgba(251, 92, 122, 0.5)', borderRadius: radius.control, paddingVertical: space.sm, paddingHorizontal: 4 },
   name: { color: colors.text, fontSize: font.caption + 1, fontWeight: '800' },
   reason: { color: colors.muted, fontSize: font.caption - 1, fontWeight: '600' },
   reasonLoss: { color: colors.loss },
