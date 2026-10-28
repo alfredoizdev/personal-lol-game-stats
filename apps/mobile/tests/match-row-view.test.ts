@@ -14,3 +14,12 @@ describe('match row meta (owner, 2026-10-27: op.gg-style rows)', () => {
     expect(rowMeta({ ...summary, teamKills: 0 }, NOW).kp).toBeNull()
   })
 })
+
+describe('LP hint (owner, 2026-10-27: "¿dónde está el LP?")', () => {
+  it('explains the empty LP column while no ranked game has a value yet, and only when ranked games are listed', async () => {
+    const { lpHint } = await import('../src/lib/match-row-view')
+    expect(lpHint({ lpCount: 0, rankedListed: true })).toBe('LP per game starts with your next ranked game played with LanePulse open.')
+    expect(lpHint({ lpCount: 1, rankedListed: true })).toBeNull()
+    expect(lpHint({ lpCount: 0, rankedListed: false })).toBeNull()
+  })
+})
