@@ -17,18 +17,36 @@ export type ShardStorage = {
 type Index = { timestamp: number; buster: string; mutations: PersistedClient['clientState']['mutations']; hashes: string[] }
 type PersistedQuery = PersistedClient['clientState']['queries'][number]
 
-export function createShardedPersister({ storage, key, throttleTime = 1000 }: { storage: ShardStorage; key: string; throttleTime?: number }): Persister {
+export function createShardedPersister({ storage, key, throttleTime = 1000, batchSize = 8 }: { storage: ShardStorage; key: string; throttleTime?: number; batchSize?: number }): Persister {
   const indexKey = `${key}:index`
   const rowKey = (hash: string) => `${key}:q:${hash}`
 
+  /**
+   * Rows go in small batches; when the device refuses one (Android's SQLite file is
+   * capped, "SQLITE_FULL") the batches already written stay and the index lists only
+   * those, so a full disk costs some refetches at launch, never an error.
+   */
   async function writeNow(client: PersistedClient): Promise<void> {
     const queries = client.clientState.queries
-    const hashes = queries.map((q) => q.queryHash)
     const previous = await readIndex()
-    const stale = (previous?.hashes ?? []).filter((h) => !hashes.includes(h))
-    const index: Index = { timestamp: client.timestamp, buster: client.buster, mutations: client.clientState.mutations, hashes }
-    await storage.multiSet([...queries.map((q): [string, string] => [rowKey(q.queryHash), JSON.stringify(q)]), [indexKey, JSON.stringify(index)]])
-    if (stale.length) await storage.multiRemove(stale.map(rowKey))
+    const written: string[] = []
+    for (let i = 0; i < queries.length; i += batchSize) {
+      const batch = queries.slice(i, i + batchSize)
+      try {
+        await storage.multiSet(batch.map((q): [string, string] => [rowKey(q.queryHash), JSON.stringify(q)]))
+        written.push(...batch.map((q) => q.queryHash))
+      } catch {
+        break
+      }
+    }
+    const index: Index = { timestamp: client.timestamp, buster: client.buster, mutations: client.clientState.mutations, hashes: written }
+    try {
+      await storage.multiSet([[indexKey, JSON.stringify(index)]])
+    } catch {
+      return
+    }
+    const stale = (previous?.hashes ?? []).filter((h) => !written.includes(h))
+    if (stale.length) await storage.multiRemove(stale.map(rowKey)).catch(() => undefined)
   }
 
   async function readIndex(): Promise<Index | null> {
@@ -44,14 +62,14 @@ export function createShardedPersister({ storage, key, throttleTime = 1000 }: { 
   let timer: ReturnType<typeof setTimeout> | null = null
   let pending: PersistedClient | null = null
   const persistClient = (client: PersistedClient): Promise<void> => {
-    if (throttleTime <= 0) return writeNow(client)
+    if (throttleTime <= 0) return writeNow(client).catch(() => undefined)
     pending = client
     if (!timer) {
       timer = setTimeout(() => {
         timer = null
         const c = pending
         pending = null
-        if (c) void writeNow(c)
+        if (c) void writeNow(c).catch(() => undefined)
       }, throttleTime)
     }
     return Promise.resolve()

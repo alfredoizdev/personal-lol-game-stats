@@ -37,6 +37,12 @@
           "color": "#8B5CF6",
           "defaultChannel": "goals"
         }
+      ],
+      [
+        "./plugins/with-async-storage-db-size.js",
+        {
+          "sizeMb": 100
+        }
       ]
     ],
     "scheme": "lpp",
