@@ -150,6 +150,12 @@ describe('performanceProfile — areas', () => {
 })
 
 describe('performanceProfile — champions and matchups', () => {
+  it('each champion carries its KDA ratio over its games (kills + assists per death), null without deaths', () => {
+    const p = performanceProfile([win({ ...STRONG, championId: 222, championName: 'Jinx', kills: 10, deaths: 2, assists: 6 }), loss({ ...WEAK, championId: 222, championName: 'Jinx', kills: 2, deaths: 6, assists: 6 }), win({ ...STRONG, championId: 51, championName: 'Caitlyn', deaths: 0 })], 20)
+    expect(p.champions.find((c) => c.championId === 222)!.kda).toBe(3)
+    expect(p.champions.find((c) => c.championId === 51)!.kda).toBeNull()
+  })
+
   it('lists champions by games with their most-played role, tier and few-games flag, at most 8', () => {
     const all = [
       win({ championId: 222, championName: 'Jinx', role: 'BOTTOM' }), win({ championId: 222, championName: 'Jinx', role: 'BOTTOM' }), loss({ championId: 222, championName: 'Jinx', role: 'MIDDLE' }),

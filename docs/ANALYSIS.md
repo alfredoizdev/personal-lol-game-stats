@@ -83,10 +83,14 @@ games, else role), the average of the lane opponents you actually faced in that
 role, your best game, the role target, and an **approximate** ladder of typical
 values per rank (Iron → Master+). The ladder is a community estimate for
 Summoner's Rift, not Riot data; it is labelled as such and never moves a score.
-Laner CS/min ladder: 4.0 · 4.6 · 5.2 · 5.8 · 6.3 · 6.8 · 7.3 · 8.0, scaled by the
-role's CS target (jungle ×5.5/7, bot ×7.5/7); vision ladder 0.4 → 1.2 (support
-1.0 → 2.6, jungle ×1.5); deaths per 10 min 2.2 → 1.3; kill participation 45 → 60
-(+8 for jungle and support).
+Recalibrated 2026-10-27 on per-rank community datasets. Mid CS/min ladder:
+5.4 · 5.7 · 6.0 · 6.3 · 6.6 · 6.9 · 7.2 · 7.6 (top the same, bot ×7.5/7); jungle
+has its own CS ladder 5.7 → 7.3 (camps count, so it is not the laner one scaled
+down); vision per minute by role: laners 0.8 → 1.2, jungle 1.2 → 1.8, support
+1.5 → 3.0; deaths per 10 min 2.2 → 1.3; kill participation 41 → 49 for laners,
++8 for jungle, support 50 → 59. The same ladder feeds the Performance tab's
+"You vs <tier>" comparison (your averages in your main role next to the value
+for your Solo/Duo tier; Gold when unranked).
 
 ## 6. Sentences
 

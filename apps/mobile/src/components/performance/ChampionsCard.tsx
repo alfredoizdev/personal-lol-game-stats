@@ -1,60 +1,46 @@
 import { StyleSheet, Text, View } from 'react-native'
-import { TIER_LABELS, tierBucket, type ChampionStat, type PerformanceProfile } from '@lpp/shared'
+import type { ChampionStat, PerformanceProfile } from '@lpp/shared'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { RoleIcon } from '@/components/RoleIcon'
 import { useChampionList } from '@/hooks/useChampionList'
 import { winRateColor } from '@/lib/performance-ui'
-import { tierColor } from '@/lib/row-rating'
 import { colors, font, radius, space } from '@/theme/tokens'
 
-/** Your most played champions in the period: record, most-played role and average tier (spec 2.6). */
+const LIMIT = 5
+
+/** Your five most played champions in the window: games, win rate and KDA (op.gg's champion list, owner 2026-10-27). */
 export function ChampionsCard({ profile }: { profile: PerformanceProfile }) {
   const { champions } = useChampionList()
   const displayName = (c: ChampionStat) => champions.find((x) => x.id === c.championId)?.name ?? c.championName
   return (
     <View style={styles.card}>
-      <Text style={styles.title} maxFontSizeMultiplier={1.15}>Your champions</Text>
-      <Text style={styles.sub} maxFontSizeMultiplier={1.15}>Most played first · win rate and average tier</Text>
-      {profile.champions.map((c) => {
-        const color = winRateColor(c.winRate)
-        return (
-          <View key={c.championId} style={styles.row}>
-            <ChampionPortrait championName={c.championName} size={40} ring={c.winRate >= 50 ? 'win' : 'loss'} />
-            <View style={styles.name}>
-              <View style={styles.nameRow}>
-                <Text style={styles.champ} maxFontSizeMultiplier={1.15}>{displayName(c)}</Text>
-                {c.role ? <RoleIcon role={c.role} size={14} /> : null}
-              </View>
-              <Text style={styles.meta} maxFontSizeMultiplier={1.15}>
-                {c.games} game{c.games === 1 ? '' : 's'} · {c.wins}W – {c.games - c.wins}L{c.fewGames ? ' · few games' : ''}
-              </Text>
+      <Text style={styles.title} maxFontSizeMultiplier={1.15}>Champions</Text>
+      {profile.champions.slice(0, LIMIT).map((c) => (
+        <View key={c.championId} style={styles.row} accessibilityLabel={`${displayName(c)}: ${c.games} games, ${c.winRate}% win, ${c.kda === null ? 'perfect' : c.kda} KDA`}>
+          <ChampionPortrait championName={c.championName} size={40} ring={c.winRate >= 50 ? 'win' : 'loss'} />
+          <View style={styles.name}>
+            <View style={styles.nameRow}>
+              <Text style={styles.champ} maxFontSizeMultiplier={1.15} numberOfLines={1}>{displayName(c)}</Text>
+              {c.role ? <RoleIcon role={c.role} size={14} /> : null}
             </View>
-            <View style={styles.right}>
-              <Text style={[styles.rate, { color }]} maxFontSizeMultiplier={1.15}>{c.winRate}%</Text>
-              {c.tier ? (
-                <View style={[styles.badge, { borderColor: tierColor(tierBucket(c.tier)) }]} accessibilityLabel={`${c.tier} ${TIER_LABELS[c.tier]}`}>
-                  <Text style={[styles.badgeText, { color: tierColor(tierBucket(c.tier)) }]} maxFontSizeMultiplier={1.15}>{c.tier}</Text>
-                </View>
-              ) : null}
-            </View>
+            <Text style={styles.meta} maxFontSizeMultiplier={1.15}>
+              {c.games} game{c.games === 1 ? '' : 's'} · <Text style={{ color: winRateColor(c.winRate), fontWeight: '800' }}>{c.winRate}%</Text>
+            </Text>
           </View>
-        )
-      })}
+          <Text style={styles.kda} maxFontSizeMultiplier={1.15}>{c.kda === null ? 'Perfect' : `${c.kda.toFixed(1)} KDA`}</Text>
+        </View>
+      ))}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.xs },
-  title: { color: colors.text, fontSize: font.body + 2, fontWeight: '800' },
-  sub: { color: colors.muted, fontSize: font.caption, marginBottom: space.xs },
+  card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: 2 },
+  title: { color: colors.text, fontSize: font.body + 2, fontWeight: '800', marginBottom: space.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
   name: { flex: 1, gap: 2 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  champ: { color: colors.text, fontSize: font.body - 1, fontWeight: '700' },
-  meta: { color: colors.muted, fontSize: font.caption - 1 },
-  right: { alignItems: 'flex-end', gap: 3 },
-  rate: { fontSize: font.body - 1, fontWeight: '800' },
-  badge: { borderWidth: 1.5, borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 1 },
-  badgeText: { fontSize: font.caption - 2, fontWeight: '800' },
+  champ: { color: colors.text, fontSize: font.body - 1, fontWeight: '700', flexShrink: 1 },
+  meta: { color: colors.muted, fontSize: font.caption },
+  kda: { color: colors.text, fontSize: font.body - 1, fontWeight: '800' },
 })

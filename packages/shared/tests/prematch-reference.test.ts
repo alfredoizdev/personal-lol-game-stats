@@ -19,6 +19,18 @@ describe('rankBenchmarks', () => {
     expect(rankBenchmarks('csPerMin', 'UTILITY')).toEqual([])
     expect(rankBenchmarks('visionPerMin', 'UTILITY').find((b) => b.tier === 'Gold')!.value).toBeGreaterThan(rankBenchmarks('visionPerMin', 'MIDDLE').find((b) => b.tier === 'Gold')!.value)
   })
+  it('is calibrated on per-rank data (2026-10-27): mid CS Iron 5.4 → Gold 6.3 → Master+ 7.6, jungle on its own ladder, support KP and vision higher', () => {
+    const at = (rows: Array<{ tier: string; value: number }>, tier: string) => rows.find((b) => b.tier === tier)!.value
+    expect(at(rankBenchmarks('csPerMin', 'MIDDLE'), 'Iron')).toBe(5.4)
+    expect(at(rankBenchmarks('csPerMin', 'MIDDLE'), 'Gold')).toBe(6.3)
+    expect(at(rankBenchmarks('csPerMin', 'MIDDLE'), 'Master+')).toBe(7.6)
+    expect(at(rankBenchmarks('csPerMin', 'JUNGLE'), 'Gold')).toBe(6.4)
+    expect(at(rankBenchmarks('kpPct', 'MIDDLE'), 'Gold')).toBe(45)
+    expect(at(rankBenchmarks('kpPct', 'UTILITY'), 'Gold')).toBe(54)
+    expect(at(rankBenchmarks('visionPerMin', 'UTILITY'), 'Gold')).toBe(2.1)
+    expect(at(rankBenchmarks('visionPerMin', 'JUNGLE'), 'Gold')).toBe(1.4)
+    expect(at(rankBenchmarks('visionPerMin', 'MIDDLE'), 'Gold')).toBe(0.95)
+  })
   it('deaths fall with rank (fewer is better)', () => {
     const d = rankBenchmarks('deathsPer10', 'MIDDLE')
     expect(d.every((b, i) => i === 0 || b.value <= d[i - 1]!.value)).toBe(true)

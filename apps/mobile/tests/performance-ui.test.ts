@@ -1,44 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { performanceProfile } from '@lpp/shared'
-import { barHeight, fewGamesNote, gamesNote, loadState, on10, onTargetLabel, recentForm, recordLabel, roleRankNote, streakLabel, subrowLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
+import { performanceProfile, type CompareRow } from '@lpp/shared'
+import { compareValues, deltaChip, gamesNote, kdaLine, loadState, recordLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
 
 describe('performance-ui helpers', () => {
-  it('record line with the W–L split and win rate; honest with 0 or 1 game', () => {
-    expect(recordLabel({ ...EMPTY, games: 20, wins: 12, winRate: 60 })).toBe('12W – 8L · 60% win rate')
-    expect(recordLabel({ ...EMPTY, games: 1, wins: 0, winRate: 0 })).toBe('0W – 1L · 0% win rate')
-    expect(recordLabel(EMPTY)).toBe('No games yet')
-  })
-  it('streak line only for a streak', () => {
-    expect(streakLabel({ kind: 'loss', n: 3 })).toBe('3-game loss streak')
-    expect(streakLabel({ kind: 'win', n: 2 })).toBe('2-game win streak')
-    expect(streakLabel(null)).toBeNull()
-  })
   it('says how many games the numbers cover', () => {
     expect(gamesNote({ ...EMPTY, period: 100, games: 100 })).toBe('Last 100 games')
     expect(gamesNote({ ...EMPTY, period: 100, games: 98 })).toBe('Last 98 games') // 2 of the 100 were ARAM / remakes
     expect(gamesNote({ ...EMPTY, period: 100, games: 1 })).toBe('Last game')
-  })
-  it('bar height scales with the score, 2 px floor, 0 for null', () => {
-    expect(barHeight(null, 40)).toBe(0)
-    expect(barHeight(0, 40)).toBe(2)
-    expect(barHeight(50, 40)).toBe(20)
-    expect(barHeight(100, 40)).toBe(40)
-  })
-})
-
-describe('performance-ui — roles and areas copy', () => {
-  it('ranks roles only when the engine did', () => {
-    expect(roleRankNote({ ...EMPTY, strongestRole: 'MIDDLE', weakestRole: 'TOP' })).toBe('Strongest: Mid · Weakest: Top')
-    expect(roleRankNote({ ...EMPTY, strongestRole: 'MIDDLE', weakestRole: null })).toBe('Strongest: Mid')
-    expect(roleRankNote(EMPTY)).toBe('Roles are ranked from 3 games each.')
-  })
-  it('writes a sub-row with its average and target in the metric format', () => {
-    expect(subrowLine({ key: 'total', label: 'CS / min', avg: 6.4, target: 7, decimals: 1, suffix: '', n: 12 })).toBe('CS / min 6.4 · target 7.0')
-    expect(subrowLine({ key: 'kp', label: 'Kill participation', avg: 48, target: 55, decimals: 0, suffix: '%', n: 12 })).toBe('Kill participation 48% · target 55%')
-    expect(subrowLine({ key: 'kp', label: 'Kill participation', avg: null, target: 55, decimals: 0, suffix: '%', n: 0 })).toBe('Kill participation —')
   })
 })
 
@@ -49,29 +20,28 @@ describe('performance-ui — win rate colour', () => {
   })
 })
 
-describe('performance-ui — few games', () => {
-  it('shows the engine sentence only under 3 games', () => {
-    expect(fewGamesNote({ ...EMPTY, games: 2, headline: 'Only 2 games loaded — load more for a clearer picture.' })).toBe('Only 2 games loaded — load more for a clearer picture.')
-    expect(fewGamesNote({ ...EMPTY, games: 3, headline: 'anything' })).toBeNull()
-    expect(fewGamesNote(EMPTY)).toBeNull()
+describe('performance-ui — recent snapshot copy (op.gg-style, owner 2026-10-27)', () => {
+  it('record line and the K/D/A line with its ratio', () => {
+    expect(recordLine({ games: 20, wins: 12, losses: 8, winRate: 60 })).toBe('12W 8L · 60%')
+    expect(recordLine({ games: 0, wins: 0, losses: 0, winRate: null })).toBe('No games yet')
+    expect(kdaLine({ kills: 6.8, deaths: 6.2, assists: 5.1, kda: 1.9 })).toEqual({ kda: '6.8 / 6.2 / 5.1', ratio: '1.9:1 KDA' })
+    expect(kdaLine({ kills: 3, deaths: 0, assists: 3, kda: null })).toEqual({ kda: '3.0 / 0.0 / 3.0', ratio: 'Perfect KDA' })
   })
 })
 
-describe('performance-ui — score context (on the 10 ladder)', () => {
-  it('formats a 0–100 score as x.y on 10, — when missing', () => {
-    expect(on10(47)).toBe('4.7')
-    expect(on10(100)).toBe('10.0')
-    expect(on10(null)).toBe('—')
+describe('performance-ui — you vs tier rows', () => {
+  const row = (p: Partial<CompareRow>): CompareRow => ({ metric: 'csPerMin', label: 'CS / min', you: 6.0, bench: 6.3, delta: -0.3, better: false, n: 29, decimals: 1, suffix: '', lowerIsBetter: false, ...p })
+  it('"you vs bench" in the metric format, — without data', () => {
+    expect(compareValues(row({}))).toEqual({ you: '6.0', bench: '6.3' })
+    expect(compareValues(row({ metric: 'kpPct', you: 50, bench: 45, decimals: 0, suffix: '%' }))).toEqual({ you: '50%', bench: '45%' })
+    expect(compareValues(row({ you: null }))).toEqual({ you: '—', bench: '6.3' })
   })
-  it('recent form: the last-20 average on 10 and whether it is above, below or level with the window average', () => {
-    expect(recentForm({ ...EMPTY, avgScore: 49, recentAvgScore: 46, recentN: 20 })).toEqual({ value: '4.6', label: 'last 20 · −0.3', trend: 'down' })
-    expect(recentForm({ ...EMPTY, avgScore: 40, recentAvgScore: 46, recentN: 20 })).toEqual({ value: '4.6', label: 'last 20 · +0.6', trend: 'up' })
-    expect(recentForm({ ...EMPTY, avgScore: 46, recentAvgScore: 46, recentN: 7 })).toEqual({ value: '4.6', label: 'last 7 · ±0.0', trend: 'level' })
-    expect(recentForm({ ...EMPTY, avgScore: null, recentAvgScore: null, recentN: 0 })).toBeNull()
-  })
-  it('counts games on target out of the window', () => {
-    expect(onTargetLabel({ ...EMPTY, games: 20, onTargetGames: 3 })).toBe('3 / 20')
-    expect(onTargetLabel(EMPTY)).toBe('—')
+  it('the signed gap chip, coloured by who is ahead; fewer deaths reads as ahead', () => {
+    expect(deltaChip(row({}))).toEqual({ text: '−0.3', color: colors.loss })
+    expect(deltaChip(row({ metric: 'kpPct', you: 50, bench: 45, delta: 5, better: true, decimals: 0, suffix: '%' }))).toEqual({ text: '+5%', color: colors.win })
+    expect(deltaChip(row({ metric: 'deathsPer10', you: 1.6, bench: 1.8, delta: -0.2, better: true, lowerIsBetter: true }))).toEqual({ text: '−0.2', color: colors.win })
+    expect(deltaChip(row({ delta: 0, better: null }))).toEqual({ text: '±0.0', color: colors.muted })
+    expect(deltaChip(row({ you: null, delta: null, better: null }))).toBeNull()
   })
 })
 
