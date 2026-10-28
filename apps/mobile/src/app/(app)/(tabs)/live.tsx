@@ -9,6 +9,7 @@ import { LiveStatTiles } from '@/components/LiveStatTiles'
 import { LiveTrendChart } from '@/components/LiveTrendChart'
 import { AlertStack } from '@/components/live/AlertStack'
 import { EventsFeed } from '@/components/live/EventsFeed'
+import { ImpactCard } from '@/components/live/ImpactCard'
 import { LastMatchCard } from '@/components/live/LastMatchCard'
 import { PhaseCard } from '@/components/live/PhaseCard'
 import { PrepareCard } from '@/components/prematch/PrepareCard'
@@ -77,6 +78,7 @@ export default function LiveScreen() {
             now={now}
           />
           {state === 'stale' ? <Text style={styles.warn}>No update from the desktop for a while. Reconnecting…</Text> : null}
+          <ImpactCard snapshot={snapshot} />
           {state === 'ended' ? (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Match ended</Text>

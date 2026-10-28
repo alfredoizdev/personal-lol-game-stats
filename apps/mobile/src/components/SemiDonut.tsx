@@ -8,7 +8,7 @@ import { colors, font } from '@/theme/tokens'
  * `text` replaces the centred number (the arc still fills by `score`).
  */
 /** `tick` draws a small reference mark on the ring at that 0–100 value (e.g. 70 = on target). */
-export function SemiDonut({ score, size, color, label, text, tick }: { score: number | null; size: number; color: string; label?: string; text?: string; tick?: number }) {
+export function SemiDonut({ score, size, color, label, text, tick, trackColor = colors.border }: { score: number | null; size: number; color: string; label?: string; text?: string; tick?: number; /** The unfilled part of the ring; red on the impact arc (what you do not bring). */ trackColor?: string }) {
   const stroke = Math.max(6, Math.round(size * 0.08))
   const r = size / 2 - stroke
   const cx = size / 2
@@ -20,7 +20,7 @@ export function SemiDonut({ score, size, color, label, text, tick }: { score: nu
   return (
     <View style={[styles.wrap, { width: size, height }]}>
       <Svg width={size} height={height}>
-        <Path d={arc} stroke={colors.border} strokeWidth={stroke} fill="none" strokeLinecap="round" />
+        <Path d={arc} stroke={trackColor} strokeWidth={stroke} fill="none" strokeLinecap="round" />
         {fraction > 0 ? (
           <Path d={arc} stroke={color} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${length * fraction} ${length}`} />
         ) : null}
