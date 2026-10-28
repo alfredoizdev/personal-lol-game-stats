@@ -54,3 +54,25 @@ describe('sharded persister (Android: "Row too big to fit into CursorWindow", ow
     expect((await p.restoreClient())?.clientState.queries).toEqual([])
   })
 })
+
+describe('sharded persister — a full database (Android SQLITE_FULL) keeps what fit and never throws', () => {
+  it('writes rows in small batches, stops at the first failure and indexes only the rows that landed', async () => {
+    const rows = new Map<string, string>()
+    let budget = 3 // rows the "disk" accepts before it is full
+    const storage = {
+      getItem: async (k: string) => rows.get(k) ?? null,
+      multiGet: async (ks: string[]) => ks.map((k) => [k, rows.get(k) ?? null] as [string, string | null]),
+      multiSet: async (pairs: Array<[string, string]>) => {
+        if (pairs.some(([k]) => k.includes(':q:')) && budget - pairs.length < 0) throw new Error('database or disk is full (code 13 SQLITE_FULL[13])')
+        for (const [k, v] of pairs) rows.set(k, v)
+        if (pairs.some(([k]) => k.includes(':q:'))) budget -= pairs.length
+      },
+      multiRemove: async (ks: string[]) => { for (const k of ks) rows.delete(k) },
+    }
+    const p = createShardedPersister({ storage, key: 'cache', throttleTime: 0, batchSize: 1 })
+    const c = client(Array.from({ length: 5 }, (_, i) => query(`["match-detail","NA1_${i}"]`, i)))
+    await expect(p.persistClient(c)).resolves.toBeUndefined()
+    const restored = await p.restoreClient()
+    expect(restored?.clientState.queries.length).toBe(3)
+  })
+})
