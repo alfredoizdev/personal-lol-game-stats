@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile, type CompareRow } from '@lpp/shared'
-import { compareValues, deltaChip, gamesNote, goalMetLine, goalTargetLine, goalTrendLine, loadState, mainRoleLine, recordLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
+import { afterLossLine, compareValues, deepSessionLine, deltaChip, gamesNote, goalMetLine, goalTargetLine, goalTrendLine, loadState, mainRoleLine, recordLine, sessionSubtitle, winRateColor, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -77,5 +77,24 @@ describe('goal progress lines (owner, 2026-10-29: your goal week by week)', () =
   it('names the target with its source', () => {
     expect(goalTargetLine(base)).toBe('Target 6.0 CS/min · as Mid')
     expect(goalTargetLine({ ...base, targetSource: 'recommended' })).toBe('Target 6.0 CS/min · recommended for Mid')
+  })
+})
+
+describe('session lines (owner, 2026-10-29: your sessions)', () => {
+  const p = { sessions: 12, avgGames: 3.2, longest: 7, afterLoss: { winRate: 38, n: 24 }, afterWin: { winRate: 55, n: 31 }, early: { winRate: 55, deaths: 5.1, n: 24 }, deep: { winRate: 41, deaths: 6.8, n: 10 } }
+  it('sums up the sittings', () => {
+    expect(sessionSubtitle(p)).toBe('12 sessions · 3.2 games each on average · longest 7')
+    expect(sessionSubtitle({ ...p, sessions: 3, avgGames: 1, longest: 1 })).toBe('3 sessions · 1 game each on average · longest 1')
+  })
+  it('reads the next game after a loss against after a win, flagging the worse side only when the gap is 5 points or more', () => {
+    expect(afterLossLine(p)).toEqual({ loss: '38%', win: '55%', worse: 'loss', text: 'You win 38% of the next game after a loss and 55% after a win (24 and 31 games)' })
+    expect(afterLossLine({ ...p, afterLoss: { winRate: 60, n: 10 }, afterWin: { winRate: 50, n: 10 } })).toMatchObject({ worse: 'win' })
+    expect(afterLossLine({ ...p, afterLoss: { winRate: 58, n: 10 }, afterWin: { winRate: 61, n: 10 } })).toMatchObject({ worse: null })
+    expect(afterLossLine({ ...p, afterLoss: null })).toBeNull()
+  })
+  it('reads games 1–2 of a sitting against the 4th onwards, deaths in the label', () => {
+    expect(deepSessionLine(p)).toEqual({ early: '55%', earlyLabel: '5.1 deaths · games 1–2 of a sitting', deep: '41%', deepLabel: '6.8 deaths · 4th game onwards', worse: 'deep', text: 'From your 4th game in a sitting you win 41% with 6.8 deaths per game, against 55% and 5.1 in games 1–2 (10 and 24 games)' })
+    expect(deepSessionLine({ ...p, early: { winRate: 50, deaths: 5, n: 10 }, deep: { winRate: 53, deaths: 5, n: 10 } })).toMatchObject({ worse: null })
+    expect(deepSessionLine({ ...p, deep: null })).toBeNull()
   })
 })

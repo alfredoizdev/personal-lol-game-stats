@@ -1,5 +1,5 @@
 import { colors } from '@/theme/tokens'
-import { ROLE_LABEL, type CompareRow, type GoalMetric, type GoalProgress, type GoalWeek, type PerformanceProfile, type RecentSnapshot, type Role } from '@lpp/shared'
+import { ROLE_LABEL, type CompareRow, type GoalMetric, type GoalProgress, type GoalWeek, type PerformanceProfile, type RecentSnapshot, type Role, type SessionPatterns } from '@lpp/shared'
 
 /** Copy and state for the Performance tab (op.gg-style since 2026-10-27); pure so it is testable. */
 
@@ -82,4 +82,45 @@ export function goalMetLine(week: GoalWeek): string {
 export function goalTargetLine(p: Pick<GoalProgress, 'metric' | 'decimals' | 'target' | 'targetSource' | 'role'>): string {
   const target = p.metric === 'kpPct' ? `${p.target.toFixed(0)}%` : `${p.target.toFixed(p.decimals)}${GOAL_UNIT[p.metric]}`
   return `Target ${target} · ${p.targetSource === 'recommended' ? 'recommended for' : 'as'} ${ROLE_LABEL[p.role]}`
+}
+
+/** A side is flagged as worse only when its win rate trails by this many points: smaller gaps are noise over a few dozen games. */
+const WORSE_GAP = 5
+function worseSide<A extends string, B extends string>(a: number, b: number, aName: A, bName: B): A | B | null {
+  if (b - a >= WORSE_GAP) return aName
+  if (a - b >= WORSE_GAP) return bName
+  return null
+}
+
+/** "12 sessions · 3.2 games each on average · longest 7". */
+export function sessionSubtitle(p: Pick<SessionPatterns, 'sessions' | 'avgGames' | 'longest'>): string {
+  return `${p.sessions} sessions · ${p.avgGames} game${p.avgGames === 1 ? '' : 's'} each on average · longest ${p.longest}`
+}
+
+/** The next game after a loss against the next game after a win; `worse` names the side with the lower win rate. */
+export function afterLossLine(p: Pick<SessionPatterns, 'afterLoss' | 'afterWin'>): { loss: string; win: string; worse: 'loss' | 'win' | null; text: string } | null {
+  if (!p.afterLoss || !p.afterWin) return null
+  const worse = worseSide(p.afterLoss.winRate, p.afterWin.winRate, 'loss', 'win')
+  return {
+    loss: `${p.afterLoss.winRate}%`,
+    win: `${p.afterWin.winRate}%`,
+    worse,
+    text: `You win ${p.afterLoss.winRate}% of the next game after a loss and ${p.afterWin.winRate}% after a win (${p.afterLoss.n} and ${p.afterWin.n} games)`,
+  }
+}
+
+/** Games 1–2 of a sitting against the 4th onwards; `worse` names the side with the lower win rate. */
+export function deepSessionLine(p: Pick<SessionPatterns, 'early' | 'deep'>): { early: string; earlyLabel: string; deep: string; deepLabel: string; worse: 'early' | 'deep' | null; text: string } | null {
+  if (!p.early || !p.deep) return null
+  const worse = worseSide(p.early.winRate, p.deep.winRate, 'early', 'deep')
+  const d1 = p.deep.deaths.toFixed(1)
+  const e1 = p.early.deaths.toFixed(1)
+  return {
+    early: `${p.early.winRate}%`,
+    earlyLabel: `${e1} deaths · games 1–2 of a sitting`,
+    deep: `${p.deep.winRate}%`,
+    deepLabel: `${d1} deaths · 4th game onwards`,
+    worse,
+    text: `From your 4th game in a sitting you win ${p.deep.winRate}% with ${d1} deaths per game, against ${p.early.winRate}% and ${e1} in games 1–2 (${p.deep.n} and ${p.early.n} games)`,
+  }
 }
