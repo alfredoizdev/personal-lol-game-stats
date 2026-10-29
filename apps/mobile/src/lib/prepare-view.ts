@@ -1,4 +1,4 @@
-import { defaultMetricFor, playedRoles, ROLE_LABEL, type ChampSelectPick, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
+import { defaultMetricFor, playedRoles, ROLE_LABEL, type ChampionEntry, type ChampSelectPick, type GoalMetric, type MatchSummary, type Role, type StoredGoal } from '@lpp/shared'
 
 /** The role Prepare shows by itself: your most played; mid before any game is loaded. Nothing to choose. */
 export function homeRole(summaries: MatchSummary[]): Role {
@@ -16,6 +16,12 @@ export function prepareHeadline(pick: ChampSelectPick | null, championName: stri
   const role = pick.position ? ROLE_LABEL[pick.position] : null
   if (pick.championId !== null && championName) return `Playing ${championName}${role ? ` · ${role}` : ''}`
   return role ? `Champion select · ${role}` : 'Champion select'
+}
+
+/** The Data Dragon image key for the avatar beside the champion select line (owner, 2026-10-29); null until a champion is locked and known. */
+export function pickedPortrait(pick: ChampSelectPick | null, champion: ChampionEntry | null): string | null {
+  if (!pick || pick.championId === null || !champion) return null
+  return champion.imageKey
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeRole, goalEditorInitial, homeRole, prepareHeadline, standingTarget } from '@/lib/prepare-view'
+import { activeRole, goalEditorInitial, homeRole, pickedPortrait, prepareHeadline, standingTarget } from '@/lib/prepare-view'
 
 describe('activeRole (which role Prepare shows)', () => {
   it('is the role champion select assigned when there is one', () => {
@@ -51,5 +51,17 @@ describe('standingTarget (what Save goal stores)', () => {
   it('stores the number once the player moved away from it', () => {
     expect(standingTarget(7.5, 7)).toBe(7.5)
     expect(standingTarget(7.5, null)).toBe(7.5)
+  })
+})
+
+describe('pickedPortrait (the champion avatar beside the champion select line, owner 2026-10-29)', () => {
+  const zed = { id: 238, name: 'Zed', imageKey: 'Zed' }
+  it('is the Data Dragon image key of the locked champion', () => {
+    expect(pickedPortrait({ championId: 238, position: 'MIDDLE' }, zed)).toBe('Zed')
+  })
+  it('is null before a champion is locked, outside champion select, or when the champion list has not loaded', () => {
+    expect(pickedPortrait({ championId: null, position: 'MIDDLE' }, null)).toBeNull()
+    expect(pickedPortrait(null, zed)).toBeNull()
+    expect(pickedPortrait({ championId: 238, position: 'MIDDLE' }, null)).toBeNull()
   })
 })
