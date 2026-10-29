@@ -7,9 +7,10 @@ import { useRank } from '@/hooks/useRank'
 import { useHistory } from '@/lib/history-context'
 import type { LinkedAccount } from '@/lib/linked-account'
 import { useLiveFeed } from '@/lib/live-feed-context'
-import { activeRole, homeRole, prepareHeadline } from '@/lib/prepare-view'
+import { activeRole, homeRole, pickedPortrait, prepareHeadline } from '@/lib/prepare-view'
 import { loadViewRole, saveViewRole } from '@/lib/view-role'
 import { colors, font, radius, space } from '@/theme/tokens'
+import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { BackfillBar } from './BackfillBar'
 import { ChampionSummaryCard } from './ChampionSummaryCard'
 import { GoalEditor } from './GoalEditor'
@@ -49,6 +50,7 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
   const best = useMemo(() => bestRole(history.summaries), [history.summaries])
   const pickedChampion = pick?.championId ? champions.find((c) => c.id === pick.championId) ?? null : null
   const headline = prepareHeadline(pick, pickedChampion?.name ?? null)
+  const portrait = pickedPortrait(pick, pickedChampion)
 
   const record = useMemo(
     () => (pickedChampion ? championSummary(history.summaries, pickedChampion.id, role) : roleSummary(history.summaries, role)),
@@ -67,8 +69,11 @@ export function PrepareCard({ account }: { account: LinkedAccount }) {
       <BackfillBar loaded={history.loaded} total={history.total} running={history.running} idsPending={history.idsPending} error={history.error} onRetry={() => history.start()} />
       {headline ? (
         <View style={styles.headline}>
-          <Text style={styles.headlineText} maxFontSizeMultiplier={1.15}>{headline}</Text>
-          <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{pick?.position ? 'From your champion select. Everything below is for this role.' : 'Waiting for your assigned role from the client.'}</Text>
+          {portrait ? <ChampionPortrait championName={portrait} size={48} ring="you" /> : null}
+          <View style={styles.headlineBody}>
+            <Text style={styles.headlineText} maxFontSizeMultiplier={1.15}>{headline}</Text>
+            <Text style={styles.sub} maxFontSizeMultiplier={1.15}>{pick?.position ? 'From your champion select. Everything below is for this role.' : 'Waiting for your assigned role from the client.'}</Text>
+          </View>
         </View>
       ) : (
         <View style={styles.showing}>
@@ -94,7 +99,8 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: font.body + 2, fontWeight: '800' },
   sub: { color: colors.muted, fontSize: font.caption + 1 },
   section: { color: colors.text, fontSize: font.body, fontWeight: '800' },
-  headline: { gap: 2, paddingVertical: space.xs },
+  headline: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  headlineBody: { flex: 1, gap: 2 },
   headlineText: { color: colors.text, fontSize: font.body + 1, fontWeight: '800' },
   showing: { gap: 8, paddingTop: 2 },
   divider: { height: 1, backgroundColor: colors.border },
