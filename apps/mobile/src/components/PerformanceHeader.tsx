@@ -18,7 +18,7 @@ function Stat({ donut }: { donut: HeaderDonut }) {
 }
 
 /** "Last 10 Games" card on the Matches tab: one semi-donut per header stat, rated like the area cards. */
-export function PerformanceHeader({ games, donuts }: { games: number; donuts: HeaderDonut[] }) {
+export function PerformanceHeader({ games, donuts, mostPlayed = null }: { games: number; donuts: HeaderDonut[]; /** "Most played · Vel'Koz 13 games · Kindred 3 games" (owner, 2026-10-30: champions as one line, not a card). */ mostPlayed?: string | null }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title} maxFontSizeMultiplier={1.15}>Last {games || 10} Games</Text>
@@ -26,11 +26,13 @@ export function PerformanceHeader({ games, donuts }: { games: number; donuts: He
       <View style={styles.row}>
         {donuts.map((d) => <Stat key={d.key} donut={d} />)}
       </View>
+      {mostPlayed ? <Text style={styles.mostPlayed} maxFontSizeMultiplier={1.15}>{mostPlayed}</Text> : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  mostPlayed: { color: colors.muted, fontSize: font.caption + 1, textAlign: 'center' },
   card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: 2 },
   title: { color: colors.text, fontSize: font.body + 4, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: font.caption + 1, marginBottom: space.md },

@@ -20,7 +20,7 @@ const STRIP: Record<'win' | 'loss' | 'none', { bg: string; letter: string }> = {
 
 /**
  * One recent game, op.gg-style (owner, 2026-10-27): a result strip with W/L and the
- * duration, the champion with its badges, the KDA with deaths in red and the K/P line,
+ * duration, the champion with its badges, the KDA with deaths in red and CS/min under it,
  * the queue and time ago on the right, items below.
  */
 export function MatchRow({ summary, now, lp = null, onPress }: { summary: MatchSummary; now: number; /** LP change of this ranked game, when the app saw the standing move (owner, 2026-10-27). */ lp?: LpChange | null; onPress: () => void }) {
@@ -43,7 +43,7 @@ export function MatchRow({ summary, now, lp = null, onPress }: { summary: MatchS
             <Text style={styles.kda} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {me.kills} / <Text style={styles.deaths}>{me.deaths}</Text> / {me.assists}
             </Text>
-            <Text style={styles.sub} numberOfLines={1}>{meta.kp ?? `${me.csPerMin === null ? '—' : me.csPerMin.toFixed(1)} CS/min`}</Text>
+            <Text style={styles.sub} numberOfLines={1}>{me.csPerMin === null ? '—' : `${me.csPerMin.toFixed(1)} CS/min`}</Text>
           </View>
           <View style={styles.metaBlock}>
             <Text style={styles.sub} numberOfLines={1}>{meta.queue}</Text>

@@ -1,30 +1,15 @@
 import { colors } from '@/theme/tokens'
-import { ROLE_LABEL, type CompareRow, type GoalMetric, type GoalProgress, type GoalWeek, type PerformanceProfile, type RecentSnapshot, type Role, type SessionPatterns } from '@lpp/shared'
+import { ROLE_LABEL, type CompareRow, type GoalMetric, type GoalProgress, type GoalWeek, type PerformanceProfile, type SessionPatterns } from '@lpp/shared'
 
-/** Copy and state for the Performance tab (op.gg-style since 2026-10-27); pure so it is testable. */
+/** Copy and state for the Performance tab (one question per screen since 2026-10-30); pure so it is testable. */
 
 /** "Last 98 games": the analyzable games behind the numbers (ARAM and remakes drop out; an incomplete load is flagged by the screen, not here). */
 export function gamesNote(p: PerformanceProfile): string {
   return p.games === 1 ? 'Last game' : `Last ${p.games} games`
 }
 
-export function winRateColor(winRate: number): string {
-  return winRate >= 50 ? colors.win : colors.loss
-}
 
-/** "12 wins · 8 losses": the plain record under the win-rate arc (owner, 2026-10-27: every number says what it is, once). */
-export function recordLine(s: Pick<RecentSnapshot, 'games' | 'wins' | 'losses' | 'winRate'>): string {
-  if (s.games === 0 || s.winRate === null) return 'No games yet'
-  return `${s.wins} win${s.wins === 1 ? '' : 's'} · ${s.losses} loss${s.losses === 1 ? '' : 'es'}`
-}
 
-/** "Mostly Jungle · 10 of 20 games"; the role alone when it is every game. */
-export function mainRoleLine(main: { role: Role; pct: number } | null, games: number): string | null {
-  if (!main || games === 0) return null
-  const n = Math.round((main.pct / 100) * games)
-  const name = ROLE_LABEL[main.role]
-  return `${main.pct >= 100 ? name : `Mostly ${name}`} · ${n} of ${games} game${games === 1 ? '' : 's'}`
-}
 
 const fmt = (n: number, r: Pick<CompareRow, 'decimals' | 'suffix'>) => `${n.toFixed(r.decimals)}${r.suffix}`
 

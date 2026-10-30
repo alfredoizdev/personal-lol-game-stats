@@ -8,10 +8,7 @@ const NOW = Date.parse('2026-10-27T16:30:00Z')
 
 describe('match row meta (owner, 2026-10-27: op.gg-style rows)', () => {
   it('queue name, time ago and kill participation', () => {
-    expect(rowMeta(summary, NOW)).toEqual({ queue: 'Ranked Solo', when: '6h ago', kp: 'K/P 54%' })
-  })
-  it('no kill participation when the team has no kills', () => {
-    expect(rowMeta({ ...summary, teamKills: 0 }, NOW).kp).toBeNull()
+    expect(rowMeta(summary, NOW)).toEqual({ queue: 'Ranked Solo', when: '6h ago' })
   })
 })
 

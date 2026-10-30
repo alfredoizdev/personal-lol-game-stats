@@ -1,20 +1,15 @@
 import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { bestRole, formatRiotId, goalProgress, inQueueFilter, mainRole, performanceProfile, QUEUE_FILTER_LABEL, rankTier, RECENT_FORM_N, recentSnapshot, sessionPatterns, tierComparison } from '@lpp/shared'
+import { formatRiotId, goalProgress, inQueueFilter, mainRole, performanceProfile, QUEUE_FILTER_LABEL, rankTier, sessionPatterns, tierComparison } from '@lpp/shared'
 import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { Screen } from '@/components/Screen'
-import { ChampionsCard } from '@/components/performance/ChampionsCard'
-import { RolesCard } from '@/components/performance/RolesCard'
 import { SessionsCard } from '@/components/performance/SessionsCard'
-import { RecentCard } from '@/components/performance/RecentCard'
-import { ChampionPoolCard } from '@/components/performance/ChampionPoolCard'
 import { GoalProgressCard } from '@/components/performance/GoalProgressCard'
 import { TierCompareCard } from '@/components/performance/TierCompareCard'
 import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useQueueFilter } from '@/hooks/useQueueFilter'
 import { useRank } from '@/hooks/useRank'
-import { headerDonuts } from '@/lib/header-donuts'
 import { useHistory } from '@/lib/history-context'
 import { BACKFILL_COUNT } from '@/lib/backfill'
 import { gamesNote, loadState, WINDOW } from '@/lib/performance-ui'
@@ -25,8 +20,9 @@ import { colors, font, radius, space } from '@/theme/tokens'
 const AUTO_LOAD = BACKFILL_COUNT
 
 /**
- * Your performance from your last 100 Summoner's Rift games (owner's window), laid out
- * like op.gg mobile since 2026-10-27: recent 20, you vs your tier, roles, champions.
+ * "¿Estoy mejorando?" (owner, 2026-10-30, one question per screen): your goal week by week,
+ * you vs your tier, your sessions — from your last 100 Summoner's Rift games. The recent-20
+ * arcs live on Matches; champions are one line there.
  */
 export default function PerformanceScreen() {
   const { data: account } = useLinkedAccount()
@@ -40,13 +36,10 @@ export default function PerformanceScreen() {
   const [queueFilter, setQueueFilter] = useQueueFilter()
   const filtered = useMemo(() => history.summaries.filter((s) => inQueueFilter(s.queueId, queueFilter)), [history.summaries, queueFilter])
   const profile = useMemo(() => performanceProfile(filtered, WINDOW), [filtered])
-  const snapshot = useMemo(() => recentSnapshot(filtered, RECENT_FORM_N), [filtered])
-  const donuts = useMemo(() => headerDonuts(filtered, RECENT_FORM_N), [filtered]) // the same arcs as the Matches header, over the same 20
   const { rank } = useRank(account ?? null)
   const tier = rankTier(rank?.solo?.tier ?? null)
   const role = useMemo(() => mainRole(filtered), [filtered])
   const compare = useMemo(() => (role ? tierComparison(filtered, tier, role) : []), [filtered, tier, role])
-  const best = useMemo(() => bestRole(filtered)?.role ?? null, [filtered])
   const { goals } = useGoals(account ?? null)
   const progress = useMemo(() => (puuid ? goalProgress(filtered, goals, puuid, Date.now()) : null), [filtered, goals, puuid])
   const sessions = useMemo(() => sessionPatterns(filtered), [filtered])
@@ -83,13 +76,9 @@ export default function PerformanceScreen() {
       ) : null}
       {state === 'ready' || state === 'short' ? (
         <>
-          <RecentCard snapshot={snapshot} donuts={donuts} />
-          <ChampionPoolCard champions={snapshot.champions} games={snapshot.games} />
           {progress ? <GoalProgressCard progress={progress} /> : null}
-          {sessions ? <SessionsCard patterns={sessions} /> : null}
           {role && compare.length ? <TierCompareCard rows={compare} tier={tier ?? 'Gold'} ranked={tier !== null} role={role} games={profile.roles.find((r) => r.role === role)?.games ?? 0} /> : null}
-          <RolesCard profile={profile} best={best} />
-          <ChampionsCard profile={profile} />
+          {sessions ? <SessionsCard patterns={sessions} /> : null}
         </>
       ) : null}
     </Screen>
