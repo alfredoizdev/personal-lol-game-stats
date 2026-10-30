@@ -18,6 +18,7 @@ import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount, useLinkedAccounts } from '@/hooks/useLinkedAccount'
 import { useLiveAlerts } from '@/hooks/useLiveAlerts'
 import { useLiveFeed } from '@/lib/live-feed-context'
+import { useIsReviewed } from '@/lib/reviewed-game'
 import { showEventsFeed } from '@/lib/live-sections'
 import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
@@ -33,6 +34,7 @@ export default function LiveScreen() {
   const { byName } = useChampionList()
   const [trend, setTrend] = useState<TrendPoint[]>([])
   const [dismissed, setDismissed] = useState(false)
+  const reviewed = useIsReviewed(endedAt) // the post-game review already opened for this game: no Last-match card again
 
   // The goal for the champion you are playing (by name → Data Dragon id), else the newest one for the role.
   const liveGoal = useMemo(() => {
@@ -50,7 +52,7 @@ export default function LiveScreen() {
     if (snapshot) setTrend((h) => appendTrendPoint(h, snapshot))
   }, [snapshot])
 
-  const mode = liveScreenMode({ view: state, endedAtMs: endedAt, nowMs: now, phase: phase?.phase ?? null, phaseAgeMs: phase ? now - phaseReceivedAt : Infinity, dismissed })
+  const mode = liveScreenMode({ view: state, endedAtMs: endedAt, nowMs: now, phase: phase?.phase ?? null, phaseAgeMs: phase ? now - phaseReceivedAt : Infinity, dismissed: dismissed || reviewed })
   useEffect(() => {
     if (mode === 'live') setDismissed(false) // the next game clears the last-match card
   }, [mode])

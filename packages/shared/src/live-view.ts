@@ -150,6 +150,8 @@ export const ENDED_HOLD_MS = 60_000
 const GAME_AND_TAIL: readonly GameflowPhase[] = ['InProgress', 'Reconnect', 'GameStart', 'WaitingForStats', 'PreEndOfGame', 'EndOfGame']
 /** Phases that mean the next game is on its way: the Last-match card makes room. */
 const NEXT_QUEUE: readonly GameflowPhase[] = ['Matchmaking', 'ReadyCheck', 'ChampSelect']
+/** A game phase received this long after the final snapshot belongs to the NEXT game (the ended game's own tail is over within seconds). */
+const NEXT_GAME: readonly GameflowPhase[] = ['GameStart', 'InProgress', 'Reconnect']
 
 export function liveScreenMode(input: {
   view: LiveViewState
@@ -164,6 +166,8 @@ export function liveScreenMode(input: {
   if (input.view === 'ended') {
     const phase = input.phaseAgeMs > PHASE_STALE_MS ? null : input.phase
     if (phase !== null && NEXT_QUEUE.includes(phase)) return 'pre'
+    const phaseReceivedAt = input.nowMs - input.phaseAgeMs
+    if (phase !== null && NEXT_GAME.includes(phase) && input.endedAtMs !== null && phaseReceivedAt - input.endedAtMs > ENDED_HOLD_MS) return 'pre'
     const left = phase !== null && !GAME_AND_TAIL.includes(phase)
     const held = input.endedAtMs !== null && input.nowMs - input.endedAtMs > ENDED_HOLD_MS
     if (!left && !held) return 'ended'
