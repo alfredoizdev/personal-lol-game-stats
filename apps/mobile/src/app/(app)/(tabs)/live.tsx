@@ -4,11 +4,7 @@ import { router } from 'expo-router'
 import { accountToFollow, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, liveScreenMode, metricInfo, stillLoading } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { LiveHero } from '@/components/LiveHero'
-import { LiveMatchupTable } from '@/components/LiveMatchupTable'
-import { LiveStatTiles } from '@/components/LiveStatTiles'
-import { LiveTrendChart } from '@/components/LiveTrendChart'
 import { AlertStack } from '@/components/live/AlertStack'
-import { EventsFeed } from '@/components/live/EventsFeed'
 import { ImpactCard } from '@/components/live/ImpactCard'
 import { LastMatchCard } from '@/components/live/LastMatchCard'
 import { PhaseCard } from '@/components/live/PhaseCard'
@@ -19,8 +15,6 @@ import { useLinkedAccount, useLinkedAccounts } from '@/hooks/useLinkedAccount'
 import { useLiveAlerts } from '@/hooks/useLiveAlerts'
 import { useLiveFeed } from '@/lib/live-feed-context'
 import { useIsReviewed } from '@/lib/reviewed-game'
-import { showEventsFeed } from '@/lib/live-sections'
-import { appendTrendPoint, type TrendPoint } from '@/lib/live-trend'
 import { colors, font, radius, space } from '@/theme/tokens'
 
 export default function LiveScreen() {
@@ -32,7 +26,6 @@ export default function LiveScreen() {
   const unlinked = follow?.kind === 'unlinked' ? follow.riotId : null
   const { goals } = useGoals(account ?? null)
   const { byName } = useChampionList()
-  const [trend, setTrend] = useState<TrendPoint[]>([])
   const [dismissed, setDismissed] = useState(false)
   const reviewed = useIsReviewed(endedAt) // the post-game review already opened for this game: no Last-match card again
 
@@ -47,10 +40,6 @@ export default function LiveScreen() {
   }, [snapshot, account, goals, byName])
 
   const { alerts, dismiss } = useLiveAlerts(snapshot, liveGoal, phase, now)
-
-  useEffect(() => {
-    if (snapshot) setTrend((h) => appendTrendPoint(h, snapshot))
-  }, [snapshot])
 
   const mode = liveScreenMode({ view: state, endedAtMs: endedAt, nowMs: now, phase: phase?.phase ?? null, phaseAgeMs: phase ? now - phaseReceivedAt : Infinity, dismissed: dismissed || reviewed })
   useEffect(() => {
@@ -96,10 +85,6 @@ export default function LiveScreen() {
               </Pressable>
             </View>
           ) : null}
-          <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} />
-          <LiveStatTiles me={snapshot.me} teamKills={snapshot.teamKills} />
-          {showEventsFeed(state) ? <EventsFeed events={snapshot.events} myChampion={snapshot.me.championName} /> : null}
-          <LiveTrendChart points={trend} />
         </>
       ) : null}
     </Screen>

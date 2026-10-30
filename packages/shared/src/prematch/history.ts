@@ -73,8 +73,13 @@ export const BAN_MIN_GAMES = 3
 export const BAN_MAX_WIN_RATE = 40
 
 /** A sentence, never an order; only with enough evidence from your own games. */
+/** The lane opponent worth a ban: the first one met often enough and lost to often enough; null when none qualifies. */
+export function banPick(rows: MatchupRow[]): MatchupRow | null {
+  return rows.find((r) => r.games >= BAN_MIN_GAMES && r.winRate < BAN_MAX_WIN_RATE) ?? null
+}
+
 export function banSuggestion(rows: MatchupRow[], roleLabel: string): string {
-  const pick = rows.find((r) => r.games >= BAN_MIN_GAMES && r.winRate < BAN_MAX_WIN_RATE)
+  const pick = banPick(rows)
   if (!pick) return 'Not enough games against a single champion to suggest a ban.'
   return `You lost ${pick.games - pick.wins} of ${pick.games} games against ${pick.championName} as ${roleLabel}. Consider banning it.`
 }

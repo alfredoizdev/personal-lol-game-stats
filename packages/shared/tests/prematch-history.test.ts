@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { MatchSummary, PlayerLine } from '../src/match-v5'
-import { banSuggestion, bestRole, BEST_ROLE_MIN_GAMES, championSummary, lastRole, playedChampions, playedRoles, roleSummary, toughestMatchups } from '../src/prematch/history'
+import { banSuggestion, bestRole, BEST_ROLE_MIN_GAMES, championSummary, lastRole, playedChampions, playedRoles, roleSummary, toughestMatchups, banPick } from '../src/prematch/history'
 import { game, line } from './analysis-fixtures'
 
 const at = (i: number) => new Date(Date.UTC(2026, 9, 1 + i)).toISOString()
@@ -133,5 +133,16 @@ describe('bestRole (owner, 2026-10-27: a mark on the role you play best)', () =>
   it('is null until some role has enough games', () => {
     expect(bestRole([])).toBeNull()
     expect(bestRole(Array.from({ length: 4 }, () => r('TOP', true)))).toBeNull()
+  })
+})
+
+describe('banPick (owner, 2026-10-30: Prepare shows one ban line, no matchups table)', () => {
+  it('is the first opponent you lost to often enough, else null', () => {
+    const rows = [
+      { championId: 1, championName: 'Zed', games: 2, wins: 1, winRate: 50, fewGames: true },
+      { championId: 2, championName: 'Ahri', games: 5, wins: 1, winRate: 20, fewGames: false },
+    ]
+    expect(banPick(rows)?.championName).toBe('Ahri')
+    expect(banPick([rows[0]!])).toBeNull()
   })
 })
