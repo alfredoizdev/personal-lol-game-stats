@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native'
 import { shareOf } from '@/lib/compare'
 
-// Series colours validated with the dataviz palette checker (see LiveTrendChart).
+// Series colours validated with the dataviz palette checker.
 export const BAR_YOU = '#0E9DB5'
 export const BAR_ENEMY = '#E8486F'
 
