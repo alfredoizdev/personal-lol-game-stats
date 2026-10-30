@@ -27,6 +27,10 @@ export type Subrow = {
   delta: Delta
   /** true = shown for context, never scored and never the sentence's subject. */
   context: boolean
+  /** Formatted references for the takeaways (owner, 2026-10-30): the lane opponent's value, your baseline, the role target. */
+  opponentDisplay: string | null
+  youDisplay: string | null
+  targetDisplay: string | null
 }
 
 export type AreaResult = {
@@ -132,6 +136,9 @@ function row(
     weight: p.weight,
     delta: { vsOpponent: diff(p.value, p.opponent, Math.max(1, p.decimals)), vsYou: diff(p.value, p.you, Math.max(1, p.decimals)) },
     context: p.context ?? false,
+    opponentDisplay: p.opponent === null ? null : `${fmt(p.opponent, p.decimals)}${p.suffix ?? ''}`,
+    youDisplay: p.you === null ? null : `${fmt(p.you, p.decimals)}${p.suffix ?? ''}`,
+    targetDisplay: p.target === null ? null : `${fmt(p.target, p.decimals)}${p.suffix ?? ''}`,
   }
   sentenceInfo.set(r, {
     sentenceDisplay: p.sentenceDisplay ?? null,

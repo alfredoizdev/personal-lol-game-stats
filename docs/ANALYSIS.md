@@ -170,3 +170,7 @@ curve of section 3 (3.0 → 70, Good), rated with the usual Poor/Fair/Good/Great
 support games have no CS target and drop out (null when only supports were played).
 **Win rate:** the arc is the rate itself; the word uses its own bands: < 40 Poor,
 40–49 Fair, 50–59 Good, ≥ 60 Great. Arc colour = rating colour; muted when null.
+
+## 10. Takeaways (`analysis/takeaways.ts`, 2026-10-30)
+
+The Match Review shows at most three lines instead of the area tabs: **Best** = the scored, non-context sub-row with the highest score across all areas; **Work on** = the one with the lowest (omitted when only one sub-row is scored); **Goal** = the goal in force at game end with its verdict. Each line carries the engine's own comparison, in this precedence: the lane opponent's value (`vs rival 6.5`), else the player's baseline (`vs you 6.5`), else the role target (`target 7.0`); lane-lead rows carry none (their value already is a difference). Sub-rows expose `opponentDisplay`, `youDisplay` and `targetDisplay` for this. Scores are unchanged.
