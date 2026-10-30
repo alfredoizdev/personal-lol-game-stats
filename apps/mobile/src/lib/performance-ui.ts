@@ -1,5 +1,5 @@
 import { colors } from '@/theme/tokens'
-import { ROLE_LABEL, type CompareRow, type PerformanceProfile, type RecentSnapshot, type Role } from '@lpp/shared'
+import { ROLE_LABEL, type CompareRow, type GoalMetric, type GoalProgress, type GoalWeek, type PerformanceProfile, type RecentSnapshot, type Role } from '@lpp/shared'
 
 /** Copy and state for the Performance tab (op.gg-style since 2026-10-27); pure so it is testable. */
 
@@ -57,4 +57,29 @@ export function loadState(s: { idsPending: boolean; total: number; loadedInWindo
   if (s.loadedInWindow >= Math.min(WINDOW, s.total)) return 'ready'
   if (s.running || !s.attempted) return 'loading'
   return 'short'
+}
+
+const GOAL_UNIT: Record<GoalMetric, string> = { csPerMin: ' CS/min', visionPerMin: ' vision score/min', deathsPer10: ' deaths per 10 min', kpPct: '% kill participation' }
+const fmtGoal = (p: Pick<GoalProgress, 'metric' | 'decimals'>, v: number) => (p.metric === 'kpPct' ? `${v.toFixed(0)}%` : v.toFixed(p.decimals))
+
+/** "5.1 → 6.1 CS/min over 3 weeks" and the trend word in its colour (up is always the good direction). */
+export function goalTrendLine(p: Pick<GoalProgress, 'metric' | 'decimals' | 'first' | 'last' | 'trend'> & Partial<GoalProgress>): { text: string; word: string; color: string } {
+  const weeks = p.first.weeksAgo - p.last.weeksAgo + 1
+  const unit = p.metric === 'kpPct' ? ' kill participation' : GOAL_UNIT[p.metric]
+  const text = `${fmtGoal(p, p.first.avg)} → ${fmtGoal(p, p.last.avg)}${unit} over ${weeks} weeks`
+  const word = p.trend === 'up' ? 'improving' : p.trend === 'down' ? 'slipping' : 'steady'
+  const color = p.trend === 'up' ? colors.win : p.trend === 'down' ? colors.loss : colors.muted
+  return { text, word, color }
+}
+
+/** How the current week stands against the target. */
+export function goalMetLine(week: GoalWeek): string {
+  if (week.games === 0) return 'No games yet this week'
+  return `Met in ${week.met} of ${week.games} game${week.games === 1 ? '' : 's'} this week`
+}
+
+/** "Target 6.0 CS/min · as Mid", or "recommended for Mid" when the player left the number to the role. */
+export function goalTargetLine(p: Pick<GoalProgress, 'metric' | 'decimals' | 'target' | 'targetSource' | 'role'>): string {
+  const target = p.metric === 'kpPct' ? `${p.target.toFixed(0)}%` : `${p.target.toFixed(p.decimals)}${GOAL_UNIT[p.metric]}`
+  return `Target ${target} · ${p.targetSource === 'recommended' ? 'recommended for' : 'as'} ${ROLE_LABEL[p.role]}`
 }

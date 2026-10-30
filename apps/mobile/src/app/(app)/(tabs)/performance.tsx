@@ -1,13 +1,15 @@
 import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { bestRole, formatRiotId, inQueueFilter, mainRole, performanceProfile, QUEUE_FILTER_LABEL, rankTier, RECENT_FORM_N, recentSnapshot, tierComparison } from '@lpp/shared'
+import { bestRole, formatRiotId, goalProgress, inQueueFilter, mainRole, performanceProfile, QUEUE_FILTER_LABEL, rankTier, RECENT_FORM_N, recentSnapshot, tierComparison } from '@lpp/shared'
 import { QueueFilterChips } from '@/components/QueueFilterChips'
 import { Screen } from '@/components/Screen'
 import { ChampionsCard } from '@/components/performance/ChampionsCard'
 import { RolesCard } from '@/components/performance/RolesCard'
 import { RecentCard } from '@/components/performance/RecentCard'
 import { ChampionPoolCard } from '@/components/performance/ChampionPoolCard'
+import { GoalProgressCard } from '@/components/performance/GoalProgressCard'
 import { TierCompareCard } from '@/components/performance/TierCompareCard'
+import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useQueueFilter } from '@/hooks/useQueueFilter'
 import { useRank } from '@/hooks/useRank'
@@ -44,6 +46,8 @@ export default function PerformanceScreen() {
   const role = useMemo(() => mainRole(filtered), [filtered])
   const compare = useMemo(() => (role ? tierComparison(filtered, tier, role) : []), [filtered, tier, role])
   const best = useMemo(() => bestRole(filtered)?.role ?? null, [filtered])
+  const { goals } = useGoals(account ?? null)
+  const progress = useMemo(() => (puuid ? goalProgress(filtered, goals, puuid, Date.now()) : null), [filtered, goals, puuid])
   const subtitle = account ? `${formatRiotId(account.gameName, account.tagLine)} · ${queueFilter === 'all' ? '' : `${QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} · `}${gamesNote(profile).toLowerCase()}` : 'Your own games only'
   const rateLimited = riotErrorCode(history.error) === 'RATE_LIMITED'
 
@@ -79,6 +83,7 @@ export default function PerformanceScreen() {
         <>
           <RecentCard snapshot={snapshot} donuts={donuts} />
           <ChampionPoolCard champions={snapshot.champions} games={snapshot.games} />
+          {progress ? <GoalProgressCard progress={progress} /> : null}
           {role && compare.length ? <TierCompareCard rows={compare} tier={tier ?? 'Gold'} ranked={tier !== null} role={role} games={profile.roles.find((r) => r.role === role)?.games ?? 0} /> : null}
           <RolesCard profile={profile} best={best} />
           <ChampionsCard profile={profile} />

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile, type CompareRow } from '@lpp/shared'
-import { compareValues, deltaChip, gamesNote, loadState, mainRoleLine, recordLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
+import { compareValues, deltaChip, gamesNote, goalMetLine, goalTargetLine, goalTrendLine, loadState, mainRoleLine, recordLine, winRateColor, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -60,3 +60,22 @@ describe('performance-ui — load state of the window', () => {
   })
 })
 
+
+describe('goal progress lines (owner, 2026-10-29: your goal week by week)', () => {
+  const base = { metric: 'csPerMin' as const, label: 'CS / min', target: 6, targetSource: 'set' as const, role: 'MIDDLE' as const, decimals: 1, lowerIsBetter: false, weeks: [], first: { weeksAgo: 2, avg: 5.1 }, last: { weeksAgo: 0, avg: 6.1 }, trend: 'up' as const }
+  it('reads the oldest and newest week with the metric unit and the trend word', () => {
+    expect(goalTrendLine(base)).toEqual({ text: '5.1 → 6.1 CS/min over 3 weeks', word: 'improving', color: colors.win })
+    expect(goalTrendLine({ ...base, metric: 'kpPct', decimals: 0, first: { weeksAgo: 1, avg: 45 }, last: { weeksAgo: 0, avg: 52 } })).toEqual({ text: '45% → 52% kill participation over 2 weeks', word: 'improving', color: colors.win })
+    expect(goalTrendLine({ ...base, metric: 'deathsPer10', lowerIsBetter: true, first: { weeksAgo: 3, avg: 1.5 }, last: { weeksAgo: 0, avg: 2.4 }, trend: 'down' })).toEqual({ text: '1.5 → 2.4 deaths per 10 min over 4 weeks', word: 'slipping', color: colors.loss })
+    expect(goalTrendLine({ ...base, trend: 'flat', first: { weeksAgo: 1, avg: 6.1 } })).toMatchObject({ word: 'steady', color: colors.muted })
+  })
+  it('says how the current week is going against the target', () => {
+    expect(goalMetLine({ weeksAgo: 0, games: 3, avg: 6.1, met: 2 })).toBe('Met in 2 of 3 games this week')
+    expect(goalMetLine({ weeksAgo: 0, games: 1, avg: 6.1, met: 1 })).toBe('Met in 1 of 1 game this week')
+    expect(goalMetLine({ weeksAgo: 0, games: 0, avg: null, met: 0 })).toBe('No games yet this week')
+  })
+  it('names the target with its source', () => {
+    expect(goalTargetLine(base)).toBe('Target 6.0 CS/min · as Mid')
+    expect(goalTargetLine({ ...base, targetSource: 'recommended' })).toBe('Target 6.0 CS/min · recommended for Mid')
+  })
+})
