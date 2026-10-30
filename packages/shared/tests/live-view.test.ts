@@ -150,6 +150,19 @@ describe('liveScreenMode', () => {
   })
 })
 
+describe('liveScreenMode — the next game (owner, 2026-10-30: the Last-match card sat next to "Loading into the game…")', () => {
+  it('a game phase received well after the end is the next game loading: the after-card makes room', () => {
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'GameStart', phaseAgeMs: 0, dismissed: false })).toBe('pre')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'InProgress', phaseAgeMs: 0, dismissed: false })).toBe('pre')
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'Reconnect', phaseAgeMs: 0, dismissed: false })).toBe('pre')
+  })
+  it('the same phase inside the hold is still the game that just ended', () => {
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 30_000, phase: 'InProgress', phaseAgeMs: 0, dismissed: false })).toBe('ended')
+    // received inside the hold, read after it: the old game's tail, so the after-card as before
+    expect(liveScreenMode({ view: 'ended', endedAtMs: 1_000, nowMs: 70_000, phase: 'InProgress', phaseAgeMs: 25_000, dismissed: false })).toBe('after')
+  })
+})
+
 describe('lastMatchLine', () => {
   it('summarises the ended game', () => {
     expect(lastMatchLine(snap({ gameTimeSeconds: 1450 }), { text: '7.0 CS/min', met: true })).toBe('Yasuo · 24:10 · Goal met')
