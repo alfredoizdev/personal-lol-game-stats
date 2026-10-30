@@ -234,6 +234,15 @@ export type LiveViewState = 'waiting' | 'live' | 'stale' | 'ended'
 
 const EXPIRE_AFTER_MS = 10 * 60_000
 
+/**
+ * A stalled snapshot at 0:00 is the loading screen, not a lost connection (owner,
+ * 2026-10-30): the Live Client answers once while the game loads, then stays silent
+ * until the clock starts, so the phone says "loading" rather than "reconnecting".
+ */
+export function stillLoading(snapshot: LiveSnapshotV2): boolean {
+  return !snapshot.isFinal && snapshot.gameTimeSeconds !== null && snapshot.gameTimeSeconds <= 0
+}
+
 /** waiting | live | stale | ended. Anything older than 10 minutes is forgotten (back to waiting). */
 export function liveViewState(
   snapshot: LiveSnapshotV2 | null,

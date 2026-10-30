@@ -34,13 +34,13 @@ export function LiveHero({
   now = snapshot.ts,
 }: {
   snapshot: LiveSnapshotV2
-  badge: 'LIVE' | 'DEMO' | 'RECONNECTING' | 'ENDED'
+  badge: 'LIVE' | 'DEMO' | 'LOADING' | 'RECONNECTING' | 'ENDED'
   goal?: LiveGoal | null
   /** Phone clock when the snapshot arrived and now: drives the respawn countdown between snapshots. */
   receivedAt?: number
   now?: number
 }) {
-  const badgeColor = badge === 'LIVE' || badge === 'DEMO' ? colors.enemy : badge === 'RECONNECTING' ? colors.warn : colors.muted
+  const badgeColor = badge === 'LIVE' || badge === 'DEMO' ? colors.enemy : badge === 'RECONNECTING' ? colors.warn : badge === 'LOADING' ? colors.accent : colors.muted
   const op = snapshot.opponent
   const ended = badge === 'ENDED'
   const myRespawn = ended ? null : respawnNow(snapshot.me, receivedAt, now)
