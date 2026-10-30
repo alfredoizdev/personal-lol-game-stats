@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   buildLiveSnapshot,
   liveViewState,
+  stillLoading,
   parseLiveSnapshot,
   shouldPublish,
   type LiveSnapshotV2,
@@ -193,6 +194,21 @@ describe('liveViewState', () => {
   })
   it('a stale non-final snapshot expires back to waiting after 10 minutes too', () => {
     expect(liveViewState(base, base.ts + 11 * 60_000)).toBe('waiting')
+  })
+})
+
+describe('stillLoading (owner, 2026-10-30: "aparece reconnecting mientras el juego aún está cargando")', () => {
+  const base = buildLiveSnapshot(raw({}), ME, extra)!
+  it('a snapshot at 0:00 means the loading screen: the Live Client answers once and then stalls until the game starts', () => {
+    expect(stillLoading({ ...base, gameTimeSeconds: 0 })).toBe(true)
+  })
+  it('once the clock runs, a stall is a real reconnect', () => {
+    expect(stillLoading({ ...base, gameTimeSeconds: 1 })).toBe(false)
+    expect(stillLoading({ ...base, gameTimeSeconds: 900 })).toBe(false)
+    expect(stillLoading({ ...base, gameTimeSeconds: null })).toBe(false)
+  })
+  it('a final snapshot is never loading', () => {
+    expect(stillLoading({ ...base, gameTimeSeconds: 0, isFinal: true })).toBe(false)
   })
 })
 

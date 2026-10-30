@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
-import { accountToFollow, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, liveScreenMode, metricInfo } from '@lpp/shared'
+import { accountToFollow, formatGoal, goalFor, goalMet, goalStatus, liveMetrics, liveScreenMode, metricInfo, stillLoading } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { LiveHero } from '@/components/LiveHero'
 import { LiveMatchupTable } from '@/components/LiveMatchupTable'
@@ -72,12 +72,18 @@ export default function LiveScreen() {
         <>
           <LiveHero
             snapshot={snapshot}
-            badge={state === 'ended' ? 'ENDED' : state === 'stale' ? 'RECONNECTING' : snapshot.gameMode === 'DEMO' ? 'DEMO' : 'LIVE'}
+            badge={state === 'ended' ? 'ENDED' : state === 'stale' ? (stillLoading(snapshot) ? 'LOADING' : 'RECONNECTING') : snapshot.gameMode === 'DEMO' ? 'DEMO' : 'LIVE'}
             goal={liveGoal}
             receivedAt={receivedAt}
             now={now}
           />
-          {state === 'stale' ? <Text style={styles.warn}>No update from the desktop for a while. Reconnecting…</Text> : null}
+          {state === 'stale' ? (
+            stillLoading(snapshot) ? (
+              <Text style={styles.muted}>The game is still loading. Your stats start with the first minute.</Text>
+            ) : (
+              <Text style={styles.warn}>No update from the desktop for a while. Reconnecting…</Text>
+            )
+          ) : null}
           <ImpactCard snapshot={snapshot} />
           {state === 'ended' ? (
             <View style={styles.card}>
