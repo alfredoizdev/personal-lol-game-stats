@@ -14,6 +14,7 @@ import { useQueueFilter } from '@/hooks/useQueueFilter'
 import { useRank, useRankHistory } from '@/hooks/useRank'
 import { useRecentMatches, type MatchRowState } from '@/hooks/useRecentMatches'
 import { headerDonuts } from '@/lib/header-donuts'
+import { mostPlayedLine } from '@/lib/most-played'
 import { aggregateMatches } from '@/lib/match-aggregates'
 import { lpHint } from '@/lib/match-row-view'
 import { riotErrorCode } from '@/lib/riot-api'
@@ -39,12 +40,13 @@ export default function MatchesScreen() {
   const hint = lpHint({ lpCount: lp.size, rankedListed: ready.some((m) => queueGroup(m.summary.queueId) === 'ranked') })
   const agg = useMemo(() => aggregateMatches(summaries), [summaries])
   const donuts = useMemo(() => headerDonuts(summaries), [summaries])
+  const mostPlayed = useMemo(() => mostPlayedLine(summaries), [summaries])
 
   const header = (
     <View style={styles.headerBlock}>
       {account ? <RankHeader account={account} rank={rank} loading={rankLoading} /> : null}
       <QueueFilterChips value={queueFilter} onChange={setQueueFilter} />
-      {ready.length > 0 ? <PerformanceHeader games={agg.games} donuts={donuts} /> : null}
+      {ready.length > 0 ? <PerformanceHeader games={agg.games} donuts={donuts} mostPlayed={mostPlayed} /> : null}
       {ready.length === 0 && ids.isSuccess && ids.data.length > 0 && queueFilter !== 'all' ? <Text style={styles.muted}>No {QUEUE_FILTER_LABEL[queueFilter].toLowerCase()} games among your recent ones. Scroll loads more.</Text> : null}
       {ids.isError ? <RiotErrorView code={riotErrorCode(ids.error)} onRetry={() => void refresh()} /> : null}
       {ids.isSuccess && ids.data.length === 0 ? <Text style={styles.muted}>No recent matches for this account.</Text> : null}
