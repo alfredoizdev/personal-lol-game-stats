@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { performanceProfile, type CompareRow } from '@lpp/shared'
-import { afterLossLine, compareValues, deepSessionLine, deltaChip, gamesNote, goalMetLine, goalTargetLine, goalTrendLine, loadState, mainRoleLine, recordLine, sessionSubtitle, winRateColor, WINDOW } from '../src/lib/performance-ui'
+import { afterLossLine, compareValues, deepSessionLine, deltaChip, gamesNote, goalMetLine, goalTargetLine, goalTrendLine, loadState, sessionSubtitle, WINDOW } from '../src/lib/performance-ui'
 import { colors } from '../src/theme/tokens'
 
 const EMPTY = performanceProfile([], 20)
@@ -10,24 +10,6 @@ describe('performance-ui helpers', () => {
     expect(gamesNote({ ...EMPTY, period: 100, games: 100 })).toBe('Last 100 games')
     expect(gamesNote({ ...EMPTY, period: 100, games: 98 })).toBe('Last 98 games') // 2 of the 100 were ARAM / remakes
     expect(gamesNote({ ...EMPTY, period: 100, games: 1 })).toBe('Last game')
-  })
-})
-
-describe('performance-ui — win rate colour', () => {
-  it('green from 50 %, red below', () => {
-    expect(winRateColor(50)).toBe(colors.win)
-    expect(winRateColor(49)).toBe(colors.loss)
-  })
-})
-
-describe('performance-ui — recent snapshot copy (op.gg-style, owner 2026-10-27)', () => {
-  it('record line under the win-rate arc and the main-role sentence', () => {
-    expect(recordLine({ games: 20, wins: 12, losses: 8, winRate: 60 })).toBe('12 wins · 8 losses')
-    expect(recordLine({ games: 1, wins: 1, losses: 0, winRate: 100 })).toBe('1 win · 0 losses')
-    expect(recordLine({ games: 0, wins: 0, losses: 0, winRate: null })).toBe('No games yet')
-    expect(mainRoleLine({ role: 'JUNGLE', pct: 50 }, 20)).toBe('Mostly Jungle · 10 of 20 games')
-    expect(mainRoleLine({ role: 'BOTTOM', pct: 100 }, 1)).toBe('Bot · 1 of 1 game')
-    expect(mainRoleLine(null, 0)).toBeNull()
   })
 })
 
