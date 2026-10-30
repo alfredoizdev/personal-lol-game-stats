@@ -4,8 +4,6 @@ import { router } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { formatDuration, formatGoal, goalFor, goalMet, liveMetrics, metricInfo, ROLE_LABEL, summarizeMatch, type MatchV5 } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
-import { LiveMatchupTable } from '@/components/LiveMatchupTable'
-import { PostGameStats } from '@/components/postgame/PostGameStats'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
@@ -107,8 +105,6 @@ export default function PostGameScreen() {
           ) : null}
         </View>
       ) : null}
-      {snapshot ? <PostGameStats me={snapshot.me} teamKills={snapshot.teamKills} summary={review} /> : null}
-      {snapshot ? <LiveMatchupTable me={snapshot.me} opponent={snapshot.opponent} /> : null}
       <View style={styles.card}>
         <Text style={styles.cardTitle} maxFontSizeMultiplier={1.15}>Match review</Text>
         {wait === 'looking' ? (

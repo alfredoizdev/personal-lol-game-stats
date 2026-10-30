@@ -1,30 +1,32 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
-import { analyzeMatch, csCurve, goalFor, goldDiffCurve, metricsOf, summarizeMatch, type AreaKey, type GoalMetric, type PhaseKey } from '@lpp/shared'
-import { AreaCard } from '@/components/AreaCard'
-import { AreaPills } from '@/components/AreaPills'
-import { CsCurveChart } from '@/components/CsCurveChart'
+import { analyzeMatch, goalFor, metricsOf, summarizeMatch, takeaways } from '@lpp/shared'
 import { Disclaimer } from '@/components/Disclaimer'
-import { GoldDiffChart } from '@/components/GoldDiffChart'
-import { LaneMatchupCard } from '@/components/LaneMatchupCard'
 import { MatchHero } from '@/components/MatchHero'
 import { OverallScoreCard } from '@/components/OverallScoreCard'
 import { RiotErrorView } from '@/components/RiotErrorView'
+import { TakeawaysCard } from '@/components/TakeawaysCard'
 import { useBaseline } from '@/hooks/useBaseline'
 import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
 import { useMatchTimeline } from '@/hooks/useMatchTimeline'
 import { identityOf, matchDetailQuery } from '@/hooks/useRecentMatches'
 import { analysisInputFromQueries, needsAnalysisData } from '@/lib/analysis-input'
-import { defaultArea } from '@/lib/area-ui'
 import { goalLine } from '@/lib/goal-line'
 import { setReviewOpen } from '@/lib/review-focus'
 import { riotErrorCode } from '@/lib/riot-api'
 import { colors, font, radius, space } from '@/theme/tokens'
 
+/**
+ * Match Review — "¿Qué tal lo hice?" (owner, 2026-10-30, one question per screen):
+ * the result, the 1–10 score with its headline, and three lines at most — your best
+ * number, your worst, the goal verdict — each against the rival, your average or the
+ * role target. The area tabs, sub-row bars, curves and the lane table are gone; the
+ * timeline is still fetched because the lane leads at 10/15 are candidates.
+ */
 export default function MatchReviewScreen() {
   const { matchId } = useLocalSearchParams<{ matchId: string }>()
   const id = String(matchId)
@@ -47,43 +49,22 @@ export default function MatchReviewScreen() {
   const baseline = useBaseline(account ?? null, wantsAnalysis ? summary?.me.role ?? null : null, id)
   const { goals } = useGoals(account ?? null)
 
-  // The goal in force when this game ended (set at or before game end), attached to the area that owns its metric.
-  const goalByArea = useMemo(() => {
-    if (!summary || !account || !summary.me.role) return {} as Partial<Record<AreaKey, { text: string; met: boolean | null }>>
+  // The goal in force when this game ended (set at or before game end), judged on the final numbers.
+  const goal = useMemo(() => {
+    if (!summary || !account || !summary.me.role) return null
     const end = Date.parse(summary.startedAt) + summary.durationSec * 1000
     const g = goalFor(goals, account.puuid, summary.me.championId, summary.me.role, end)
-    if (!g) return {}
-    const value = metricsOf(summary.me, summary.durationSec, summary.teamKills)[g.metric]
-    const owner: Record<GoalMetric, AreaKey> = { csPerMin: 'farming', visionPerMin: 'vision', deathsPer10: 'combat', kpPct: 'combat' }
-    return { [owner[g.metric]]: goalLine(g, value) }
+    if (!g) return null
+    return goalLine(g, metricsOf(summary.me, summary.durationSec, summary.teamKills)[g.metric])
   }, [summary, account, goals])
 
-  const { input, timelineError, baselineLoading } = analysisInputFromQueries({
+  const { input, baselineLoading } = analysisInputFromQueries({
     summary,
     series: timeline.isSuccess ? { status: 'success', data: timeline.data } : timeline.isError ? { status: 'error', error: timeline.error } : { status: 'pending' },
     baseline: { loading: baseline.loading, data: baseline.baseline },
   })
   const analysis = useMemo(() => (input ? analyzeMatch(input) : null), [input])
-
-  // The weakest area can change once the timeline lands (Lane and the phases join),
-  // so the default follows the data until the user taps a pill.
-  const [picked, setPicked] = useState<AreaKey | null>(null)
-  const active = picked ?? (analysis ? defaultArea(analysis) : null)
-  const area = analysis?.analyzable ? analysis.areas.find((a) => a.key === active) ?? null : null
-
-  const chart = useMemo(() => {
-    if (!summary || !area || !input?.series) return null
-    const me = summary.me.participantId
-    const opp = summary.opponent?.participantId ?? null
-    if (area.key === 'farming') {
-      const weakest = area.subrows.filter((r) => !r.context && r.score !== null && r.key !== 'total').sort((a, b) => a.score! - b.score!)[0]
-      return <CsCurveChart curve={csCurve(input.series, me, opp)} durationSec={summary.durationSec} weakestPhase={(weakest?.key as PhaseKey | undefined) ?? null} />
-    }
-    if (area.key === 'lane' && opp !== null) {
-      return <GoldDiffChart curve={goldDiffCurve(input.series, me, opp)} durationSec={summary.durationSec} />
-    }
-    return null
-  }, [summary, area, input?.series])
+  const lines = useMemo(() => (analysis ? takeaways(analysis, goal) : []), [analysis, goal])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -109,19 +90,7 @@ export default function MatchReviewScreen() {
             {analysis?.analyzable ? (
               <>
                 <OverallScoreCard analysis={analysis} baselineLoading={baselineLoading} />
-                <AreaPills areas={analysis.areas} active={area?.key ?? analysis.areas[0]!.key} onChange={setPicked} />
-                {area ? (
-                  <AreaCard
-                    area={area}
-                    baselineN={analysis.baselineN}
-                    baselineLoading={baselineLoading}
-                    chart={chart}
-                    timelineError={timelineError}
-                    onRetryTimeline={() => void timeline.refetch()}
-                    goalLine={goalByArea[area.key] ?? null}
-                  />
-                ) : null}
-                {timeline.isPending ? <Text style={styles.hint}>Loading the timeline for phases and lane leads…</Text> : null}
+                <TakeawaysCard items={lines} />
               </>
             ) : analysis ? (
               <View style={styles.note}>
@@ -129,8 +98,6 @@ export default function MatchReviewScreen() {
                 <Text style={styles.muted}>{analysis.reason}</Text>
               </View>
             ) : null}
-
-            <LaneMatchupCard me={summary.me} opponent={summary.opponent} />
 
             {analysis?.analyzable && summary.me.role ? (
               <Pressable
@@ -162,7 +129,6 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontSize: font.caption + 1 },
   spinner: { marginTop: space.lg },
   muted: { color: colors.muted, fontSize: font.body },
-  hint: { color: colors.muted, fontSize: font.caption + 1, textAlign: 'center' },
   note: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: 4 },
   noteTitle: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   link: { color: colors.accent, fontSize: font.body, fontWeight: '700', textAlign: 'center' },
