@@ -30,6 +30,19 @@ describe('champSelectPicks (the three picks the carousel shows)', () => {
       ['Ezreal', 'mostPlayed'],
     ])
   })
+  it('never shows a champion you have a losing record with (owner, 2026-10-30: a 0W 2L top pick is not a pick)', () => {
+    const all = [
+      g({ win: false, ...ez }), g({ win: false, ...ez }), // Ezreal 0–2, few games: out
+      g({ win: false, ...cait }), g({ win: false, ...cait }), g({ win: true, ...cait }), // Caitlyn 1–2: out even with 3+ games
+      g({ win: true, ...kai }), g({ win: false, ...kai }), // Kai'Sa 1–1: even record stays
+      g({ win: true }), // Jinx 1–0: stays
+    ]
+    expect(champSelectPicks(all, 'BOTTOM').map((p) => [p.championName, p.reason])).toEqual([
+      ['Kai\'Sa', 'mostPlayed'],
+      ['Jinx', 'mostPlayed'],
+    ])
+    expect(champSelectPicks([g({ win: false }), g({ win: false })], 'BOTTOM')).toEqual([])
+  })
   it('returns fewer than three when the role has fewer champions, and none without games', () => {
     expect(champSelectPicks([g({ win: true })], 'BOTTOM').map((p) => p.championName)).toEqual(['Jinx'])
     expect(champSelectPicks([], 'TOP')).toEqual([])

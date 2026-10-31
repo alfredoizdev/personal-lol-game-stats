@@ -51,7 +51,8 @@ function Stat({ value, label }: { value: string; label: string }) {
 /**
  * The three picks the app recommends for the role, as a swipeable carousel of big
  * cards (owner, 2026-10-23: "arriba grande como un carousel"). From the player's
- * own games only: best win rate with 3+ games first, then the most played.
+ * own games only: best win rate with 3+ games first, then the most played; a
+ * champion with a losing record is never a pick.
  */
 export function PickCarousel({ picks, roleLabel }: { picks: PickCard[]; roleLabel: string }) {
   const { width: windowW } = useWindowDimensions()
@@ -67,7 +68,7 @@ export function PickCarousel({ picks, roleLabel }: { picks: PickCard[]; roleLabe
       </View>
       {picks.length === 0 ? (
         <View style={[styles.card, { width: contentW }]}>
-          <Text style={styles.empty} maxFontSizeMultiplier={1.15}>No games of yours as {roleLabel} among your loaded games yet.</Text>
+          <Text style={styles.empty} maxFontSizeMultiplier={1.15}>No champion you win with as {roleLabel} among your loaded games yet.</Text>
         </View>
       ) : (
         <ScrollView

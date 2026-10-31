@@ -52,9 +52,16 @@ export const CHAMP_SELECT_PICKS = 3
 
 export type PickCard = PickRow & { reason: 'best' | 'mostPlayed' }
 
-/** The champion select carousel: best win rate (3+ games) first, filled with the most played, three in all. */
+/** A champion is a pick only while you are not losing with it: wins ≥ losses (owner, 2026-10-30: "me recomendó un champ que tengo 0W 2L"). */
+export const notLosing = (r: { wins: number; games: number }): boolean => r.wins * 2 >= r.games
+
+/**
+ * The champion select carousel: best win rate (3+ games) first, filled with the
+ * most played, three in all. Champions you have a losing record with never show,
+ * however many games they have.
+ */
 export function champSelectPicks(all: MatchSummary[], role: Role, limit = CHAMP_SELECT_PICKS): PickCard[] {
   const { best, mostPlayed } = recommendedPicks(all, role)
   const rows: PickCard[] = [...best.map((r) => ({ ...r, reason: 'best' as const })), ...mostPlayed.map((r) => ({ ...r, reason: 'mostPlayed' as const }))]
-  return rows.slice(0, limit)
+  return rows.filter(notLosing).slice(0, limit)
 }
