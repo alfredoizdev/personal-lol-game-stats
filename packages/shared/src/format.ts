@@ -43,3 +43,8 @@ export function relativeTimeShort(iso: string, nowMs: number): string {
   if (days <= 7) return `${days}d ago`
   return `${MONTHS[then.getUTCMonth()]} ${then.getUTCDate()}`
 }
+
+/** Damage and gold totals: 18240 → "18.2k", under a thousand as is. */
+export function formatCompact(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n))
+}

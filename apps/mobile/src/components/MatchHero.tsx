@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
-import { formatDuration, formatKda, type MatchSummary } from '@lpp/shared'
+import { formatCompact, formatDuration, formatKda, type MatchSummary } from '@lpp/shared'
 import { PortraitWithBadges } from './PortraitWithBadges'
 import { ItemRow } from './ItemRow'
 import { resultWord } from './MatchRow'
@@ -37,6 +37,8 @@ export function MatchHero({ summary }: { summary: MatchSummary }) {
         <Stat value={`${me.kills} / ${me.deaths} / ${me.assists}`} label="KDA" sub={formatKda(me.kills, me.deaths, me.assists)} />
         <View style={styles.divider} />
         <Stat value={me.csPerMin === null ? '—' : me.csPerMin.toFixed(1)} label="CS / min" />
+        <View style={styles.divider} />
+        <Stat value={formatCompact(me.damageToChampions)} label="Damage" sub="to champions" />
         <View style={styles.divider} />
         <Stat value={formatDuration(summary.durationSec)} label="Duration" />
       </View>
