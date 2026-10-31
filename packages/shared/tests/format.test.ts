@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDuration, formatKda, relativeTime, relativeTimeShort } from '../src/format'
+import { formatCompact, formatDuration, formatKda, relativeTime, relativeTimeShort } from '../src/format'
 import { queueLabel } from '../src/queue-label'
 
 describe('formatDuration', () => {
@@ -50,5 +50,13 @@ describe('relativeTimeShort', () => {
     expect(relativeTimeShort('2026-10-22T02:00:00Z', now)).toBe('10h ago')
     expect(relativeTimeShort('2026-10-19T12:00:00Z', now)).toBe('3d ago')
     expect(relativeTimeShort('2026-10-01T12:00:00Z', now)).toBe('Oct 1')
+  })
+})
+
+describe('formatCompact (damage and gold totals)', () => {
+  it('thousands as 18.2k, small numbers as they are', () => {
+    expect(formatCompact(18240)).toBe('18.2k')
+    expect(formatCompact(999)).toBe('999')
+    expect(formatCompact(1000)).toBe('1.0k')
   })
 })

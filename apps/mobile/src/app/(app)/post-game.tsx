@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { formatDuration, formatGoal, goalFor, goalMet, liveMetrics, metricInfo, ROLE_LABEL, summarizeMatch, type MatchV5 } from '@lpp/shared'
+import { formatDuration, formatGoal, goalFor, goalMet, liveMetrics, metricInfo, postGameNumbers, rankTier, ROLE_LABEL, summarizeMatch, type MatchV5 } from '@lpp/shared'
 import { Screen } from '@/components/Screen'
 import { ChampionPortrait } from '@/components/ChampionPortrait'
 import { useChampionList } from '@/hooks/useChampionList'
 import { useGoals } from '@/hooks/useGoals'
 import { useLinkedAccount } from '@/hooks/useLinkedAccount'
+import { useRank } from '@/hooks/useRank'
+import { PostGameNumbersCard } from '@/components/postgame/PostGameNumbersCard'
 import { identityOf, matchDetailQuery, matchKeys } from '@/hooks/useRecentMatches'
 import { useLiveFeed } from '@/lib/live-feed-context'
 import { isReviewOf, postGameRedirect, reviewWaitState } from '@/lib/post-game-review'
@@ -20,9 +22,9 @@ const LIST = 20
 
 /**
  * Post-game (owner, 2026-10-23): what you did this game, whether the goal was
- * met, your final numbers (owner, 2026-10-23: more stats here, the deep read in
- * the review), your lane against the opponent, and the match review as soon as
- * Riot's history lists the game. Opens by itself when the game ends, full
+ * met, your final numbers against your tier (owner, 2026-10-31: the stats you
+ * did well, not only the goal), and the match review — score, damage, Best /
+ * Work on — as soon as Riot's history lists the game. Opens by itself when the game ends, full
  * screen with no tab bar and nothing to close (owner, 2026-10-27): once the
  * review is ready it moves to the match review by itself; the next queue closes
  * it; after six minutes without a listing it offers Matches.
@@ -32,9 +34,13 @@ export default function PostGameScreen() {
   const { data: account } = useLinkedAccount()
   const { goals } = useGoals(account ?? null)
   const { byName } = useChampionList()
+  const { rank } = useRank(account ?? null)
+  const tier = rankTier(rank?.solo?.tier ?? null)
+  const numbers = useMemo(() => (snapshot ? postGameNumbers(snapshot, tier ?? 'Gold') : []), [snapshot, tier])
   const qc = useQueryClient()
   const endedAtRef = useRef(endedAt ?? Date.now())
 
+  const kda = snapshot && snapshot.me.kills !== null && snapshot.me.deaths !== null && snapshot.me.assists !== null ? `${snapshot.me.kills}/${snapshot.me.deaths}/${snapshot.me.assists}` : null
   const goal = useMemo(() => {
     if (!snapshot || !account) return null
     const g = goalFor(goals, account.puuid, byName(snapshot.me.championName), snapshot.me.position)
@@ -94,7 +100,7 @@ export default function PostGameScreen() {
             <ChampionPortrait championName={snapshot.me.championName} size={64} ring={review ? (review.me.win ? 'win' : 'loss') : 'none'} />
             <View style={styles.heroText}>
               <Text style={styles.result} maxFontSizeMultiplier={1.15}>{review ? (review.me.win ? 'Victory' : 'Defeat') : 'Game over'}</Text>
-              <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{snapshot.me.championName}{snapshot.me.position ? ` · ${ROLE_LABEL[snapshot.me.position]}` : ''}{review ? ` · ${review.queueLabel}` : ''}</Text>
+              <Text style={styles.muted} maxFontSizeMultiplier={1.15}>{snapshot.me.championName}{snapshot.me.position ? ` · ${ROLE_LABEL[snapshot.me.position]}` : ''}{kda ? ` · ${kda}` : ''}{review ? ` · ${review.queueLabel}` : ''}</Text>
             </View>
           </View>
           {goal ? (
@@ -105,12 +111,13 @@ export default function PostGameScreen() {
           ) : null}
         </View>
       ) : null}
+      <PostGameNumbersCard rows={numbers} tier={tier ?? 'Gold'} ranked={tier !== null} />
       <View style={styles.card}>
         <Text style={styles.cardTitle} maxFontSizeMultiplier={1.15}>Match review</Text>
         {wait === 'looking' ? (
           <View style={styles.row}>
             <ActivityIndicator color={colors.muted} />
-            <Text style={styles.muted} maxFontSizeMultiplier={1.15}>Waiting for Riot to list the game in your history. Usually 1–2 minutes.</Text>
+            <Text style={styles.muted} maxFontSizeMultiplier={1.15}>Waiting for Riot to list the game. Your score, damage and Best / Work on come with it. Usually 1–2 minutes.</Text>
           </View>
         ) : null}
         {wait === 'found' && found ? (
